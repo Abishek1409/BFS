@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BFS &ndash; Billing System | Best Fruits Stall</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="GradientWaves.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:   #fde047;
+      --green-l: #fef08a;
+      --green-d: #ca8a04;
+      --accent:  #eab308;
+      --accent-text: #000000;
+      --bg:      #121212;
+      --card:    #1a1a1a;
+      --border:  #404040;
+      --border-subtle: #262626;
+      --text:    #f5f5f5;
+      --muted:   #a3a3a3;
+      --orange:  #eab308;
+      --amber:   #ca8a04;
+      --danger:  #dc2626;
+      --radius:  14px;
+      --shadow:  0 4px 24px rgba(234,179,8,.12);
+      --gradient: linear-gradient(to right, #fde047, #ca8a04);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .app-header {
+      background: var(--gradient);
+      color: var(--accent-text); padding: 18px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 4px 18px rgba(0,0,0,.22);
+    }
+    .app-header h1 {
+      font-family: 'Playfair Display', serif; font-size: 1.7rem; letter-spacing: .5px;
+      color: var(--accent-text);
+      background: none;
+      -webkit-text-fill-color: currentColor;
+    }
+    .app-header small { font-size: .8rem; opacity: .75; display: block; }
+    .bill-badge {
+      background: rgba(0,0,0,.22); border: 1px solid rgba(0,0,0,.35);
+      color: var(--accent-text); border-radius: 50px; padding: 6px 18px; font-size: .85rem; font-weight: 600;
+    }
+
+    .workspace {
+      display: grid; grid-template-columns: 1fr 420px;
+      gap: 24px; padding: 24px 28px; max-width: 1400px; margin: 0 auto;
+    }
+
+    .panel { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .panel-head {
+      background: var(--gradient);
+      color: var(--accent-text); padding: 14px 20px; font-weight: 700; font-size: 1rem;
+      letter-spacing: .3px; display: flex; align-items: center; gap: 8px;
+    }
+    .panel-head svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    .cat-tabs {
+      display: flex; gap: 8px; padding: 14px 16px;
+      overflow-x: auto; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .cat-tab {
+      cursor: pointer; border: 1.5px solid var(--border); background: var(--card);
+      color: var(--text); border-radius: 50px; padding: 6px 16px;
+      font-size: .82rem; font-weight: 600; transition: all .2s; white-space: nowrap;
+    }
+    .cat-tab:hover, .cat-tab.active {
+      background: var(--accent); color: var(--accent-text); border-color: var(--accent); transform: translateY(-1px);
+    }
+
+    .menu-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 14px; padding: 16px; max-height: calc(100vh - 230px); overflow-y: auto;
+    }
+
+    /* ── GlareHover (ported from React Bits) applied to menu cards ── */
+    .menu-card {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      background: linear-gradient(145deg, #262626 0%, #1a1a1a 60%, #141414 100%);
+      position: relative;
+      overflow: hidden;          /* clips the glare to the card */
+      display: grid;
+      place-items: start;        /* keep content left-aligned */
+      transition: border-color .22s, box-shadow .22s, transform .22s;
+
+      /* GlareHover CSS variables */
+      --gh-angle:    -30deg;
+      --gh-duration: 800ms;
+      --gh-size:     320%;
+      --gh-rgba:     rgba(255, 255, 255, 0.35);
+    }
+
+    /* Glare sweep layer */
+    .menu-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        var(--gh-angle),
+        hsla(0, 0%, 100%, 0)   55%,
+        var(--gh-rgba)         68%,
+        hsla(0, 0%, 100%, 0)   78%,
+        hsla(0, 0%, 100%, 0)  100%
+      );
+      background-size:     var(--gh-size) var(--gh-size), 100% 100%;
+      background-repeat:   no-repeat;
+      background-position: -100% -100%, 0 0;
+      transition:          background-position var(--gh-duration) ease;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Trigger glare sweep on hover */
+    .menu-card:hover::before {
+      background-position: 160% 160%, 0 0;
+    }
+
+    /* Lift & glow on hover */
+    .menu-card:hover {
+      border-color: var(--green);
+      box-shadow: 0 6px 24px rgba(234,179,8,.2);
+      transform: translateY(-3px);
+    }
+
+    /* Keep all card content above the glare layer */
+    .menu-card .emoji,
+    .menu-card .item-name,
+    .menu-card .item-price,
+    .menu-card .item-cat-badge {
+      position: relative;
+      z-index: 1;
+    }
+
+    .menu-card .emoji { font-size: 2.2rem; margin-bottom: 6px; display: block; }
+    .menu-card .item-name { font-weight: 700; font-size: .92rem; color: var(--text); }
+    .menu-card .item-price { color: var(--orange); font-weight: 700; font-size: .95rem; margin-top: 4px; }
+    .menu-card .item-cat-badge {
+      position: absolute; top: 8px; right: 8px; background: var(--amber);
+      color: #fff; font-size: .65rem; font-weight: 700; border-radius: 50px;
+      padding: 2px 7px; letter-spacing: .3px; z-index: 2;
+    }
+
+
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 999; align-items: center; justify-content: center; animation: fadeIn .15s ease;
+    }
+    .overlay.show { display: flex; }
+    @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+    .modal {
+      background: var(--card); border-radius: 18px; padding: 28px;
+      width: 380px; max-width: 95vw;
+      box-shadow: 0 16px 48px rgba(0,0,0,.22); animation: slideUp .2s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+    .modal h3 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    .modal .modal-price { color: var(--orange); font-weight: 700; font-size: 1.05rem; margin-bottom: 18px; }
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .form-row input[type="number"], .form-row select, .form-row textarea {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 8px 12px; font-size: .9rem; font-family: inherit;
+      color: var(--text); background: var(--bg); outline: none; transition: border-color .2s;
+    }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--accent); }
+    .toggle-group { display: flex; gap: 8px; }
+    .toggle-btn {
+      flex: 1; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border);
+      background: var(--bg); font-size: .85rem; font-weight: 600; cursor: pointer;
+      transition: all .18s; color: var(--text);
+    }
+    .toggle-btn.selected { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn { border: none; border-radius: 8px; padding: 10px 18px; font-size: .9rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; }
+    .btn-primary { background: var(--accent); color: var(--accent-text); flex: 1; }
+    .btn-primary:hover { background: var(--green-d); color: var(--text); }
+    .btn-secondary { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { background: var(--border-subtle); }
+
+    .bill-panel { display: flex; flex-direction: column; }
+    .bill-items-list { flex: 1; overflow-y: auto; max-height: 40vh; padding: 12px; border-bottom: 1px solid var(--border); }
+    .bill-item {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 10px 8px; border-radius: 8px; gap: 8px; transition: background .15s;
+    }
+    .bill-item:hover { background: #262626; }
+    .bill-item + .bill-item { border-top: 1px dashed var(--border); }
+    .bill-item-info { flex: 1; }
+    .bill-item-name { font-weight: 700; font-size: .88rem; color: var(--text); }
+    .bill-item-spec { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+    .bill-item-qty-price { text-align: right; font-size: .85rem; }
+    .bill-item-total { font-weight: 700; color: var(--orange); }
+    .bill-item-unit { font-size: .72rem; color: var(--muted); }
+    .bill-item-del { background: none; border: none; cursor: pointer; color: #f87171; font-size: 1.1rem; padding: 0 4px; transition: color .15s; }
+    .bill-item-del:hover { color: var(--danger); }
+    .empty-bill { text-align: center; color: var(--muted); padding: 40px 20px; font-size: .9rem; }
+    .empty-bill .icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+
+    .bill-totals { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .total-row { display: flex; justify-content: space-between; font-size: .88rem; margin-bottom: 6px; color: var(--muted); }
+    .total-row.grand { font-size: 1.1rem; font-weight: 800; color: var(--text); border-top: 2px solid var(--border); padding-top: 8px; margin-top: 4px; }
+
+    .bill-actions { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .btn-print {
+      background: var(--accent);
+      color: var(--accent-text); padding: 13px; border-radius: 10px; font-size: .95rem; font-weight: 700;
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 8px; font-family: inherit; transition: all .2s; box-shadow: 0 4px 12px rgba(234,179,8,.25);
+    }
+    .btn-print:hover { transform: translateY(-1px); background: var(--green-d); color: var(--text); box-shadow: 0 6px 18px rgba(234,179,8,.3); }
+    .btn-clear {
+      background: transparent; color: var(--danger); border: 1.5px solid #7f1d1d;
+      padding: 10px; border-radius: 8px; font-size: .88rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all .18s;
+    }
+    .btn-clear:hover { background: #262626; }
+
+    .bill-number-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border); background: #141414;
+    }
+    .bill-number-row label { font-size: .8rem; font-weight: 600; color: var(--muted); }
+    .bill-no-input {
+      border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 10px;
+      font-size: .88rem; font-weight: 700; width: 90px; font-family: inherit;
+      color: var(--text); background: #141414; outline: none;
+    }
+    .bill-no-input:focus { border-color: var(--accent); }
+
+    .customer-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-bottom: 1px solid var(--border); background: #141414;
+    }
+    .customer-row label { font-size: .8rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .customer-row input {
+      border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 10px;
+      font-size: .88rem; font-family: inherit; color: var(--text);
+      background: #141414; outline: none; flex: 1;
+    }
+    .customer-row input:focus { border-color: var(--accent); }
+
+
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    @media (max-width: 900px) {
+      .workspace { grid-template-columns: 1fr; }
+      .menu-grid { max-height: 55vh; }
+      .bill-items-list { max-height: 30vh; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="gradient-waves-root" class="gradient-waves-bg" aria-hidden="true"></div>
+
+<div class="app-ui">
+
+<!-- HEADER -->
+<header class="app-header">
+  <div>
+    <h1>&#x1F379; Best Fruits Stall</h1>
+    <small>BFS Billing System &mdash; 100% Offline &amp; Frontend Only</small>
+  </div>
+  <div class="bill-badge" id="headerBillNo">Bill #001</div>
+</header>
+
+<!-- ITEM MODAL -->
+<div class="overlay" id="itemOverlay">
+  <div class="modal">
+    <h3 id="modalItemName">Item</h3>
+    <div class="modal-price" id="modalItemPrice">&#x20B9;0</div>
+    <div class="form-row">
+      <label>Quantity</label>
+      <input type="number" id="modalQty" min="1" value="1" />
+    </div>
+    <div class="form-row" id="iceRow">
+      <label>&#x1F9CA; Ice Preference</label>
+      <div class="toggle-group">
+        <button class="toggle-btn selected" data-val="With Ice"    onclick="selectToggle(this,'iceRow')">With Ice</button>
+        <button class="toggle-btn"          data-val="Without Ice" onclick="selectToggle(this,'iceRow')">Without Ice</button>
+      </div>
+    </div>
+    <div class="form-row" id="sugarRow">
+      <label>&#x1F36C; Sugar Level</label>
+      <div class="toggle-group">
+        <button class="toggle-btn selected" data-val="Normal Sugar" onclick="selectToggle(this,'sugarRow')">Normal</button>
+        <button class="toggle-btn"          data-val="Less Sugar"   onclick="selectToggle(this,'sugarRow')">Less Sugar</button>
+        <button class="toggle-btn"          data-val="No Sugar"     onclick="selectToggle(this,'sugarRow')">No Sugar</button>
+      </div>
+    </div>
+    <div class="form-row" id="sizeRow">
+      <label>&#x1F4CF; Size</label>
+      <div class="toggle-group">
+        <button class="toggle-btn selected" data-val="Regular" onclick="selectToggle(this,'sizeRow')">Regular</button>
+        <button class="toggle-btn"          data-val="Large"   onclick="selectToggle(this,'sizeRow')">Large (+&#x20B9;10)</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>&#x1F4DD; Special Note (optional)</label>
+      <textarea id="modalNote" rows="2" placeholder="e.g. extra sweet, no straw, extra lemon&#x2026;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary"   onclick="addToBill()">&#x2795; Add to Bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- MENU -->
+  <div class="panel">
+    <div class="panel-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Menu &mdash; Select items to add to bill
+    </div>
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="menu-grid" id="menuGrid"></div>
+  </div>
+
+  <!-- BILL -->
+  <div class="panel bill-panel">
+    <div class="panel-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+      Current Bill
+    </div>
+    <div class="bill-number-row">
+      <label for="billNoInput">Bill No.</label>
+      <input type="text" id="billNoInput" class="bill-no-input" value="001" oninput="updateHeaderBill(this.value)" />
+    </div>
+    <div class="customer-row">
+      <label for="customerName">Customer</label>
+      <input type="text" id="customerName" placeholder="Customer name (optional)" />
+    </div>
+    <div class="bill-items-list" id="billItemsList">
+      <div class="empty-bill">
+        <span class="icon">&#x1F6D2;</span>
+        No items yet. Tap any menu item to add.
+      </div>
+    </div>
+    <div class="bill-totals" id="billTotals" style="display:none;">
+      <div class="total-row"><span>Subtotal</span><span id="subtotalVal">&#x20B9;0.00</span></div>
+      <div class="total-row grand"><span>TOTAL</span><span id="grandTotal">&#x20B9;0.00</span></div>
+    </div>
+    <div class="bill-actions">
+      <button class="btn-print" id="printBtn" onclick="printBill()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print Bill
+      </button>
+      <button class="btn-clear" onclick="clearBill()">&#x1F5D1; Clear &amp; New Bill</button>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<script src="gradient-waves.bundle.js" defer></script>
+<script>
+/* ===== MENU DATA ===== */
+const MENU = [
+  // JUICES
+  { id:1,  name:"Mango Juice",       emoji:"🥭", price:50,  cat:"Juices",  specs:["ice","sugar","size"] },
+  { id:2,  name:"Watermelon Juice",  emoji:"🍉", price:40,  cat:"Juices",  specs:["ice","sugar","size"] },
+  { id:3,  name:"Orange Juice",      emoji:"🍊", price:45,  cat:"Juices",  specs:["ice","sugar","size"] },
+  { id:4,  name:"Pineapple Juice",   emoji:"🍍", price:50,  cat:"Juices",  specs:["ice","sugar","size"] },
+  { id:5,  name:"Mixed Fruit Juice", emoji:"🍹", price:60,  cat:"Juices",  specs:["ice","sugar","size"] },
+  { id:6,  name:"Guava Juice",       emoji:"🟢", price:40,  cat:"Juices",  specs:["ice","sugar","size"] },
+  { id:7,  name:"Grape Juice",       emoji:"🍇", price:55,  cat:"Juices",  specs:["ice","sugar","size"] },
+  { id:8,  name:"Coconut Water",     emoji:"🥥", price:35,  cat:"Juices",  specs:["ice"] },
+  // SHAKES
+  { id:9,  name:"Mango Shake",       emoji:"🥤", price:65,  cat:"Shakes",  specs:["ice","sugar","size"] },
+  { id:10, name:"Strawberry Shake",  emoji:"🍓", price:70,  cat:"Shakes",  specs:["ice","sugar","size"] },
+  { id:11, name:"Banana Shake",      emoji:"🍌", price:60,  cat:"Shakes",  specs:["ice","sugar","size"] },
+  { id:12, name:"Chikoo Shake",      emoji:"🤎", price:65,  cat:"Shakes",  specs:["ice","sugar","size"] },
+  // SNACKS
+  { id:13, name:"Fruit Salad",       emoji:"🥗", price:50,  cat:"Snacks",  specs:["size"] },
+  { id:14, name:"Corn Cup",          emoji:"🌽", price:30,  cat:"Snacks",  specs:["size"] },
+  { id:15, name:"Sprouts Bowl",      emoji:"🫘", price:40,  cat:"Snacks",  specs:["size"] },
+  { id:16, name:"Papaya Slices",     emoji:"🟠", price:35,  cat:"Snacks",  specs:["size"] },
+  // SPECIALS
+  { id:17, name:"Jal Jeera",         emoji:"💚", price:25,  cat:"Specials",specs:["ice"] },
+  { id:18, name:"Sugarcane Juice",   emoji:"🌿", price:30,  cat:"Specials",specs:["ice","sugar"] },
+  { id:19, name:"Lemon Soda",        emoji:"🍋", price:30,  cat:"Specials",specs:["ice","sugar"] },
+  { id:20, name:"Rose Milk",         emoji:"🌸", price:45,  cat:"Specials",specs:["ice","sugar","size"] },
+];
+
+/* ===== STATE ===== */
+let billItems   = [];
+let currentItem = null;
+let billCounter = parseInt(localStorage.getItem('bfsBillNo') || '1');
+
+/* ===== BOOT ===== */
+(function init() {
+  const pad = String(billCounter).padStart(3,'0');
+  document.getElementById('billNoInput').value = pad;
+  updateHeaderBill(pad);
+  buildCategoryTabs();
+  renderMenuGrid("All");
+})();
+
+/* ===== MENU ===== */
+function buildCategoryTabs() {
+  const cats = ["All", ...new Set(MENU.map(i => i.cat))];
+  document.getElementById('catTabs').innerHTML = cats.map(c =>
+    `<button class="cat-tab ${c==='All'?'active':''}" onclick="filterCat(this,'${c}')">${c}</button>`
+  ).join('');
+}
+
+function renderMenuGrid(cat) {
+  const items = cat === "All" ? MENU : MENU.filter(i => i.cat === cat);
+  document.getElementById('menuGrid').innerHTML = items.map(item => `
+    <div class="menu-card" onclick="openModal(${item.id})">
+      <span class="emoji">${item.emoji}</span>
+      <div class="item-name">${item.name}</div>
+      <div class="item-price">&#x20B9;${item.price}</div>
+      <div class="item-cat-badge">${item.cat}</div>
+    </div>`).join('');
+}
+
+function filterCat(btn, cat) {
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderMenuGrid(cat);
+}
+
+/* ===== MODAL ===== */
+function openModal(id) {
+  currentItem = MENU.find(i => i.id === id);
+  if (!currentItem) return;
+  document.getElementById('modalItemName').textContent  = currentItem.emoji + ' ' + currentItem.name;
+  document.getElementById('modalItemPrice').textContent = '&#x20B9;' + currentItem.price + ' each';
+  document.getElementById('modalItemPrice').innerHTML   = '&#x20B9;' + currentItem.price + ' each';
+  document.getElementById('modalQty').value  = 1;
+  document.getElementById('modalNote').value = '';
+
+  const s = currentItem.specs;
+  document.getElementById('iceRow').style.display   = s.includes('ice')   ? '' : 'none';
+  document.getElementById('sugarRow').style.display = s.includes('sugar') ? '' : 'none';
+  document.getElementById('sizeRow').style.display  = s.includes('size')  ? '' : 'none';
+
+  // Reset toggles to first option
+  ['iceRow','sugarRow','sizeRow'].forEach(rowId => {
+    const row = document.getElementById(rowId);
+    const btns = row.querySelectorAll('.toggle-btn');
+    btns.forEach((b,i) => b.classList.toggle('selected', i === 0));
+  });
+
+  document.getElementById('itemOverlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('itemOverlay').classList.remove('show');
+  currentItem = null;
+}
+
+document.getElementById('itemOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('itemOverlay')) closeModal();
+});
+
+function selectToggle(btn, rowId) {
+  document.getElementById(rowId).querySelectorAll('.toggle-btn')
+    .forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function getToggleVal(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row || row.style.display === 'none') return null;
+  const sel = row.querySelector('.toggle-btn.selected');
+  return sel ? sel.dataset.val : null;
+}
+
+function addToBill() {
+  if (!currentItem) return;
+  const qty  = Math.max(1, parseInt(document.getElementById('modalQty').value) || 1);
+  const note = document.getElementById('modalNote').value.trim();
+
+  const ice   = getToggleVal('iceRow');
+  const sugar = getToggleVal('sugarRow');
+  const size  = getToggleVal('sizeRow');
+  const sizeExtra = (size === 'Large') ? 10 : 0;
+  const unitPrice = currentItem.price + sizeExtra;
+
+  billItems.push({
+    uid: Date.now() + Math.random(),
+    name:  currentItem.name,
+    emoji: currentItem.emoji,
+    price: unitPrice,
+    qty,
+    ice, sugar, size, note,
+    total: unitPrice * qty
+  });
+
+  renderBill();
+  closeModal();
+}
+
+/* ===== BILL ===== */
+function renderBill() {
+  const list     = document.getElementById('billItemsList');
+  const totalsEl = document.getElementById('billTotals');
+
+  if (billItems.length === 0) {
+    list.innerHTML = `<div class="empty-bill"><span class="icon">&#x1F6D2;</span>No items yet. Tap any menu item to add.</div>`;
+    totalsEl.style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = billItems.map((item, idx) => {
+    const parts = [];
+    if (item.ice)   parts.push(item.ice);
+    if (item.sugar && item.sugar !== 'Normal Sugar') parts.push(item.sugar);
+    if (item.size  && item.size  !== 'Regular')      parts.push(item.size);
+    if (item.note) parts.push(item.note);
+    const spec = parts.length ? parts.join(' &middot; ') : 'Standard';
+    return `
+      <div class="bill-item">
+        <div class="bill-item-info">
+          <div class="bill-item-name">${item.emoji} ${item.name}</div>
+          <div class="bill-item-spec">${spec}</div>
+        </div>
+        <div class="bill-item-qty-price">
+          <div class="bill-item-unit">x${item.qty} &times; &#x20B9;${item.price}</div>
+          <div class="bill-item-total">&#x20B9;${item.total.toFixed(2)}</div>
+        </div>
+        <button class="bill-item-del" onclick="removeItem(${idx})" title="Remove item">&#x2715;</button>
+      </div>`;
+  }).join('');
+
+  const subtotal = billItems.reduce((s,i) => s + i.total, 0);
+  document.getElementById('subtotalVal').innerHTML = '&#x20B9;' + subtotal.toFixed(2);
+  document.getElementById('grandTotal').innerHTML  = '&#x20B9;' + subtotal.toFixed(2);
+  totalsEl.style.display = 'block';
+}
+
+function removeItem(idx) {
+  billItems.splice(idx, 1);
+  renderBill();
+}
+
+function clearBill() {
+  if (billItems.length > 0 && !confirm('Clear all items and start a new bill?')) return;
+  billItems = [];
+  billCounter++;
+  localStorage.setItem('bfsBillNo', billCounter);
+  const pad = String(billCounter).padStart(3,'0');
+  document.getElementById('billNoInput').value = pad;
+  updateHeaderBill(pad);
+  document.getElementById('customerName').value = '';
+  renderBill();
+}
+
+function updateHeaderBill(val) {
+  document.getElementById('headerBillNo').textContent = 'Bill #' + (val || '---');
+}
+
+/* ===== PRINT ===== */
+function printBill() {
+  if (billItems.length === 0) { alert('Add at least one item before printing!'); return; }
+
+  const billNo   = document.getElementById('billNoInput').value;
+  const customer = document.getElementById('customerName').value.trim();
+  const now      = new Date();
+  const dateStr  = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  const timeStr  = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+  const subtotal = billItems.reduce((s,i) => s + i.total, 0);
+
+  const rows = billItems.map(item => {
+    const parts = [];
+    if (item.ice)   parts.push(item.ice);
+    if (item.sugar && item.sugar !== 'Normal Sugar') parts.push(item.sugar);
+    if (item.size  && item.size  !== 'Regular')      parts.push(item.size);
+    if (item.note) parts.push(item.note);
+    const spec = parts.length ? '(' + parts.join(', ') + ')' : '';
+    return `
+      <tr>
+        <td style="padding:4px 2px;vertical-align:top;font-size:11px;">
+          <strong>${item.name}</strong>
+          ${spec ? '<br/><span style="color:#555;font-size:9.5px;">' + spec + '</span>' : ''}
+        </td>
+        <td style="text-align:center;padding:4px;white-space:nowrap;vertical-align:top;font-size:11px;">${item.qty}</td>
+        <td style="text-align:right;padding:4px 2px;white-space:nowrap;vertical-align:top;font-size:11px;">Rs.${item.price}</td>
+        <td style="text-align:right;padding:4px 2px;white-space:nowrap;vertical-align:top;font-size:11px;font-weight:700;">Rs.${item.total.toFixed(2)}</td>
+      </tr>`;
+  }).join('');
+
+  const receiptHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Bill #${billNo} - Best Fruits Stall</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #111; background: #fff; }
+    @page { margin: 6mm; size: 80mm auto; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div style="width:76mm;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:8px;">
+      <div style="font-size:17px;font-weight:900;letter-spacing:1px;">Best Fruits Stall</div>
+      <div style="font-size:9px;color:#555;margin-top:2px;">Fresh Juices | Shakes | Snacks</div>
+      <div style="border-top:2px dashed #000;margin:6px 0;"></div>
+      <table style="width:100%;font-size:10px;">
+        <tr>
+          <td style="text-align:left;"><strong>Bill No.: #${billNo}</strong></td>
+          <td style="text-align:right;">${dateStr}</td>
+        </tr>
+        ${customer ? '<tr><td colspan="2" style="text-align:left;">Customer: <strong>' + customer + '</strong></td></tr>' : ''}
+        <tr><td colspan="2" style="text-align:right;color:#666;">${timeStr}</td></tr>
+      </table>
+      <div style="border-top:2px dashed #000;margin:6px 0;"></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid #333;">
+          <th style="text-align:left;padding:3px 2px;font-size:10px;">ITEM</th>
+          <th style="text-align:center;padding:3px 2px;font-size:10px;">QTY</th>
+          <th style="text-align:right;padding:3px 2px;font-size:10px;">RATE</th>
+          <th style="text-align:right;padding:3px 2px;font-size:10px;">AMT</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="border-top:2px dashed #000;margin:6px 0;"></div>
+    <table style="width:100%;">
+      <tr>
+        <td style="font-size:13px;font-weight:900;">TOTAL</td>
+        <td style="text-align:right;font-size:13px;font-weight:900;">Rs.${subtotal.toFixed(2)}</td>
+      </tr>
+    </table>
+    <div style="border-top:2px dashed #000;margin:6px 0;"></div>
+    <div style="text-align:center;font-size:9.5px;color:#555;margin-top:6px;line-height:1.7;">
+      Thank you for visiting Best Fruits Stall!<br/>
+      Stay Fresh | Stay Healthy
+    </div>
+  </div>
+  <script>
+    window.onload = function() { window.print(); window.onafterprint = function(){ window.close(); }; };
+  <\/script>
+</body>
+</html>`;
+
+  const printWin = window.open('', '_blank', 'width=400,height=600');
+  if (!printWin) {
+    alert('Please allow pop-ups for this page to print bills. (Look for a pop-up blocked icon in your browser address bar)');
+    return;
+  }
+  printWin.document.write(receiptHTML);
+  printWin.document.close();
+}
+</script>
+</body>
+</html>
