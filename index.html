@@ -440,16 +440,16 @@ function checkAndResetDailyCounter() {
   if (storedData) {
     try {
       const data = JSON.parse(storedData);
-      if (data && typeof data === 'object' && data.date === today && typeof data.counter === 'number') {
+      if (data && typeof data === 'object' && data.date === today && typeof data.counter === 'number' && data.counter >= 1) {
         return data.counter;
       }
     } catch (e) {
       console.warn('Invalid stored bill data:', e);
     }
   }
-  // New day or first time boot -> Reset bill counter to 0 for the new day
-  safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: 0 }));
-  return 0;
+  // New day or first time boot -> Reset bill counter to 1 for the new day
+  safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: 1 }));
+  return 1;
 }
 
 /* ===== BOOT ===== */
@@ -621,8 +621,8 @@ function clearBill() {
   }
 
   if (currentSavedDate !== today) {
-    // New day reached -> Reset to 0
-    billCounter = 0;
+    // New day reached -> Reset to 1
+    billCounter = 1;
   } else {
     billCounter++;
   }
