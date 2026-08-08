@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BFS &ndash; Billing System | Best Fruits Stall</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="GradientWaves.css"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .gradient-waves-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+    .gradient-waves-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: #121212; }
+    .app-ui { position: relative; z-index: 1; min-height: 100vh; }
     :root {
       --green:   #fde047;
       --green-l: #fef08a;
@@ -400,16 +402,65 @@ const MENU = [
 /* ===== STATE ===== */
 let billItems   = [];
 let currentItem = null;
-let billCounter = parseInt(localStorage.getItem('bfsBillNo') || '1');
+let billCounter = 1;
+
+/* ===== STORAGE HELPERS ===== */
+function safeGetStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.warn('localStorage read disabled or blocked:', e);
+    return null;
+  }
+}
+
+function safeSetStorage(key, val) {
+  try {
+    localStorage.setItem(key, val);
+  } catch (e) {
+    console.warn('localStorage write disabled or blocked:', e);
+  }
+}
 
 /* ===== BOOT ===== */
-(function init() {
-  const pad = String(billCounter).padStart(3,'0');
-  document.getElementById('billNoInput').value = pad;
+function init() {
+  try {
+    const storedData = safeGetStorage('bfsBillData');
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    if (storedData) {
+      try {
+        const data = JSON.parse(storedData);
+        if (data && typeof data === 'object' && data.date === today && typeof data.counter === 'number') {
+          billCounter = data.counter;
+        } else {
+          billCounter = 1;
+        }
+      } catch (e) {
+        console.warn('Invalid stored bill data:', e);
+        billCounter = 1;
+      }
+    } else {
+      billCounter = 1;
+    }
+  } catch (e) {
+    console.warn('Init storage error:', e);
+    billCounter = 1;
+  }
+  
+  const pad = String(billCounter).padStart(3, '0');
+  const billNoEl = document.getElementById('billNoInput');
+  if (billNoEl) billNoEl.value = pad;
   updateHeaderBill(pad);
   buildCategoryTabs();
   renderMenuGrid("All");
-})();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 /* ===== MENU ===== */
 function buildCategoryTabs() {
@@ -508,7 +559,6 @@ function addToBill() {
   closeModal();
 }
 
-/* ===== BILL ===== */
 function renderBill() {
   const list     = document.getElementById('billItemsList');
   const totalsEl = document.getElementById('billTotals');
@@ -555,11 +605,14 @@ function clearBill() {
   if (billItems.length > 0 && !confirm('Clear all items and start a new bill?')) return;
   billItems = [];
   billCounter++;
-  localStorage.setItem('bfsBillNo', billCounter);
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: billCounter }));
   const pad = String(billCounter).padStart(3,'0');
-  document.getElementById('billNoInput').value = pad;
+  const billNoEl = document.getElementById('billNoInput');
+  if (billNoEl) billNoEl.value = pad;
   updateHeaderBill(pad);
-  document.getElementById('customerName').value = '';
+  const custEl = document.getElementById('customerName');
+  if (custEl) custEl.value = '';
   renderBill();
 }
 
@@ -576,24 +629,41 @@ function printBill() {
   const now      = new Date();
   const dateStr  = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
   const timeStr  = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-  const subtotal = billItems.reduce((s,i) => s + i.total, 0);
 
   const rows = billItems.map(item => {
-    const parts = [];
-    if (item.ice)   parts.push(item.ice);
-    if (item.sugar && item.sugar !== 'Normal Sugar') parts.push(item.sugar);
-    if (item.size  && item.size  !== 'Regular')      parts.push(item.size);
-    if (item.note) parts.push(item.note);
-    const spec = parts.length ? '(' + parts.join(', ') + ')' : '';
+    const hasIceSpec   = item.ice !== null && item.ice !== undefined;
+    const hasSugarSpec = item.sugar !== null && item.sugar !== undefined;
+
+    const isWithIce    = item.ice === 'With Ice';
+    const isWithoutIce = item.ice === 'Without Ice';
+    const isWithSugar  = item.sugar === 'Normal Sugar' || item.sugar === 'Less Sugar' || item.sugar === 'With Sugar';
+    const isNoSugar    = item.sugar === 'No Sugar';
+
+    let prefBox = '';
+
+    if (hasIceSpec || hasSugarSpec) {
+      if (isWithIce && (isWithSugar || !hasSugarSpec)) {
+        // 1. With Ice & With Sugar -> FULL BLACK BOX
+        prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="#000" stroke="#000" stroke-width="1"/></svg>`;
+      } else if (isWithIce && isNoSugar) {
+        // 3. With Ice & No Sugar -> HALF WHITE AND HALF BLACK BOX
+        prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/><rect x="1" y="1" width="6" height="12" fill="#000"/></svg>`;
+      } else if (isWithoutIce && isWithSugar) {
+        // 4. No Ice & With Sugar -> CHECKERED BOX (Horizontal & Vertical lines)
+        prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/><line x1="0.5" y1="7" x2="13.5" y2="7" stroke="#000" stroke-width="1.5"/><line x1="7" y1="0.5" x2="7" y2="13.5" stroke="#000" stroke-width="1.5"/></svg>`;
+      } else if ((isWithoutIce || !hasIceSpec) && (isNoSugar || !hasSugarSpec)) {
+        // 2. No Ice & No Sugar -> FULL WHITE (EMPTY OUTLINE) BOX
+        prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/></svg>`;
+      }
+    }
+
     return `
       <tr>
         <td style="padding:4px 2px;vertical-align:top;font-size:11px;">
           <strong>${item.name}</strong>
-          ${spec ? '<br/><span style="color:#555;font-size:9.5px;">' + spec + '</span>' : ''}
         </td>
         <td style="text-align:center;padding:4px;white-space:nowrap;vertical-align:top;font-size:11px;">${item.qty}</td>
-        <td style="text-align:right;padding:4px 2px;white-space:nowrap;vertical-align:top;font-size:11px;">Rs.${item.price}</td>
-        <td style="text-align:right;padding:4px 2px;white-space:nowrap;vertical-align:top;font-size:11px;font-weight:700;">Rs.${item.total.toFixed(2)}</td>
+        <td style="text-align:center;padding:4px;white-space:nowrap;vertical-align:top;font-size:11px;">${prefBox}</td>
       </tr>`;
   }).join('');
 
@@ -604,9 +674,9 @@ function printBill() {
   <title>Bill #${billNo} - Best Fruits Stall</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #111; background: #fff; }
+    body { font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #111; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     @page { margin: 6mm; size: 80mm auto; }
-    @media print { body { margin: 0; } }
+    @media print { body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
 <body>
@@ -630,18 +700,10 @@ function printBill() {
         <tr style="border-bottom:1px solid #333;">
           <th style="text-align:left;padding:3px 2px;font-size:10px;">ITEM</th>
           <th style="text-align:center;padding:3px 2px;font-size:10px;">QTY</th>
-          <th style="text-align:right;padding:3px 2px;font-size:10px;">RATE</th>
-          <th style="text-align:right;padding:3px 2px;font-size:10px;">AMT</th>
+          <th style="text-align:center;padding:3px 2px;font-size:10px;">PREF</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
-    </table>
-    <div style="border-top:2px dashed #000;margin:6px 0;"></div>
-    <table style="width:100%;">
-      <tr>
-        <td style="font-size:13px;font-weight:900;">TOTAL</td>
-        <td style="text-align:right;font-size:13px;font-weight:900;">Rs.${subtotal.toFixed(2)}</td>
-      </tr>
     </table>
     <div style="border-top:2px dashed #000;margin:6px 0;"></div>
     <div style="text-align:center;font-size:9.5px;color:#555;margin-top:6px;line-height:1.7;">
