@@ -4,8 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build:waves": "esbuild gradient-waves-init.js --bundle --format=iife --outfile=gradient-waves.bundle.js --platform=browser",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
