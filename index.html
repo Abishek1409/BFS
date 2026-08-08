@@ -422,31 +422,36 @@ function safeSetStorage(key, val) {
   }
 }
 
+/* ===== LOCAL DATE HELPER ===== */
+function getLocalTodayDate() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function checkAndResetDailyCounter() {
+  const today = getLocalTodayDate();
+  const storedData = safeGetStorage('bfsBillData');
+  if (storedData) {
+    try {
+      const data = JSON.parse(storedData);
+      if (data && typeof data === 'object' && data.date === today && typeof data.counter === 'number') {
+        return data.counter;
+      }
+    } catch (e) {
+      console.warn('Invalid stored bill data:', e);
+    }
+  }
+  // New day or first time boot -> Reset bill counter to 0 for the new day
+  safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: 0 }));
+  return 0;
+}
+
 /* ===== BOOT ===== */
 function init() {
-  try {
-    const storedData = safeGetStorage('bfsBillData');
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    
-    if (storedData) {
-      try {
-        const data = JSON.parse(storedData);
-        if (data && typeof data === 'object' && data.date === today && typeof data.counter === 'number') {
-          billCounter = data.counter;
-        } else {
-          billCounter = 1;
-        }
-      } catch (e) {
-        console.warn('Invalid stored bill data:', e);
-        billCounter = 1;
-      }
-    } else {
-      billCounter = 1;
-    }
-  } catch (e) {
-    console.warn('Init storage error:', e);
-    billCounter = 1;
-  }
+  billCounter = checkAndResetDailyCounter();
   
   const pad = String(billCounter).padStart(3, '0');
   const billNoEl = document.getElementById('billNoInput');
@@ -604,10 +609,23 @@ function removeItem(idx) {
 function clearBill() {
   if (billItems.length > 0 && !confirm('Clear all items and start a new bill?')) return;
   billItems = [];
-  billCounter++;
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  
+  const today = getLocalTodayDate();
+  const storedData = safeGetStorage('bfsBillData');
+  let currentSavedDate = '';
+  if (storedData) {
+    try { currentSavedDate = JSON.parse(storedData).date; } catch(e) {}
+  }
+
+  if (currentSavedDate !== today) {
+    // New day reached -> Reset to 0
+    billCounter = 0;
+  } else {
+    billCounter++;
+  }
+
   safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: billCounter }));
-  const pad = String(billCounter).padStart(3,'0');
+  const pad = String(billCounter).padStart(3, '0');
   const billNoEl = document.getElementById('billNoInput');
   if (billNoEl) billNoEl.value = pad;
   updateHeaderBill(pad);
