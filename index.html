@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -254,6 +254,73 @@
 
 
 
+    /* ── History Drawer ── */
+    .hist-btn {
+      background: rgba(0,0,0,.22); border: 1px solid rgba(0,0,0,.35);
+      color: var(--accent-text); border-radius: 50px; padding: 6px 16px;
+      font-size: .85rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: background .18s; display: flex; align-items: center; gap: 6px;
+    }
+    .hist-btn:hover { background: rgba(0,0,0,.38); }
+
+    .hist-drawer {
+      position: fixed; top: 0; right: -520px; width: 500px; max-width: 98vw;
+      height: 100vh; background: var(--card); z-index: 1100;
+      box-shadow: -8px 0 32px rgba(0,0,0,.4); transition: right .28s ease;
+      display: flex; flex-direction: column;
+    }
+    .hist-drawer.open { right: 0; }
+    .hist-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1099;
+    }
+    .hist-backdrop.open { display: block; }
+
+    .hist-head {
+      background: var(--gradient); color: var(--accent-text);
+      padding: 16px 20px; font-weight: 700; font-size: 1rem;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .hist-close {
+      background: none; border: none; color: var(--accent-text); font-size: 1.3rem;
+      cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px;
+    }
+    .hist-close:hover { background: rgba(0,0,0,.2); }
+
+    .hist-filters {
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .hist-filters select, .hist-filters input {
+      border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px;
+      font-size: .82rem; font-family: inherit; color: var(--text);
+      background: var(--bg); outline: none;
+    }
+    .hist-filters select:focus, .hist-filters input:focus { border-color: var(--accent); }
+    .hist-dl-btn {
+      background: var(--accent); color: var(--accent-text);
+      border: none; border-radius: 8px; padding: 6px 14px;
+      font-size: .82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .hist-dl-btn:hover { background: var(--green-d); color: var(--text); }
+
+    .hist-summary {
+      padding: 8px 16px; font-size: .8rem; color: var(--muted);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+
+    .hist-table-wrap { flex: 1; overflow-y: auto; padding: 0; }
+    .hist-table {
+      width: 100%; border-collapse: collapse; font-size: .83rem;
+    }
+    .hist-table th {
+      position: sticky; top: 0; background: #222; color: var(--muted);
+      font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .hist-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); }
+    .hist-table tr:hover td { background: #262626; }
+    .hist-amount { color: var(--orange); font-weight: 700; }
+    .hist-empty { text-align: center; color: var(--muted); padding: 40px; }
+
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
@@ -278,7 +345,34 @@
     <small>BFS Billing System &mdash; 100% Offline &amp; Frontend Only</small>
   </div>
   <div class="bill-badge" id="headerBillNo">Bill #001</div>
+  <button class="hist-btn" onclick="openHistDrawer()">&#x1F4DC; History</button>
 </header>
+
+<!-- HISTORY BACKDROP + DRAWER -->
+<div class="hist-backdrop" id="histBackdrop" onclick="closeHistDrawer()"></div>
+<div class="hist-drawer" id="histDrawer">
+  <div class="hist-head">
+    <span>&#x1F4DC; Bill History</span>
+    <button class="hist-close" onclick="closeHistDrawer()">&#x2715;</button>
+  </div>
+  <div class="hist-filters">
+    <select id="histFilterMode" onchange="onHistFilterChange()">
+      <option value="all">All Records</option>
+      <option value="day">By Day</option>
+      <option value="month">By Month</option>
+    </select>
+    <input type="date" id="histDateInput" style="display:none" onchange="loadHistory()" />
+    <input type="month" id="histMonthInput" style="display:none" onchange="loadHistory()" />
+    <button class="hist-dl-btn" onclick="downloadHistory()">&#x2B07; Download</button>
+  </div>
+  <div class="hist-summary" id="histSummary"></div>
+  <div class="hist-table-wrap">
+    <table class="hist-table">
+      <thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Amount</th></tr></thead>
+      <tbody id="histTableBody"><tr><td colspan="5" class="hist-empty">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
 
 <!-- ITEM MODAL -->
 <div class="overlay" id="itemOverlay">
@@ -373,6 +467,7 @@
 </div>
 
 <script src="gradient-waves.bundle.js" defer></script>
+<script src="billHistory.js"></script>
 <script>
 /* ===== MENU DATA ===== */
 const MENU = [
@@ -609,29 +704,29 @@ function removeItem(idx) {
   renderBill();
 }
 
-function clearBill() {
-  if (billItems.length > 0 && !confirm('Clear all items and start a new bill?')) return;
-  billItems = [];
-  
+function advanceBillCounter() {
   const today = getLocalTodayDate();
   const storedData = safeGetStorage('bfsBillData');
   let currentSavedDate = '';
   if (storedData) {
     try { currentSavedDate = JSON.parse(storedData).date; } catch(e) {}
   }
-
   if (currentSavedDate !== today) {
-    // New day reached -> Reset to 1
     billCounter = 1;
   } else {
     billCounter++;
   }
-
   safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: billCounter }));
   const pad = String(billCounter).padStart(3, '0');
   const billNoEl = document.getElementById('billNoInput');
   if (billNoEl) billNoEl.value = pad;
   updateHeaderBill(pad);
+}
+
+function clearBill() {
+  if (billItems.length > 0 && !confirm('Clear all items and start a new bill?')) return;
+  billItems = [];
+  advanceBillCounter();
   const custEl = document.getElementById('customerName');
   if (custEl) custEl.value = '';
   renderBill();
@@ -641,13 +736,173 @@ function updateHeaderBill(val) {
   document.getElementById('headerBillNo').textContent = 'Bill #' + (val || '---');
 }
 
-/* ===== PRINT ===== */
+/* ===== HISTORY DRAWER ===== */
+function openHistDrawer() {
+  document.getElementById('histDrawer').classList.add('open');
+  document.getElementById('histBackdrop').classList.add('open');
+  loadHistory();
+}
+
+function closeHistDrawer() {
+  document.getElementById('histDrawer').classList.remove('open');
+  document.getElementById('histBackdrop').classList.remove('open');
+}
+
+function onHistFilterChange() {
+  const mode = document.getElementById('histFilterMode').value;
+  document.getElementById('histDateInput').style.display  = mode === 'day'   ? '' : 'none';
+  document.getElementById('histMonthInput').style.display = mode === 'month' ? '' : 'none';
+  loadHistory();
+}
+
+function loadHistory() {
+  if (!window.BillHistory) return;
+  const mode = document.getElementById('histFilterMode').value;
+  let promise;
+
+  if (mode === 'day') {
+    const val = document.getElementById('histDateInput').value; // YYYY-MM-DD
+    if (!val) { promise = window.BillHistory.getAllBillRecords(); }
+    else {
+      const [y,m,d] = val.split('-');
+      const dStr = d + '-' + m + '-' + y;
+      promise = window.BillHistory.getBillRecordsByDateRange(dStr, dStr);
+    }
+  } else if (mode === 'month') {
+    const val = document.getElementById('histMonthInput').value; // YYYY-MM
+    if (!val) { promise = window.BillHistory.getAllBillRecords(); }
+    else {
+      const [y,m] = val.split('-');
+      promise = window.BillHistory.downloadBillHistory ? // reuse range logic
+        (function(){
+          const mm = parseInt(m,10), yyyy = parseInt(y,10);
+          const first = '01-' + m + '-' + y;
+          const last  = new Date(yyyy, mm, 0);
+          const lastStr = String(last.getDate()).padStart(2,'0') + '-' + m + '-' + y;
+          return window.BillHistory.getBillRecordsByDateRange(first, lastStr);
+        })()
+        : window.BillHistory.getAllBillRecords();
+    }
+  } else {
+    promise = window.BillHistory.getAllBillRecords();
+  }
+
+  promise.then(renderHistoryTable).catch(function(e) {
+    document.getElementById('histTableBody').innerHTML =
+      '<tr><td colspan="5" class="hist-empty">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+function renderHistoryTable(records) {
+  const tbody = document.getElementById('histTableBody');
+  const summary = document.getElementById('histSummary');
+
+  if (!records || records.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="hist-empty">No records found.</td></tr>';
+    summary.textContent = '';
+    return;
+  }
+
+  const total = records.reduce(function(s, r) { return s + r.amount; }, 0);
+  summary.textContent = records.length + ' bill' + (records.length > 1 ? 's' : '') +
+    '  ·  Total: ₹' + total.toFixed(2);
+
+  tbody.innerHTML = records.map(function(r, i) {
+    return '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td><strong>#' + r.billNo + '</strong></td>' +
+      '<td>' + r.date + '</td>' +
+      '<td>' + r.time + '</td>' +
+      '<td class="hist-amount">₹' + Number(r.amount).toFixed(2) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function downloadHistory() {
+  if (!window.BillHistory) return;
+  const mode = document.getElementById('histFilterMode').value;
+  let promise, filename, label;
+
+  if (mode === 'day') {
+    const val = document.getElementById('histDateInput').value;
+    if (!val) { alert('Pick a date first.'); return; }
+    const [y,m,d] = val.split('-');
+    const dStr = d + '-' + m + '-' + y;
+    promise = window.BillHistory.getBillRecordsByDateRange(dStr, dStr);
+    filename = 'bills-' + dStr + '.html';
+    label = 'Date: ' + dStr;
+  } else if (mode === 'month') {
+    const val = document.getElementById('histMonthInput').value;
+    if (!val) { alert('Pick a month first.'); return; }
+    const [y,m] = val.split('-');
+    const mm = parseInt(m,10), yyyy = parseInt(y,10);
+    const first = '01-' + m + '-' + y;
+    const last  = new Date(yyyy, mm, 0);
+    const lastStr = String(last.getDate()).padStart(2,'0') + '-' + m + '-' + y;
+    promise = window.BillHistory.getBillRecordsByDateRange(first, lastStr);
+    filename = 'bills-' + m + '-' + y + '.html';
+    label = 'Month: ' + m + '-' + y;
+  } else {
+    promise = window.BillHistory.getAllBillRecords();
+    filename = 'bills-all.html';
+    label = 'All Records';
+  }
+
+  promise.then(function(records) {
+    const total = records.reduce(function(s,r){ return s + r.amount; }, 0);
+    const rows = records.map(function(r, i) {
+      return '<tr>' +
+        '<td>' + (i+1) + '</td>' +
+        '<td><strong>#' + r.billNo + '</strong></td>' +
+        '<td>' + r.date + '</td>' +
+        '<td>' + r.time + '</td>' +
+        '<td style="color:#b45309;font-weight:700;">&#x20B9;' + Number(r.amount).toFixed(2) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    const html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>' +
+      '<title>Bill History — Best Fruits Stall</title>' +
+      '<style>' +
+        'body{font-family:Inter,sans-serif;background:#121212;color:#f5f5f5;padding:24px;margin:0}' +
+        'h2{font-size:1.3rem;margin-bottom:4px}' +
+        '.meta{color:#a3a3a3;font-size:.85rem;margin-bottom:16px}' +
+        'table{width:100%;border-collapse:collapse;font-size:.88rem}' +
+        'th{background:#222;color:#a3a3a3;padding:10px 14px;text-align:left;border-bottom:1px solid #404040}' +
+        'td{padding:10px 14px;border-bottom:1px solid #262626}' +
+        'tr:nth-child(even) td{background:#1a1a1a}' +
+        '.summary{margin-top:16px;font-size:.9rem;color:#a3a3a3}' +
+        '.summary strong{color:#f5f5f5}' +
+      '</style></head><body>' +
+      '<h2>&#x1F4DC; Bill History — Best Fruits Stall</h2>' +
+      '<div class="meta">' + label + ' &nbsp;|&nbsp; Generated: ' + new Date().toLocaleString('en-IN') + '</div>' +
+      '<table><thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Amount</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="5" style="text-align:center;color:#a3a3a3;padding:32px">No records found.</td></tr>') + '</tbody></table>' +
+      '<div class="summary">' + records.length + ' bill' + (records.length !== 1 ? 's' : '') +
+        ' &nbsp;·&nbsp; Total: <strong>&#x20B9;' + total.toFixed(2) + '</strong></div>' +
+      '</body></html>';
+
+    const blob = new Blob([html], {type: 'text/html'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }).catch(function(e){ alert('Download failed: ' + e.message); });
+}
+
+
 function printBill() {
   if (billItems.length === 0) { alert('Add at least one item before printing!'); return; }
 
   const billNo   = document.getElementById('billNoInput').value;
   const customer = document.getElementById('customerName').value.trim();
   const now      = new Date();
+
+  const grandTotalAmount = billItems.reduce((s, i) => s + i.total, 0);
+  if (window.BillHistory) {
+    window.BillHistory.saveBillRecord(billNo, grandTotalAmount)
+      .catch(err => console.error('Bill save failed:', err));
+  }
   const dateStr  = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
   const timeStr  = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
 
@@ -734,7 +989,7 @@ function printBill() {
   </div>
   <script>
     window.onload = function() { window.print(); window.onafterprint = function(){ window.close(); }; };
-  <\/script>
+  ${'</' + 'script>'}
 </body>
 </html>`;
 
@@ -745,6 +1000,13 @@ function printBill() {
   }
   printWin.document.write(receiptHTML);
   printWin.document.close();
+
+  // Auto-advance to next bill after printing
+  billItems = [];
+  advanceBillCounter();
+  const custEl = document.getElementById('customerName');
+  if (custEl) custEl.value = '';
+  renderBill();
 }
 </script>
 </body>
