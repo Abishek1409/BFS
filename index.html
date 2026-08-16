@@ -368,8 +368,8 @@
   <div class="hist-summary" id="histSummary"></div>
   <div class="hist-table-wrap">
     <table class="hist-table">
-      <thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Amount</th></tr></thead>
-      <tbody id="histTableBody"><tr><td colspan="5" class="hist-empty">Loading…</td></tr></tbody>
+      <thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Items</th><th>Amount</th></tr></thead>
+      <tbody id="histTableBody"><tr><td colspan="6" class="hist-empty">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -726,7 +726,6 @@ function advanceBillCounter() {
 function clearBill() {
   if (billItems.length > 0 && !confirm('Clear all items and start a new bill?')) return;
   billItems = [];
-  advanceBillCounter();
   const custEl = document.getElementById('customerName');
   if (custEl) custEl.value = '';
   renderBill();
@@ -798,7 +797,7 @@ function renderHistoryTable(records) {
   const summary = document.getElementById('histSummary');
 
   if (!records || records.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="hist-empty">No records found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="hist-empty">No records found.</td></tr>';
     summary.textContent = '';
     return;
   }
@@ -808,11 +807,17 @@ function renderHistoryTable(records) {
     '  ·  Total: ₹' + total.toFixed(2);
 
   tbody.innerHTML = records.map(function(r, i) {
+    const itemList = (r.items && r.items.length)
+      ? r.items.map(function(it) {
+          return it.emoji + ' ' + it.name + ' x' + it.qty + (it.spec && it.spec !== 'Standard' ? ' (' + it.spec + ')' : '');
+        }).join('<br>')
+      : '<span style="color:#737373">—</span>';
     return '<tr>' +
       '<td>' + (i + 1) + '</td>' +
       '<td><strong>#' + r.billNo + '</strong></td>' +
       '<td>' + r.date + '</td>' +
       '<td>' + r.time + '</td>' +
+      '<td style="font-size:.78rem;line-height:1.6">' + itemList + '</td>' +
       '<td class="hist-amount">₹' + Number(r.amount).toFixed(2) + '</td>' +
       '</tr>';
   }).join('');
@@ -851,11 +856,15 @@ function downloadHistory() {
   promise.then(function(records) {
     const total = records.reduce(function(s,r){ return s + r.amount; }, 0);
     const rows = records.map(function(r, i) {
+      const itemList = (r.items && r.items.length)
+        ? r.items.map(function(it){ return it.emoji + ' ' + it.name + ' x' + it.qty + (it.spec && it.spec !== 'Standard' ? ' (' + it.spec + ')' : ''); }).join('<br>')
+        : '—';
       return '<tr>' +
         '<td>' + (i+1) + '</td>' +
         '<td><strong>#' + r.billNo + '</strong></td>' +
         '<td>' + r.date + '</td>' +
         '<td>' + r.time + '</td>' +
+        '<td style="font-size:.8rem;line-height:1.7">' + itemList + '</td>' +
         '<td style="color:#b45309;font-weight:700;">&#x20B9;' + Number(r.amount).toFixed(2) + '</td>' +
         '</tr>';
     }).join('');
@@ -868,15 +877,15 @@ function downloadHistory() {
         '.meta{color:#a3a3a3;font-size:.85rem;margin-bottom:16px}' +
         'table{width:100%;border-collapse:collapse;font-size:.88rem}' +
         'th{background:#222;color:#a3a3a3;padding:10px 14px;text-align:left;border-bottom:1px solid #404040}' +
-        'td{padding:10px 14px;border-bottom:1px solid #262626}' +
+        'td{padding:10px 14px;border-bottom:1px solid #262626;vertical-align:top}' +
         'tr:nth-child(even) td{background:#1a1a1a}' +
         '.summary{margin-top:16px;font-size:.9rem;color:#a3a3a3}' +
         '.summary strong{color:#f5f5f5}' +
       '</style></head><body>' +
       '<h2>&#x1F4DC; Bill History — Best Fruits Stall</h2>' +
       '<div class="meta">' + label + ' &nbsp;|&nbsp; Generated: ' + new Date().toLocaleString('en-IN') + '</div>' +
-      '<table><thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Amount</th></tr></thead>' +
-      '<tbody>' + (rows || '<tr><td colspan="5" style="text-align:center;color:#a3a3a3;padding:32px">No records found.</td></tr>') + '</tbody></table>' +
+      '<table><thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Items</th><th>Amount</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="6" style="text-align:center;color:#a3a3a3;padding:32px">No records found.</td></tr>') + '</tbody></table>' +
       '<div class="summary">' + records.length + ' bill' + (records.length !== 1 ? 's' : '') +
         ' &nbsp;·&nbsp; Total: <strong>&#x20B9;' + total.toFixed(2) + '</strong></div>' +
       '</body></html>';
@@ -899,10 +908,15 @@ function printBill() {
   const now      = new Date();
 
   const grandTotalAmount = billItems.reduce((s, i) => s + i.total, 0);
-  if (window.BillHistory) {
-    window.BillHistory.saveBillRecord(billNo, grandTotalAmount)
-      .catch(err => console.error('Bill save failed:', err));
-  }
+  const itemsSnapshot = billItems.map(function(it) {
+    var parts = [];
+    if (it.ice) parts.push(it.ice);
+    if (it.sugar && it.sugar !== 'Normal Sugar') parts.push(it.sugar);
+    if (it.size  && it.size  !== 'Regular')      parts.push(it.size);
+    if (it.note) parts.push(it.note);
+    return { name: it.name, emoji: it.emoji, qty: it.qty, price: it.price, total: it.total, spec: parts.join(', ') || 'Standard' };
+  });
+
   const dateStr  = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
   const timeStr  = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
 
@@ -1000,6 +1014,12 @@ function printBill() {
   }
   printWin.document.write(receiptHTML);
   printWin.document.close();
+
+  // Only save to history after successful print
+  if (window.BillHistory) {
+    window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
+      .catch(err => console.error('Bill save failed:', err));
+  }
 
   // Auto-advance to next bill after printing
   billItems = [];

@@ -83,9 +83,10 @@
    * Date and time are auto-generated from the device clock at call time.
    * @param {string} billNo  - Non-empty bill/invoice number (primary key).
    * @param {number} amount  - Finite numeric total in INR.
+   * @param {Array}  items   - Optional array of item snapshots.
    * @returns {Promise<void>}
    */
-  function saveBillRecord(billNo, amount) {
+  function saveBillRecord(billNo, amount, items) {
     if (typeof billNo !== 'string' || billNo.trim() === '') {
       return Promise.reject(new Error('billNo must be a non-empty string'));
     }
@@ -98,7 +99,8 @@
       billNo: billNo,
       amount: amount,
       date: _formatDate(now),
-      time: _formatTime(now)
+      time: _formatTime(now),
+      items: Array.isArray(items) ? items : []
     };
 
     return _getDB().then(function (db) {
