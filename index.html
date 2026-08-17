@@ -7,49 +7,52 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>BFS &ndash; Billing System | Best Fruits Stall</title>
+  <link rel="stylesheet" href="FloatingLines.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     .gradient-waves-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
-    .gradient-waves-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: #121212; }
+    .gradient-waves-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--bg); }
     .app-ui { position: relative; z-index: 1; min-height: 100vh; }
     :root {
-      --green:   #fde047;
-      --green-l: #fef08a;
-      --green-d: #ca8a04;
-      --accent:  #eab308;
-      --accent-text: #000000;
-      --bg:      #121212;
-      --card:    #1a1a1a;
-      --border:  #404040;
-      --border-subtle: #262626;
-      --text:    #f5f5f5;
-      --muted:   #a3a3a3;
-      --orange:  #eab308;
-      --amber:   #ca8a04;
-      --danger:  #dc2626;
-      --radius:  14px;
-      --shadow:  0 4px 24px rgba(234,179,8,.12);
-      --gradient: linear-gradient(to right, #fde047, #ca8a04);
+      /* User-provided cafe/juice palette adapted for dark mode */
+      --bg:            #000000; /* black background */
+      --accent:        #389E62; /* fresh green (primary) - slightly brighter for dark contrast */
+      --accent-light:  #50B77B; /* lighter green for hover */
+      --accent-text:   #ffffff;
+      --accent-cta:    #F5B041; /* bright mango/citrus orange (CTA) */
+      --accent-2:      #EC7063; /* watermelon red (highlights) */
+      --gold:          var(--accent-cta);
+      --text:          #F3F4F6; /* clean light text */
+      --border:        rgba(255, 255, 255, 0.12); /* dark border */
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --card:          rgba(25, 25, 25, 0.55); /* dark glass card surface */
+      --card2:         rgba(35, 30, 25, 0.6); /* slightly warm glass card */
+      --muted:         #9CA3AF; /* gray muted text */
+      --sand:          rgba(255, 255, 255, 0.08);
+      --danger:        var(--accent-2);
+      --radius:        14px;
+      --shadow:        0 8px 32px rgba(0, 0, 0, 0.4);
+      --gradient:      linear-gradient(135deg, rgba(56, 158, 98, 0.25) 0%, rgba(0, 0, 0, 0.8) 100%);
     }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
     .app-header {
-      background: var(--gradient);
-      color: var(--accent-text); padding: 18px 32px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      color: #ffffff; padding: 18px 32px;
       display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 4px 18px rgba(0,0,0,.22);
+      box-shadow: 0 4px 18px rgba(0,0,0,.3);
     }
     .app-header h1 {
       font-family: 'Playfair Display', serif; font-size: 1.7rem; letter-spacing: .5px;
-      color: var(--accent-text);
+      color: #ffffff;
       background: none;
       -webkit-text-fill-color: currentColor;
     }
     .app-header small { font-size: .8rem; opacity: .75; display: block; }
     .bill-badge {
-      background: rgba(0,0,0,.22); border: 1px solid rgba(0,0,0,.35);
-      color: var(--accent-text); border-radius: 50px; padding: 6px 18px; font-size: .85rem; font-weight: 600;
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff; border-radius: 50px; padding: 6px 18px; font-size: .85rem; font-weight: 600;
     }
 
     .workspace {
@@ -57,25 +60,41 @@
       gap: 24px; padding: 24px 28px; max-width: 1400px; margin: 0 auto;
     }
 
-    .panel { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .panel {
+      background: rgba(18, 18, 18, 0.65);
+      backdrop-filter: blur(20px) saturate(140%);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+    }
     .panel-head {
-      background: var(--gradient);
-      color: var(--accent-text); padding: 14px 20px; font-weight: 700; font-size: 1rem;
+      background: linear-gradient(135deg, rgba(46, 125, 79, 0.8) 0%, rgba(96, 166, 118, 0.6) 100%);
+      color: #ffffff; padding: 14px 20px; font-weight: 700; font-size: 1rem;
       letter-spacing: .3px; display: flex; align-items: center; gap: 8px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
     .panel-head svg { width: 18px; height: 18px; flex-shrink: 0; }
 
     .cat-tabs {
       display: flex; gap: 8px; padding: 14px 16px;
-      overflow-x: auto; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+      overflow-x: auto; border-bottom: 1px solid rgba(255, 255, 255, 0.15); flex-wrap: wrap;
     }
     .cat-tab {
-      cursor: pointer; border: 1.5px solid var(--border); background: var(--card);
+      cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.08); 
+      background: rgba(255, 255, 255, 0.04);
       color: var(--text); border-radius: 50px; padding: 6px 16px;
       font-size: .82rem; font-weight: 600; transition: all .2s; white-space: nowrap;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
     .cat-tab:hover, .cat-tab.active {
-      background: var(--accent); color: var(--accent-text); border-color: var(--accent); transform: translateY(-1px);
+      background: var(--accent); color: #ffffff; border-color: var(--accent); transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(80, 183, 123, 0.2);
     }
 
     .menu-grid {
@@ -85,22 +104,27 @@
 
     /* ── GlareHover (ported from React Bits) applied to menu cards ── */
     .menu-card {
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px;
       cursor: pointer;
-      background: linear-gradient(145deg, #262626 0%, #1a1a1a 60%, #141414 100%);
+      /* Dark Glassmorphism styling with backdrop blur */
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
       position: relative;
-      overflow: hidden;          /* clips the glare to the card */
+      overflow: hidden;
       display: grid;
-      place-items: start;        /* keep content left-aligned */
-      transition: border-color .22s, box-shadow .22s, transform .22s;
-
-      /* GlareHover CSS variables */
+      place-items: start;
+      transition: border-color .25s, box-shadow .25s, transform .25s;
       --gh-angle:    -30deg;
-      --gh-duration: 800ms;
+      --gh-duration: 850ms;
       --gh-size:     320%;
-      --gh-rgba:     rgba(255, 255, 255, 0.35);
+      /* Bright green glare sweep for stunning glass reflection contrast on dark background */
+      --gh-rgba:     rgba(80, 183, 123, 0.25);
+      box-shadow: 
+        0 4px 18px rgba(0, 0, 0, 0.3), 
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     /* Glare sweep layer */
@@ -108,31 +132,38 @@
       content: '';
       position: absolute;
       inset: 0;
+      /* Smooth, green glare sweep gradient */
       background: linear-gradient(
         var(--gh-angle),
-        hsla(0, 0%, 100%, 0)   55%,
-        var(--gh-rgba)         68%,
-        hsla(0, 0%, 100%, 0)   78%,
-        hsla(0, 0%, 100%, 0)  100%
+        rgba(80, 183, 123, 0)      40%,
+        rgba(80, 183, 123, 0.05)   55%,
+        var(--gh-rgba)             70%,
+        rgba(80, 183, 123, 0.02)   85%,
+        rgba(80, 183, 123, 0)      100%
       );
       background-size:     var(--gh-size) var(--gh-size), 100% 100%;
       background-repeat:   no-repeat;
-      background-position: -100% -100%, 0 0;
-      transition:          background-position var(--gh-duration) ease;
+      background-position: -120% -120%, 0 0;
+      transition:          background-position var(--gh-duration) cubic-bezier(.2,.9,.2,1);
       z-index: 0;
       pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0.95;
     }
 
     /* Trigger glare sweep on hover */
     .menu-card:hover::before {
       background-position: 160% 160%, 0 0;
+      opacity: 1;
     }
 
-    /* Lift & glow on hover */
+    /* Lift & premium glow on hover */
     .menu-card:hover {
-      border-color: var(--green);
-      box-shadow: 0 6px 24px rgba(234,179,8,.2);
-      transform: translateY(-3px);
+      border-color: rgba(80, 183, 123, 0.5);
+      box-shadow: 
+        0 12px 30px rgba(0, 0, 0, 0.5),
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+      transform: translateY(-4px) scale(1.02);
     }
 
     /* Keep all card content above the glare layer */
@@ -146,12 +177,23 @@
 
     .menu-card .emoji { font-size: 2.2rem; margin-bottom: 6px; display: block; }
     .menu-card .item-name { font-weight: 700; font-size: .92rem; color: var(--text); }
-    .menu-card .item-price { color: var(--orange); font-weight: 700; font-size: .95rem; margin-top: 4px; }
+    .menu-card .item-price { color: var(--text); font-weight: 800; font-size: 1rem; margin-top: 6px; }
     .menu-card .item-cat-badge {
-      position: absolute; top: 8px; right: 8px; background: var(--amber);
-      color: #fff; font-size: .65rem; font-weight: 700; border-radius: 50px;
-      padding: 2px 7px; letter-spacing: .3px; z-index: 2;
+      position: absolute; top: 8px; right: 8px; background: var(--accent);
+      color: #fff; font-size: .72rem; font-weight: 800; border-radius: 12px;
+      padding: 6px 8px; letter-spacing: .2px; z-index: 2;
     }
+    .menu-card.just-added { box-shadow: 0 10px 34px rgba(46,125,79,0.14); transform: scale(1.02); border-color: var(--accent); }
+    .added-badge {
+      position: absolute; top: 8px; left: 8px; background: var(--accent-cta); color: #fff;
+      padding: 4px 8px; border-radius: 999px; font-weight: 800; font-size: .78rem; z-index: 3;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+    /* Category badge colors (data-cat on menu-card) */
+    .menu-card[data-cat="Juices"] .item-cat-badge { background: var(--accent); }
+    .menu-card[data-cat="Shakes"] .item-cat-badge { background: #D24D88; }
+    .menu-card[data-cat="Snacks"] .item-cat-badge { background: #F4A72A; color: #2B2B23; }
+    .menu-card[data-cat="Specials"] .item-cat-badge { background: #7C4D9C; }
 
 
     .overlay {
@@ -161,13 +203,17 @@
     .overlay.show { display: flex; }
     @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
     .modal {
-      background: var(--card); border-radius: 18px; padding: 28px;
+      background: rgba(25, 25, 25, 0.75); 
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px; padding: 28px;
       width: 380px; max-width: 95vw;
-      box-shadow: 0 16px 48px rgba(0,0,0,.22); animation: slideUp .2s ease;
+      box-shadow: 0 16px 48px rgba(0,0,0,.7); animation: slideUp .2s ease;
     }
     @keyframes slideUp { from { transform: translateY(30px); opacity:0 } to { transform: translateY(0); opacity:1 } }
     .modal h3 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 4px; }
-    .modal .modal-price { color: var(--orange); font-weight: 700; font-size: 1.05rem; margin-bottom: 18px; }
+    .modal .modal-price { color: var(--accent); font-weight: 700; font-size: 1.05rem; margin-bottom: 18px; }
     .form-row { margin-bottom: 14px; }
     .form-row label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
     .form-row input[type="number"], .form-row select, .form-row textarea {
@@ -185,8 +231,8 @@
     .toggle-btn.selected { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
     .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
     .btn { border: none; border-radius: 8px; padding: 10px 18px; font-size: .9rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; }
-    .btn-primary { background: var(--accent); color: var(--accent-text); flex: 1; }
-    .btn-primary:hover { background: var(--green-d); color: var(--text); }
+    .btn-primary { background: var(--accent); color: #fff; flex: 1; }
+    .btn-primary:hover { background: var(--accent-light); color: #fff; }
     .btn-secondary { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
     .btn-secondary:hover { background: var(--border-subtle); }
 
@@ -196,15 +242,15 @@
       display: flex; align-items: flex-start; justify-content: space-between;
       padding: 10px 8px; border-radius: 8px; gap: 8px; transition: background .15s;
     }
-    .bill-item:hover { background: #262626; }
+    .bill-item:hover { background: rgba(46, 125, 79, 0.06); }
     .bill-item + .bill-item { border-top: 1px dashed var(--border); }
     .bill-item-info { flex: 1; }
     .bill-item-name { font-weight: 700; font-size: .88rem; color: var(--text); }
     .bill-item-spec { font-size: .75rem; color: var(--muted); margin-top: 2px; }
     .bill-item-qty-price { text-align: right; font-size: .85rem; }
-    .bill-item-total { font-weight: 700; color: var(--orange); }
+    .bill-item-total { font-weight: 700; color: var(--accent); }
     .bill-item-unit { font-size: .72rem; color: var(--muted); }
-    .bill-item-del { background: none; border: none; cursor: pointer; color: #f87171; font-size: 1.1rem; padding: 0 4px; transition: color .15s; }
+    .bill-item-del { background: none; border: none; cursor: pointer; color: var(--salmon); font-size: 1.1rem; padding: 0 4px; transition: color .15s; }
     .bill-item-del:hover { color: var(--danger); }
     .empty-bill { text-align: center; color: var(--muted); padding: 40px 20px; font-size: .9rem; }
     .empty-bill .icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
@@ -216,72 +262,212 @@
     .bill-actions { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
     .btn-print {
       background: var(--accent);
-      color: var(--accent-text); padding: 13px; border-radius: 10px; font-size: .95rem; font-weight: 700;
+      color: #fff; padding: 13px; border-radius: 10px; font-size: .95rem; font-weight: 700;
       border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      gap: 8px; font-family: inherit; transition: all .2s; box-shadow: 0 4px 12px rgba(234,179,8,.25);
+      gap: 8px; font-family: inherit; transition: all .2s; box-shadow: 0 4px 12px rgba(255,120,46,.3);
     }
-    .btn-print:hover { transform: translateY(-1px); background: var(--green-d); color: var(--text); box-shadow: 0 6px 18px rgba(234,179,8,.3); }
+    .btn-print:hover { transform: translateY(-1px); background: var(--accent-light); color: #fff; box-shadow: 0 6px 18px rgba(255,120,46,.4); }
     .btn-clear {
-      background: transparent; color: var(--danger); border: 1.5px solid #7f1d1d;
+      background: transparent; color: var(--salmon); border: 1.5px solid rgba(255,127,127,.4);
       padding: 10px; border-radius: 8px; font-size: .88rem; font-weight: 700;
       cursor: pointer; font-family: inherit; transition: all .18s;
     }
-    .btn-clear:hover { background: #262626; }
+    .btn-clear:hover { background: rgba(255,127,127,.08); }
 
     .bill-number-row {
       display: flex; align-items: center; gap: 8px;
-      padding: 10px 16px; border-bottom: 1px solid var(--border); background: #141414;
+      padding: 10px 16px; border-bottom: 1px solid var(--border); background: transparent;
     }
     .bill-number-row label { font-size: .8rem; font-weight: 600; color: var(--muted); }
     .bill-no-input {
-      border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 6px; padding: 6px 10px;
       font-size: .88rem; font-weight: 700; width: 90px; font-family: inherit;
-      color: var(--text); background: #141414; outline: none;
+      color: var(--text); background: rgba(255, 255, 255, 0.4); outline: none;
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      box-shadow: inset 0 1px 1px rgba(0,0,0,0.04);
+      transition: border-color 0.2s, background-color 0.2s;
     }
-    .bill-no-input:focus { border-color: var(--accent); }
+    .bill-no-input:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.65); }
 
     .customer-row {
       display: flex; align-items: center; gap: 8px;
-      padding: 8px 16px; border-bottom: 1px solid var(--border); background: #141414;
+      padding: 8px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.15); background: transparent;
     }
     .customer-row label { font-size: .8rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
     .customer-row input {
-      border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 6px; padding: 6px 10px;
       font-size: .88rem; font-family: inherit; color: var(--text);
-      background: #141414; outline: none; flex: 1;
+      background: rgba(255, 255, 255, 0.4); outline: none; flex: 1;
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      box-shadow: inset 0 1px 1px rgba(0,0,0,0.04);
+      transition: border-color 0.2s, background-color 0.2s;
     }
-    .customer-row input:focus { border-color: var(--accent); }
+    .customer-row input::placeholder { color: rgba(43,43,35,0.45); }
+    .customer-row input:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.65); }
+
+    .bill-items-list { flex: 1; overflow-y: auto; max-height: 40vh; padding: 12px; border-bottom: 1px solid var(--border); background: transparent; }
+    .bill-items-list .empty-bill { background: transparent; }
+    .bill-items-list { background: linear-gradient(180deg, rgba(46,125,79,0.02), transparent); border-radius: 8px; }
 
 
 
-    /* ── History Drawer ── */
+    /* ── Reports Dashboard ── */
+    .rpt-section { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+    .rpt-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    }
+    .rpt-title { font-size: 1.15rem; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+    .rpt-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .rpt-mode-btn {
+      padding: 7px 18px; border-radius: 50px; border: 2px solid var(--border);
+      background: var(--card); color: var(--muted); font-size: .82rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all .18s;
+    }
+    .rpt-mode-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .rpt-mode-btn:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+    .rpt-date-input {
+      border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 12px;
+      font-size: .82rem; font-family: inherit; color: var(--text);
+      background: var(--card); outline: none;
+    }
+    .rpt-date-input:focus { border-color: var(--accent); }
+    .rpt-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    }
+    @media (max-width: 900px) { .rpt-grid { grid-template-columns: 1fr; } }
+    .rpt-card {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 14px;
+      padding: 20px; box-shadow: var(--shadow);
+    }
+    .rpt-card-title {
+      font-size: .9rem; font-weight: 700; color: var(--muted);
+      margin-bottom: 16px; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .rpt-canvas-wrap { position: relative; width: 100%; }
+    .rpt-canvas-wrap canvas { width: 100% !important; display: block; }
+    .rpt-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .rpt-legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: .75rem; color: var(--muted); white-space: nowrap;
+    }
+    .rpt-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .rpt-empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: .85rem; }
+    .rpt-summary-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px;
+    }
+    .rpt-stat {
+      background: var(--card2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px; text-align: center;
+    }
+    .rpt-stat-val { font-size: 1.4rem; font-weight: 800; color: var(--gold); }
+    .rpt-stat-lbl { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+    .oq-section {
+      padding: 24px 28px; max-width: 1400px; margin: 0 auto;
+    }
+    .oq-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+    }
+    .oq-title {
+      font-size: 1.15rem; font-weight: 800; color: var(--gold);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .oq-badge {
+      background: var(--accent); color: var(--sand); border-radius: 50px;
+      padding: 2px 10px; font-size: .78rem; font-weight: 700;
+    }
+    .oq-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
+    }
+    .oq-card {
+      background: #3d1818; border: 2px solid var(--border); border-radius: 14px;
+      padding: 16px; display: flex; flex-direction: column; gap: 10px;
+      box-shadow: 0 4px 18px rgba(168,50,50,.12); position: relative; overflow: hidden;
+      transition: border-color .2s;
+    }
+    .oq-card:hover { border-color: var(--accent); }
+    .oq-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .oq-bill-no { font-size: 1rem; font-weight: 800; color: var(--sand); }
+    .oq-time { font-size: .72rem; color: var(--brown); }
+    .oq-customer { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+    .oq-items { flex: 1; }
+    .oq-item-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 3px 0; border-bottom: 1px dashed var(--border); font-size: .82rem;
+    }
+    .oq-item-row:last-child { border-bottom: none; }
+    .oq-item-name { color: var(--sand); font-weight: 600; }
+    .oq-item-spec { color: var(--brown); font-size: .7rem; margin-top: 1px; }
+    .oq-item-price { color: var(--gold); font-weight: 700; white-space: nowrap; margin-left: 8px; }
+    .oq-total-row {
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 2px solid var(--border); padding-top: 8px; margin-top: 4px;
+    }
+    .oq-total-label { font-size: .8rem; font-weight: 700; color: var(--muted); }
+    .oq-total-amt { font-size: 1.05rem; font-weight: 800; color: var(--gold); }
+    .oq-pay-row { display: flex; gap: 8px; align-items: center; }
+    .oq-pay-btn {
+      flex: 1; padding: 7px 10px; border-radius: 8px; border: 2px solid var(--border);
+      background: var(--card2); color: var(--muted); font-size: .8rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all .18s; text-align: center;
+    }
+    .oq-pay-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .oq-pay-btn.selected-cash { background: var(--sand); color: #2e1010; border-color: var(--sand); }
+    .oq-pay-btn.selected-gpay { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .oq-done-btn {
+      width: 38px; height: 38px; border-radius: 50%; border: none;
+      background: var(--border); color: var(--sand); font-size: 1.2rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .18s; flex-shrink: 0;
+    }
+    .oq-done-btn:hover { background: var(--brown); color: #fff; transform: scale(1.1); }
+    .oq-done-btn.ready { background: #8b6e45; color: #fff; }
+    .oq-gpay-verify {
+      background: #250d0d; border: 1px solid var(--accent); border-radius: 8px;
+      padding: 8px 12px; font-size: .78rem; color: var(--sand); display: none;
+    }
+    .oq-gpay-verify.show { display: block; }
+    .oq-gpay-verify strong { color: var(--gold); }
+    .oq-empty {
+      text-align: center; color: var(--muted); padding: 40px; font-size: .9rem;
+      grid-column: 1/-1;
+    }
+    .oq-empty .icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+    /* remove animation */
+    .oq-card.removing {
+      animation: oqFadeOut .3s ease forwards;
+    }
+    @keyframes oqFadeOut {
+      to { opacity: 0; transform: scale(.95); }
+    }
     .hist-btn {
-      background: rgba(0,0,0,.22); border: 1px solid rgba(0,0,0,.35);
-      color: var(--accent-text); border-radius: 50px; padding: 6px 16px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--accent); border-radius: 50px; padding: 6px 16px;
       font-size: .85rem; font-weight: 600; cursor: pointer; font-family: inherit;
-      transition: background .18s; display: flex; align-items: center; gap: 6px;
+      transition: background .18s, transform .12s; display: flex; align-items: center; gap: 6px;
     }
-    .hist-btn:hover { background: rgba(0,0,0,.38); }
+    .hist-btn:hover { background: var(--card2); transform: translateY(-1px); }
 
     .hist-drawer {
       position: fixed; top: 0; right: -520px; width: 500px; max-width: 98vw;
       height: 100vh; background: var(--card); z-index: 1100;
-      box-shadow: -8px 0 32px rgba(0,0,0,.4); transition: right .28s ease;
+      box-shadow: -8px 0 32px rgba(0,0,0,.5); transition: right .28s ease;
       display: flex; flex-direction: column;
     }
     .hist-drawer.open { right: 0; }
     .hist-backdrop {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1099;
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1099;
     }
     .hist-backdrop.open { display: block; }
 
     .hist-head {
-      background: var(--gradient); color: var(--accent-text);
+      background: var(--gradient); color: #fff;
       padding: 16px 20px; font-weight: 700; font-size: 1rem;
       display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
     }
     .hist-close {
-      background: none; border: none; color: var(--accent-text); font-size: 1.3rem;
+      background: none; border: none; color: #fff; font-size: 1.3rem;
       cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px;
     }
     .hist-close:hover { background: rgba(0,0,0,.2); }
@@ -297,11 +483,11 @@
     }
     .hist-filters select:focus, .hist-filters input:focus { border-color: var(--accent); }
     .hist-dl-btn {
-      background: var(--accent); color: var(--accent-text);
+      background: var(--accent); color: #fff;
       border: none; border-radius: 8px; padding: 6px 14px;
       font-size: .82rem; font-weight: 700; cursor: pointer; font-family: inherit;
     }
-    .hist-dl-btn:hover { background: var(--green-d); color: var(--text); }
+    .hist-dl-btn:hover { background: var(--accent-light); }
 
     .hist-summary {
       padding: 8px 16px; font-size: .8rem; color: var(--muted);
@@ -313,12 +499,12 @@
       width: 100%; border-collapse: collapse; font-size: .83rem;
     }
     .hist-table th {
-      position: sticky; top: 0; background: #222; color: var(--muted);
+      position: sticky; top: 0; background: #250d0d; color: var(--muted);
       font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
     }
     .hist-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); }
-    .hist-table tr:hover td { background: #262626; }
-    .hist-amount { color: var(--orange); font-weight: 700; }
+    .hist-table tr:hover td { background: #4a2020; }
+    .hist-amount { color: var(--accent); font-weight: 700; }
     .hist-empty { text-align: center; color: var(--muted); padding: 40px; }
 
     ::-webkit-scrollbar { width: 5px; }
@@ -346,6 +532,7 @@
   </div>
   <div class="bill-badge" id="headerBillNo">Bill #001</div>
   <button class="hist-btn" onclick="openHistDrawer()">&#x1F4DC; History</button>
+  <button class="hist-btn" onclick="openRptDrawer()">📊 Reports</button>
 </header>
 
 <!-- HISTORY BACKDROP + DRAWER -->
@@ -456,7 +643,7 @@
     <div class="bill-actions">
       <button class="btn-print" id="printBtn" onclick="printBill()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Print Bill
+        <span id="printBtnLabel">Print Bill</span>
       </button>
       <button class="btn-clear" onclick="clearBill()">&#x1F5D1; Clear &amp; New Bill</button>
     </div>
@@ -466,7 +653,49 @@
 
 </div>
 
-<script src="gradient-waves.bundle.js" defer></script>
+<!-- ORDERS QUEUE -->
+<div class="oq-section">
+  <div class="oq-head">
+    <div class="oq-title">
+      🍱 Orders Queue
+      <span class="oq-badge" id="oqCount">0</span>
+    </div>
+  </div>
+  <div class="oq-grid" id="oqGrid">
+    <div class="oq-empty"><span class="icon">✅</span>No pending orders. Print a bill to add one.</div>
+  </div>
+</div>
+
+<!-- REPORTS DRAWER -->
+<div class="hist-backdrop" id="rptBackdrop" onclick="closeRptDrawer()" style="display:none"></div>
+<div class="hist-drawer" id="rptDrawer" style="display:none;width:680px;max-width:98vw;">
+  <div class="hist-head">
+    <span>📊 Sales Reports</span>
+    <button class="hist-close" onclick="closeRptDrawer()">&#x2715;</button>
+  </div>
+  <div class="rpt-controls" style="padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <button class="rpt-mode-btn active" id="rptBtnDay" onclick="setRptMode('day')">📅 Day</button>
+    <button class="rpt-mode-btn" id="rptBtnMonth" onclick="setRptMode('month')">🗓 Month</button>
+    <input type="date" id="rptDatePicker" class="rpt-date-input" onchange="loadReports()" />
+    <input type="month" id="rptMonthPicker" class="rpt-date-input" style="display:none" onchange="loadReports()" />
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px;">
+    <div class="rpt-summary-grid" id="rptStats"></div>
+    <div class="rpt-grid">
+      <div class="rpt-card">
+        <div class="rpt-card-title">Items Sold — Quantity (Pie)</div>
+        <div class="rpt-canvas-wrap"><canvas id="rptPieCanvas" height="260"></canvas></div>
+        <div class="rpt-legend" id="rptPieLegend"></div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-card-title">Items Sold — Quantity (Bar)</div>
+        <div class="rpt-canvas-wrap"><canvas id="rptBarCanvas" height="260"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
 <script>
 /* ===== MENU DATA ===== */
@@ -568,15 +797,16 @@ if (document.readyState === 'loading') {
 /* ===== MENU ===== */
 function buildCategoryTabs() {
   const cats = ["All", ...new Set(MENU.map(i => i.cat))];
+  const icons = { All: '🍽️', Juices: '🍹', Shakes: '🥤', Snacks: '🍿', Specials: '⭐' };
   document.getElementById('catTabs').innerHTML = cats.map(c =>
-    `<button class="cat-tab ${c==='All'?'active':''}" onclick="filterCat(this,'${c}')">${c}</button>`
+    `<button class="cat-tab ${c==='All'?'active':''}" onclick="filterCat(this,'${c}')">${icons[c] ? icons[c] + ' ' : ''}${c}</button>`
   ).join('');
 }
 
 function renderMenuGrid(cat) {
   const items = cat === "All" ? MENU : MENU.filter(i => i.cat === cat);
   document.getElementById('menuGrid').innerHTML = items.map(item => `
-    <div class="menu-card" onclick="openModal(${item.id})">
+    <div class="menu-card" id="menuCard-${item.id}" data-cat="${item.cat}" onclick="openModal(${item.id})">
       <span class="emoji">${item.emoji}</span>
       <div class="item-name">${item.name}</div>
       <div class="item-price">&#x20B9;${item.price}</div>
@@ -658,8 +888,26 @@ function addToBill() {
     total: unitPrice * qty
   });
 
+  // briefly flash the menu card to show item was added
+  try { flashCard(currentItem.id, qty); } catch(e){}
+
   renderBill();
   closeModal();
+}
+
+function flashCard(itemId, qty) {
+  var el = document.getElementById('menuCard-' + itemId);
+  if (!el) return;
+  // add badge
+  var badge = document.createElement('div');
+  badge.className = 'added-badge';
+  badge.textContent = 'Added ×' + qty;
+  el.appendChild(badge);
+  el.classList.add('just-added');
+  setTimeout(function() {
+    el.classList.remove('just-added');
+    if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
+  }, 900);
 }
 
 function renderBill() {
@@ -669,6 +917,7 @@ function renderBill() {
   if (billItems.length === 0) {
     list.innerHTML = `<div class="empty-bill"><span class="icon">&#x1F6D2;</span>No items yet. Tap any menu item to add.</div>`;
     totalsEl.style.display = 'none';
+    var pLabel = document.getElementById('printBtnLabel'); if (pLabel) pLabel.textContent = 'Print Bill';
     return;
   }
 
@@ -697,6 +946,8 @@ function renderBill() {
   document.getElementById('subtotalVal').innerHTML = '&#x20B9;' + subtotal.toFixed(2);
   document.getElementById('grandTotal').innerHTML  = '&#x20B9;' + subtotal.toFixed(2);
   totalsEl.style.display = 'block';
+  var totalItems = billItems.reduce(function(s,i){ return s + (i.qty||0); }, 0);
+  var pLabel = document.getElementById('printBtnLabel'); if (pLabel) pLabel.textContent = 'Print Bill (' + totalItems + ' items)';
 }
 
 function removeItem(idx) {
@@ -1021,6 +1272,9 @@ function printBill() {
       .catch(err => console.error('Bill save failed:', err));
   }
 
+  // Add to orders queue
+  addToQueue(billNo, customer, grandTotalAmount, itemsSnapshot);
+
   // Auto-advance to next bill after printing
   billItems = [];
   advanceBillCounter();
@@ -1028,6 +1282,344 @@ function printBill() {
   if (custEl) custEl.value = '';
   renderBill();
 }
+
+/* ===== ORDERS QUEUE ===== */
+var orderQueue = [];
+
+function addToQueue(billNo, customer, amount, items) {
+  var now = new Date();
+  orderQueue.push({
+    id: Date.now(),
+    billNo: billNo,
+    customer: customer || '',
+    amount: amount,
+    items: items || [],
+    time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+    payMethod: null
+  });
+  renderQueue();
+}
+
+function renderQueue() {
+  var grid = document.getElementById('oqGrid');
+  var badge = document.getElementById('oqCount');
+  badge.textContent = orderQueue.length;
+
+  if (orderQueue.length === 0) {
+    grid.innerHTML = '<div class="oq-empty"><span class="icon">✅</span>No pending orders. Print a bill to add one.</div>';
+    return;
+  }
+
+  grid.innerHTML = orderQueue.map(function(o) {
+    var itemRows = o.items.map(function(it) {
+      return '<div class="oq-item-row">' +
+        '<div><div class="oq-item-name">' + it.emoji + ' ' + it.name + ' <span style="color:var(--accent)">x' + it.qty + '</span></div>' +
+        (it.spec && it.spec !== 'Standard' ? '<div class="oq-item-spec">' + it.spec + '</div>' : '') +
+        '</div>' +
+        '<div class="oq-item-price">₹' + Number(it.total).toFixed(2) + '</div>' +
+        '</div>';
+    }).join('');
+
+    var cashSel = o.payMethod === 'cash' ? ' selected-cash' : '';
+    var gpaySel = o.payMethod === 'gpay' ? ' selected-gpay' : '';
+    var doneReady = o.payMethod ? ' ready' : '';
+    var gpayVerify = o.payMethod === 'gpay'
+      ? '<div class="oq-gpay-verify show">GPay: Ask customer to send <strong>₹' + Number(o.amount).toFixed(2) + '</strong> · Bill <strong>#' + o.billNo + '</strong></div>'
+      : '<div class="oq-gpay-verify"></div>';
+
+    return '<div class="oq-card" id="oqcard-' + o.id + '">' +
+      '<div class="oq-card-top">' +
+        '<div><div class="oq-bill-no">Bill #' + o.billNo + '</div>' +
+        (o.customer ? '<div class="oq-customer">👤 ' + o.customer + '</div>' : '') +
+        '</div>' +
+        '<div class="oq-time">' + o.time + '</div>' +
+      '</div>' +
+      '<div class="oq-items">' + itemRows + '</div>' +
+      '<div class="oq-total-row"><span class="oq-total-label">TOTAL</span><span class="oq-total-amt">₹' + Number(o.amount).toFixed(2) + '</span></div>' +
+      gpayVerify +
+      '<div class="oq-pay-row">' +
+        '<button class="oq-pay-btn' + cashSel + '" onclick="setPayMethod(' + o.id + ',\'cash\')">💵 Cash</button>' +
+        '<button class="oq-pay-btn' + gpaySel + '" onclick="setPayMethod(' + o.id + ',\'gpay\')">📱 GPay</button>' +
+        '<button class="oq-done-btn' + doneReady + '" onclick="completeOrder(' + o.id + ')" title="Mark as done">✓</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function setPayMethod(id, method) {
+  var order = orderQueue.find(function(o) { return o.id === id; });
+  if (!order) return;
+  order.payMethod = order.payMethod === method ? null : method;
+  renderQueue();
+}
+
+function completeOrder(id) {
+  var card = document.getElementById('oqcard-' + id);
+  if (card) {
+    card.classList.add('removing');
+    setTimeout(function() {
+      orderQueue = orderQueue.filter(function(o) { return o.id !== id; });
+      renderQueue();
+    }, 300);
+  }
+}
+
+/* ===== REPORTS ===== */
+var rptMode = 'day';
+var RPT_COLORS = [
+  '#2E7D4F', // primary green
+  '#F4A72A', // mango/orange CTA
+  '#E8483C', // watermelon red
+  '#E5E0D2', // sand (muted)
+  '#FFFFFF', // white (for contrast)
+  '#2E7D4F', '#F4A72A', '#E8483C', '#8FAE96', '#DFAF7A',
+  '#C76B5E', '#B9C9B2', '#F7E9D8', '#9BB29E', '#6F8A6F'
+];
+
+function setRptMode(mode) {
+  rptMode = mode;
+  document.getElementById('rptBtnDay').classList.toggle('active', mode === 'day');
+  document.getElementById('rptBtnMonth').classList.toggle('active', mode === 'month');
+  document.getElementById('rptDatePicker').style.display  = mode === 'day'   ? '' : 'none';
+  document.getElementById('rptMonthPicker').style.display = mode === 'month' ? '' : 'none';
+  loadReports();
+}
+
+function loadReports() {
+  if (!window.BillHistory) return;
+  var promise;
+  if (rptMode === 'day') {
+    var val = document.getElementById('rptDatePicker').value;
+    if (!val) { renderReports([]); return; }
+    var parts = val.split('-');
+    var dStr = parts[2] + '-' + parts[1] + '-' + parts[0];
+    promise = window.BillHistory.getBillRecordsByDateRange(dStr, dStr);
+  } else {
+    var mval = document.getElementById('rptMonthPicker').value;
+    if (!mval) { renderReports([]); return; }
+    var mp = mval.split('-');
+    var mm = parseInt(mp[1], 10), yyyy = parseInt(mp[0], 10);
+    var first = '01-' + mp[1] + '-' + mp[0];
+    var lastD = new Date(yyyy, mm, 0);
+    var lastStr = String(lastD.getDate()).padStart(2,'0') + '-' + mp[1] + '-' + mp[0];
+    promise = window.BillHistory.getBillRecordsByDateRange(first, lastStr);
+  }
+  promise.then(renderReports).catch(function(e) { console.error('Reports error:', e); });
+}
+
+function renderReports(records) {
+  // Aggregate item quantities and revenue
+  var itemMap = {};
+  records.forEach(function(r) {
+    if (!r.items) return;
+    r.items.forEach(function(it) {
+      var key = it.name;
+      if (!itemMap[key]) itemMap[key] = { name: it.name, emoji: it.emoji || '', qty: 0, revenue: 0 };
+      itemMap[key].qty     += (it.qty || 1);
+      itemMap[key].revenue += (it.total || 0);
+    });
+  });
+
+  var items = Object.values(itemMap).sort(function(a,b) { return b.qty - a.qty; });
+  var totalQty     = items.reduce(function(s,i){ return s + i.qty; }, 0);
+  var totalRevenue = items.reduce(function(s,i){ return s + i.revenue; }, 0);
+  var totalBills   = records.length;
+
+  // Stats row
+  var statsEl = document.getElementById('rptStats');
+  if (items.length === 0) {
+    statsEl.innerHTML = '';
+    document.getElementById('rptPieLegend').innerHTML = '';
+    clearCanvas('rptPieCanvas');
+    clearCanvas('rptBarCanvas');
+    drawEmpty('rptPieCanvas', 'No data for selected period');
+    drawEmpty('rptBarCanvas', 'No data for selected period');
+    return;
+  }
+  statsEl.innerHTML =
+    stat('₹' + totalRevenue.toFixed(0), 'Total Revenue') +
+    stat(totalBills, 'Bills') +
+    stat(totalQty, 'Items Sold') +
+    stat(items.length, 'Unique Items') +
+    stat('₹' + (totalBills ? (totalRevenue / totalBills).toFixed(0) : 0), 'Avg Bill');
+
+  drawPie(items, totalQty);
+  drawBar(items);
+}
+
+function stat(val, lbl) {
+  return '<div class="rpt-stat"><div class="rpt-stat-val">' + val + '</div><div class="rpt-stat-lbl">' + lbl + '</div></div>';
+}
+
+function clearCanvas(id) {
+  var canvas = document.getElementById(id);
+  var ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth || 400;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawEmpty(id, msg) {
+  var canvas = document.getElementById(id);
+  canvas.width = canvas.offsetWidth || 400;
+  canvas.height = 200;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#c4a882';
+  ctx.font = '14px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(msg, canvas.width / 2, canvas.height / 2);
+}
+
+function drawPie(items, totalQty) {
+  var canvas = document.getElementById('rptPieCanvas');
+  canvas.width  = canvas.offsetWidth || 400;
+  canvas.height = 300;
+  var ctx   = canvas.getContext('2d');
+  var cx    = canvas.width / 2;
+  var cy    = canvas.height / 2;
+  var r     = Math.min(cx, cy) - 20;
+  var angle = -Math.PI / 2;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  items.forEach(function(item, i) {
+    var slice = (item.qty / totalQty) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, angle, angle + slice);
+    ctx.closePath();
+    ctx.fillStyle = RPT_COLORS[i % RPT_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = '#2e1010';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label if slice big enough
+    if (slice > 0.25) {
+      var mid = angle + slice / 2;
+      var lx  = cx + (r * 0.65) * Math.cos(mid);
+      var ly  = cy + (r * 0.65) * Math.sin(mid);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(Math.round((item.qty / totalQty) * 100) + '%', lx, ly);
+    }
+    angle += slice;
+  });
+
+  // Legend
+  var legendEl = document.getElementById('rptPieLegend');
+  legendEl.innerHTML = items.map(function(item, i) {
+    return '<div class="rpt-legend-item">' +
+      '<div class="rpt-legend-dot" style="background:' + RPT_COLORS[i % RPT_COLORS.length] + '"></div>' +
+      item.emoji + ' ' + item.name + ' (' + item.qty + ')' +
+      '</div>';
+  }).join('');
+}
+
+function drawBar(items) {
+  var canvas = document.getElementById('rptBarCanvas');
+  canvas.width  = canvas.offsetWidth || 400;
+  canvas.height = 300;
+  var ctx    = canvas.getContext('2d');
+  var pad    = { top: 20, right: 20, bottom: 80, left: 50 };
+  var W      = canvas.width  - pad.left - pad.right;
+  var H      = canvas.height - pad.top  - pad.bottom;
+  var maxQty = Math.max.apply(null, items.map(function(i){ return i.qty; }));
+  var barW   = Math.max(8, Math.floor(W / items.length) - 6);
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Gridlines
+  ctx.strokeStyle = '#5c2a2a';
+  ctx.lineWidth = 1;
+  for (var g = 0; g <= 4; g++) {
+    var gy = pad.top + H - (g / 4) * H;
+    ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(pad.left + W, gy); ctx.stroke();
+    ctx.fillStyle = '#c4a882';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round((g / 4) * maxQty), pad.left - 6, gy);
+  }
+
+  // Bars
+  items.forEach(function(item, i) {
+    var bh  = maxQty > 0 ? (item.qty / maxQty) * H : 0;
+    var bx  = pad.left + i * (W / items.length) + (W / items.length - barW) / 2;
+    var by  = pad.top + H - bh;
+    var col = RPT_COLORS[i % RPT_COLORS.length];
+
+    // Bar fill
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(bx, by, barW, bh, [4,4,0,0]) : ctx.rect(bx, by, barW, bh);
+    ctx.fill();
+
+    // Value on top
+    if (bh > 14) {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(item.qty, bx + barW / 2, by - 2);
+    }
+
+    // X-axis label (emoji + truncated name)
+    ctx.fillStyle = '#c4a882';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    var label = item.emoji + ' ' + (item.name.length > 8 ? item.name.slice(0,7) + '…' : item.name);
+    ctx.save();
+    ctx.translate(bx + barW / 2, pad.top + H + 8);
+    ctx.rotate(-Math.PI / 5);
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+  });
+
+  // Y-axis line
+  ctx.strokeStyle = '#5c2a2a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(pad.left, pad.top + H);
+  ctx.lineTo(pad.left + W, pad.top + H);
+  ctx.stroke();
+}
+
+/* ===== REPORTS DRAWER ===== */
+function openRptDrawer() {
+  var d = document.getElementById('rptDrawer');
+  var b = document.getElementById('rptBackdrop');
+  // make elements visible first
+  d.style.display = 'flex';
+  b.style.display = 'block';
+  // force reflow then open
+  void d.offsetWidth;
+  d.classList.add('open');
+  b.classList.add('open');
+  setTimeout(loadReports, 80);
+}
+
+function closeRptDrawer() {
+  var d = document.getElementById('rptDrawer');
+  var b = document.getElementById('rptBackdrop');
+  d.classList.remove('open');
+  b.classList.remove('open');
+  // hide after transition completes
+  setTimeout(function() { d.style.display = 'none'; b.style.display = 'none'; }, 320);
+}
+
+// Init reports default dates
+(function initReports() {
+  var today = new Date();
+  var yy = today.getFullYear();
+  var mm = String(today.getMonth() + 1).padStart(2, '0');
+  var dd = String(today.getDate()).padStart(2, '0');
+  document.getElementById('rptDatePicker').value  = yy + '-' + mm + '-' + dd;
+  document.getElementById('rptMonthPicker').value = yy + '-' + mm;
+})();
 </script>
 </body>
 </html>

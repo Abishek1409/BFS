@@ -10,7 +10,7 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: #121212;
+  background: var(--bg, #000000);
 }
 
 .app-ui {

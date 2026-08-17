@@ -3,9 +3,9 @@ import { mountGradientWaves } from './GradientWaves.js';
 const root = document.getElementById('gradient-waves-root');
 if (root) {
   mountGradientWaves(root, {
-    horizonColor: '#121212',
-    waveColor: '#854d0e',
-    crestColor: '#fde047',
+    horizonColor: '#000000',
+    waveColor: '#1a1002',
+    crestColor: '#3d2e05',
     speed: 0.35,
     amplitude: 2.5,
     waveScale: 0.6,
@@ -17,8 +17,8 @@ if (root) {
     height: 5.5,
     fogDepth: 15,
     detail: 'medium',
-    brightness: 0.9,
-    opacity: 0.5,
+    brightness: 0.35,
+    opacity: 0.35,
     mouseInteraction: false,
     grain: true,
     grainIntensity: 0.04,
