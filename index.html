@@ -59,6 +59,12 @@
       display: grid; grid-template-columns: 1fr 420px;
       gap: 24px; padding: 24px 28px; max-width: 1400px; margin: 0 auto;
     }
+    .right-col {
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .right-col > .panel {
+      flex: 1;
+    }
 
     .panel {
       background: rgba(18, 18, 18, 0.65);
@@ -237,39 +243,39 @@
     .btn-secondary:hover { background: var(--border-subtle); }
 
     .bill-panel { display: flex; flex-direction: column; }
-    .bill-items-list { flex: 1; overflow-y: auto; max-height: 40vh; padding: 12px; border-bottom: 1px solid var(--border); }
+    .bill-items-list { flex: 1; overflow-y: auto; max-height: 25vh; padding: 10px; border-bottom: 1px solid var(--border); }
     .bill-item {
       display: flex; align-items: flex-start; justify-content: space-between;
-      padding: 10px 8px; border-radius: 8px; gap: 8px; transition: background .15s;
+      padding: 8px 6px; border-radius: 6px; gap: 8px; transition: background .15s;
     }
     .bill-item:hover { background: rgba(46, 125, 79, 0.06); }
     .bill-item + .bill-item { border-top: 1px dashed var(--border); }
     .bill-item-info { flex: 1; }
-    .bill-item-name { font-weight: 700; font-size: .88rem; color: var(--text); }
-    .bill-item-spec { font-size: .75rem; color: var(--muted); margin-top: 2px; }
-    .bill-item-qty-price { text-align: right; font-size: .85rem; }
+    .bill-item-name { font-weight: 700; font-size: .82rem; color: var(--text); }
+    .bill-item-spec { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+    .bill-item-qty-price { text-align: right; font-size: .8rem; }
     .bill-item-total { font-weight: 700; color: var(--accent); }
-    .bill-item-unit { font-size: .72rem; color: var(--muted); }
-    .bill-item-del { background: none; border: none; cursor: pointer; color: var(--salmon); font-size: 1.1rem; padding: 0 4px; transition: color .15s; }
+    .bill-item-unit { font-size: .68rem; color: var(--muted); }
+    .bill-item-del { background: none; border: none; cursor: pointer; color: var(--salmon); font-size: 1rem; padding: 0 4px; transition: color .15s; }
     .bill-item-del:hover { color: var(--danger); }
-    .empty-bill { text-align: center; color: var(--muted); padding: 40px 20px; font-size: .9rem; }
-    .empty-bill .icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+    .empty-bill { text-align: center; color: var(--muted); padding: 30px 16px; font-size: .85rem; }
+    .empty-bill .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
 
-    .bill-totals { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-    .total-row { display: flex; justify-content: space-between; font-size: .88rem; margin-bottom: 6px; color: var(--muted); }
-    .total-row.grand { font-size: 1.1rem; font-weight: 800; color: var(--text); border-top: 2px solid var(--border); padding-top: 8px; margin-top: 4px; }
+    .bill-totals { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .total-row { display: flex; justify-content: space-between; font-size: .82rem; margin-bottom: 4px; color: var(--muted); }
+    .total-row.grand { font-size: 1rem; font-weight: 800; color: var(--text); border-top: 2px solid var(--border); padding-top: 6px; margin-top: 4px; }
 
-    .bill-actions { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .bill-actions { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
     .btn-print {
       background: var(--accent);
-      color: #fff; padding: 13px; border-radius: 10px; font-size: .95rem; font-weight: 700;
+      color: #fff; padding: 11px; border-radius: 8px; font-size: .9rem; font-weight: 700;
       border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
       gap: 8px; font-family: inherit; transition: all .2s; box-shadow: 0 4px 12px rgba(255,120,46,.3);
     }
     .btn-print:hover { transform: translateY(-1px); background: var(--accent-light); color: #fff; box-shadow: 0 6px 18px rgba(255,120,46,.4); }
     .btn-clear {
       background: transparent; color: var(--salmon); border: 1.5px solid rgba(255,127,127,.4);
-      padding: 10px; border-radius: 8px; font-size: .88rem; font-weight: 700;
+      padding: 8px; border-radius: 8px; font-size: .82rem; font-weight: 700;
       cursor: pointer; font-family: inherit; transition: all .18s;
     }
     .btn-clear:hover { background: rgba(255,127,127,.08); }
@@ -377,65 +383,83 @@
       background: var(--accent); color: var(--sand); border-radius: 50px;
       padding: 2px 10px; font-size: .78rem; font-weight: 700;
     }
-    .oq-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
+    /* Compact order queue - single line rows */
+    .oq-list {
+      display: flex; flex-direction: column; gap: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      max-height: 200px;
+      overflow-y: auto;
     }
-    .oq-card {
-      background: #3d1818; border: 2px solid var(--border); border-radius: 14px;
-      padding: 16px; display: flex; flex-direction: column; gap: 10px;
-      box-shadow: 0 4px 18px rgba(168,50,50,.12); position: relative; overflow: hidden;
-      transition: border-color .2s;
+    .oq-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      transition: background .15s;
     }
-    .oq-card:hover { border-color: var(--accent); }
-    .oq-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .oq-bill-no { font-size: 1rem; font-weight: 800; color: var(--sand); }
-    .oq-time { font-size: .72rem; color: var(--brown); }
-    .oq-customer { font-size: .78rem; color: var(--muted); margin-top: 2px; }
-    .oq-items { flex: 1; }
-    .oq-item-row {
-      display: flex; justify-content: space-between; align-items: baseline;
-      padding: 3px 0; border-bottom: 1px dashed var(--border); font-size: .82rem;
+    .oq-row:hover { background: rgba(46, 125, 79, 0.06); }
+    .oq-row:last-child { border-bottom: none; }
+    .oq-row-info {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; gap: 2px;
     }
-    .oq-item-row:last-child { border-bottom: none; }
-    .oq-item-name { color: var(--sand); font-weight: 600; }
-    .oq-item-spec { color: var(--brown); font-size: .7rem; margin-top: 1px; }
-    .oq-item-price { color: var(--gold); font-weight: 700; white-space: nowrap; margin-left: 8px; }
-    .oq-total-row {
-      display: flex; justify-content: space-between; align-items: center;
-      border-top: 2px solid var(--border); padding-top: 8px; margin-top: 4px;
+    .oq-row-main {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
     }
-    .oq-total-label { font-size: .8rem; font-weight: 700; color: var(--muted); }
-    .oq-total-amt { font-size: 1.05rem; font-weight: 800; color: var(--gold); }
-    .oq-pay-row { display: flex; gap: 8px; align-items: center; }
-    .oq-pay-btn {
-      flex: 1; padding: 7px 10px; border-radius: 8px; border: 2px solid var(--border);
-      background: var(--card2); color: var(--muted); font-size: .8rem; font-weight: 700;
-      cursor: pointer; font-family: inherit; transition: all .18s; text-align: center;
+    .oq-row-bill {
+      font-size: .85rem; font-weight: 800; color: var(--gold);
+      white-space: nowrap;
     }
-    .oq-pay-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .oq-pay-btn.selected-cash { background: var(--sand); color: #2e1010; border-color: var(--sand); }
-    .oq-pay-btn.selected-gpay { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .oq-done-btn {
-      width: 38px; height: 38px; border-radius: 50%; border: none;
-      background: var(--border); color: var(--sand); font-size: 1.2rem; cursor: pointer;
+    .oq-row-items {
+      font-size: .75rem; color: var(--muted);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .oq-row-time {
+      font-size: .7rem; color: var(--muted); white-space: nowrap;
+    }
+    .oq-row-amount {
+      font-size: .9rem; font-weight: 800; color: var(--accent-cta);
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    .oq-row-pay {
+      display: flex; gap: 6px; align-items: center;
+      margin-left: 8px;
+    }
+    .oq-row-pay-btn {
+      padding: 6px 10px; border-radius: 6px; border: 1.5px solid var(--border);
+      background: var(--card2); color: var(--muted); font-size: .72rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all .18s; white-space: nowrap;
+    }
+    .oq-row-pay-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .oq-row-pay-btn.selected-cash { background: var(--sand); color: #2e1010; border-color: var(--sand); }
+    .oq-row-pay-btn.selected-gpay { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .oq-row-done {
+      width: 32px; height: 32px; border-radius: 50%; border: none;
+      background: var(--border); color: var(--sand); font-size: 1rem; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: all .18s; flex-shrink: 0;
+      opacity: 0.5; pointer-events: none;
     }
-    .oq-done-btn:hover { background: var(--brown); color: #fff; transform: scale(1.1); }
-    .oq-done-btn.ready { background: #8b6e45; color: #fff; }
-    .oq-gpay-verify {
-      background: #250d0d; border: 1px solid var(--accent); border-radius: 8px;
-      padding: 8px 12px; font-size: .78rem; color: var(--sand); display: none;
+    .oq-row-done.ready { opacity: 1; pointer-events: auto; background: #8b6e45; color: #fff; }
+    .oq-row-done.ready:hover { background: var(--accent); color: #fff; transform: scale(1.1); }
+    .oq-row-gpay {
+      background: #250d0d; border: 1px solid var(--accent); border-radius: 6px;
+      padding: 4px 8px; font-size: .68rem; color: var(--sand); display: none;
+      margin-left: 8px; white-space: nowrap;
     }
-    .oq-gpay-verify.show { display: block; }
-    .oq-gpay-verify strong { color: var(--gold); }
+    .oq-row-gpay.show { display: inline-block; }
+    .oq-row-gpay strong { color: var(--gold); }
     .oq-empty {
-      text-align: center; color: var(--muted); padding: 40px; font-size: .9rem;
-      grid-column: 1/-1;
+      text-align: center; color: var(--muted); padding: 32px 16px; font-size: .85rem;
     }
-    .oq-empty .icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+    .oq-empty .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
     /* remove animation */
-    .oq-card.removing {
+    .oq-row.removing {
       animation: oqFadeOut .3s ease forwards;
     }
     @keyframes oqFadeOut {
@@ -616,8 +640,24 @@
     <div class="menu-grid" id="menuGrid"></div>
   </div>
 
-  <!-- BILL -->
-  <div class="panel bill-panel">
+  <!-- RIGHT COLUMN: Orders Queue + Bill -->
+  <div class="right-col">
+
+    <!-- ORDERS QUEUE (moved above bill) -->
+    <div class="oq-section" style="padding: 0; max-width: none; margin: 0;">
+      <div class="oq-head">
+        <div class="oq-title">
+          🍱 Orders Queue
+          <span class="oq-badge" id="oqCount">0</span>
+        </div>
+      </div>
+      <div class="oq-list" id="oqList">
+        <div class="oq-empty"><span class="icon">✅</span>No pending orders. Print a bill to add one.</div>
+      </div>
+    </div>
+
+    <!-- BILL -->
+    <div class="panel bill-panel">
     <div class="panel-head">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
       Current Bill
@@ -651,19 +691,6 @@
 
 </div>
 
-</div>
-
-<!-- ORDERS QUEUE -->
-<div class="oq-section">
-  <div class="oq-head">
-    <div class="oq-title">
-      🍱 Orders Queue
-      <span class="oq-badge" id="oqCount">0</span>
-    </div>
-  </div>
-  <div class="oq-grid" id="oqGrid">
-    <div class="oq-empty"><span class="icon">✅</span>No pending orders. Print a bill to add one.</div>
-  </div>
 </div>
 
 <!-- REPORTS DRAWER -->
@@ -1301,47 +1328,43 @@ function addToQueue(billNo, customer, amount, items) {
 }
 
 function renderQueue() {
-  var grid = document.getElementById('oqGrid');
+  var list = document.getElementById('oqList');
   var badge = document.getElementById('oqCount');
   badge.textContent = orderQueue.length;
 
   if (orderQueue.length === 0) {
-    grid.innerHTML = '<div class="oq-empty"><span class="icon">✅</span>No pending orders. Print a bill to add one.</div>';
+    list.innerHTML = '<div class="oq-empty"><span class="icon">✅</span>No pending orders. Print a bill to add one.</div>';
     return;
   }
 
-  grid.innerHTML = orderQueue.map(function(o) {
-    var itemRows = o.items.map(function(it) {
-      return '<div class="oq-item-row">' +
-        '<div><div class="oq-item-name">' + it.emoji + ' ' + it.name + ' <span style="color:var(--accent)">x' + it.qty + '</span></div>' +
-        (it.spec && it.spec !== 'Standard' ? '<div class="oq-item-spec">' + it.spec + '</div>' : '') +
-        '</div>' +
-        '<div class="oq-item-price">₹' + Number(it.total).toFixed(2) + '</div>' +
-        '</div>';
-    }).join('');
+  list.innerHTML = orderQueue.map(function(o) {
+    // Build compact items summary: "🥭 Mango Juice x2, 🍉 Watermelon Juice x1"
+    var itemsSummary = o.items.map(function(it) {
+      return it.emoji + ' ' + it.name + ' x' + it.qty;
+    }).join(', ');
 
     var cashSel = o.payMethod === 'cash' ? ' selected-cash' : '';
     var gpaySel = o.payMethod === 'gpay' ? ' selected-gpay' : '';
     var doneReady = o.payMethod ? ' ready' : '';
     var gpayVerify = o.payMethod === 'gpay'
-      ? '<div class="oq-gpay-verify show">GPay: Ask customer to send <strong>₹' + Number(o.amount).toFixed(2) + '</strong> · Bill <strong>#' + o.billNo + '</strong></div>'
-      : '<div class="oq-gpay-verify"></div>';
+      ? '<div class="oq-row-gpay show">GPay: Ask customer to send <strong>₹' + Number(o.amount).toFixed(2) + '</strong> · Bill <strong>#' + o.billNo + '</strong></div>'
+      : '<div class="oq-row-gpay"></div>';
 
-    return '<div class="oq-card" id="oqcard-' + o.id + '">' +
-      '<div class="oq-card-top">' +
-        '<div><div class="oq-bill-no">Bill #' + o.billNo + '</div>' +
-        (o.customer ? '<div class="oq-customer">👤 ' + o.customer + '</div>' : '') +
+    return '<div class="oq-row" id="oqcard-' + o.id + '">' +
+      '<div class="oq-row-info">' +
+        '<div class="oq-row-main">' +
+          '<span class="oq-row-bill">Bill #' + o.billNo + '</span>' +
+          '<span class="oq-row-time">' + o.time + '</span>' +
         '</div>' +
-        '<div class="oq-time">' + o.time + '</div>' +
+        '<span class="oq-row-items">' + itemsSummary + '</span>' +
       '</div>' +
-      '<div class="oq-items">' + itemRows + '</div>' +
-      '<div class="oq-total-row"><span class="oq-total-label">TOTAL</span><span class="oq-total-amt">₹' + Number(o.amount).toFixed(2) + '</span></div>' +
+      '<span class="oq-row-amount">₹' + Number(o.amount).toFixed(2) + '</span>' +
+      '<div class="oq-row-pay">' +
+        '<button class="oq-row-pay-btn' + cashSel + '" onclick="setPayMethod(' + o.id + ',\'cash\')">💵 Cash</button>' +
+        '<button class="oq-row-pay-btn' + gpaySel + '" onclick="setPayMethod(' + o.id + ',\'gpay\')">📱 GPay</button>' +
+        '<button class="oq-row-done' + doneReady + '" onclick="completeOrder(' + o.id + ')" title="Mark as done">✓</button>' +
+      '</div>' +
       gpayVerify +
-      '<div class="oq-pay-row">' +
-        '<button class="oq-pay-btn' + cashSel + '" onclick="setPayMethod(' + o.id + ',\'cash\')">💵 Cash</button>' +
-        '<button class="oq-pay-btn' + gpaySel + '" onclick="setPayMethod(' + o.id + ',\'gpay\')">📱 GPay</button>' +
-        '<button class="oq-done-btn' + doneReady + '" onclick="completeOrder(' + o.id + ')" title="Mark as done">✓</button>' +
-      '</div>' +
     '</div>';
   }).join('');
 }
@@ -1354,9 +1377,9 @@ function setPayMethod(id, method) {
 }
 
 function completeOrder(id) {
-  var card = document.getElementById('oqcard-' + id);
-  if (card) {
-    card.classList.add('removing');
+  var row = document.getElementById('oqcard-' + id);
+  if (row) {
+    row.classList.add('removing');
     setTimeout(function() {
       orderQueue = orderQueue.filter(function(o) { return o.id !== id; });
       renderQueue();
