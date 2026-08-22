@@ -14,6 +14,6 @@ if (root) {
     parallax: true,
     parallaxStrength: 0.16,
     mixBlendMode: 'screen',
-    linesGradient: ['#7AF7BE', '#3BD8A8', '#1CC6B7', '#5EA5FF', '#A679FF']
+    linesGradient: ['#ffd21c', '#63e0b5', '#28c89a', '#ff9f43', '#f4fff9']
   });
 }
