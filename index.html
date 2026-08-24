@@ -384,6 +384,14 @@
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
     }
+    .oq-head-actions { display: flex; align-items: center; gap: 8px; }
+    .oq-connection { color: var(--muted); font-size: .72rem; }
+    .oq-connection.connected { color: var(--accent-light); }
+    .oq-connect-btn {
+      background: var(--card); color: var(--accent); border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 10px; font: 700 .72rem inherit; cursor: pointer;
+    }
+    .oq-connect-btn:hover { background: var(--card2); border-color: var(--accent); }
     .oq-title {
       font-size: 1.15rem; font-weight: 800; color: var(--gold);
       display: flex; align-items: center; gap: 8px;
@@ -659,9 +667,13 @@
           🍱 Orders Queue
           <span class="oq-badge" id="oqCount">0</span>
         </div>
+        <div class="oq-head-actions">
+          <span class="oq-connection" id="oqConnection">QR offline</span>
+          <button class="oq-connect-btn" onclick="connectOrderServer()">Reconnect QR</button>
+        </div>
       </div>
       <div class="oq-list" id="oqList">
-        <div class="oq-empty"><span class="icon">✅</span>No pending orders. Print a bill to add one.</div>
+        <div class="oq-empty"><span class="icon">✅</span>No pending orders.</div>
       </div>
     </div>
 
@@ -766,6 +778,7 @@ const MENU = [
 let billItems   = [];
 let currentItem = null;
 let billCounter = 1;
+let activeQrOrderId = null;
 
 /* ===== STORAGE HELPERS ===== */
 function safeGetStorage(key) {
@@ -822,6 +835,8 @@ function init() {
   updateHeaderBill(pad);
   buildCategoryTabs();
   renderMenuGrid("All");
+  renderQueue();
+  connectOrderServer();
 }
 
 if (document.readyState === 'loading') {
@@ -1317,8 +1332,15 @@ function printBill() {
       .catch(err => console.error('Bill save failed:', err));
   }
 
-  // Add to orders queue
-  addToQueue(billNo, customer, grandTotalAmount, itemsSnapshot);
+  if (activeQrOrderId) {
+    setQrOrderStatus(activeQrOrderId, 'preparing');
+    orderQueue = orderQueue.filter(function(o) { return o.serverId !== activeQrOrderId; });
+    activeQrOrderId = null;
+    renderQueue();
+  } else {
+    // Add manually printed bills to the local orders queue.
+    addToQueue(billNo, customer, grandTotalAmount, itemsSnapshot);
+  }
 
   // Auto-advance to next bill after printing
   billItems = [];
@@ -1330,6 +1352,109 @@ function printBill() {
 
 /* ===== ORDERS QUEUE ===== */
 var orderQueue = [];
+const ORDER_SERVER_URL = 'https://192.168.1.3:3443';
+var orderServerUrl = ORDER_SERVER_URL;
+var orderSocket = null;
+
+function escapeQueueText(value) {
+  var div = document.createElement('div');
+  div.textContent = value == null ? '' : String(value);
+  return div.innerHTML;
+}
+
+function setQrConnection(message, connected) {
+  var el = document.getElementById('oqConnection');
+  if (!el) return;
+  el.textContent = message;
+  el.classList.toggle('connected', !!connected);
+}
+
+function configureOrderServer() {
+  connectOrderServer();
+}
+
+function connectOrderServer() {
+  setQrConnection('Connecting…', false);
+  fetch(orderServerUrl + '/api/orders')
+    .then(function(response) {
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return response.json();
+    })
+    .then(function(orders) {
+      orderQueue = orderQueue.filter(function(order) { return !order.serverId; });
+      (Array.isArray(orders) ? orders : [])
+        .filter(function(order) { return order && order.status !== 'served'; })
+        .forEach(addQrOrder);
+      renderQueue();
+      openOrderSocket();
+    })
+    .catch(function(error) {
+      console.error('QR order connection failed:', error);
+      setQrConnection('QR connection failed', false);
+    });
+}
+
+function openOrderSocket() {
+  if (orderSocket) orderSocket.close();
+  var socketUrl = orderServerUrl.replace(/^http/i, 'ws') + '/';
+  orderSocket = new WebSocket(socketUrl);
+  orderSocket.onopen = function() { setQrConnection('QR live', true); };
+  orderSocket.onmessage = function(event) {
+    try {
+      var message = JSON.parse(event.data);
+      if (message.type === 'new_order' && message.order) {
+        addQrOrder(message.order);
+        renderQueue();
+      }
+      if (message.type === 'status_update' && message.order) {
+        var row = orderQueue.find(function(order) { return order.serverId === message.order.id; });
+        if (row && message.order.status === 'served') {
+          orderQueue = orderQueue.filter(function(order) { return order.serverId !== message.order.id; });
+          renderQueue();
+        }
+      }
+    } catch (error) { console.error('Invalid QR order event:', error); }
+  };
+  orderSocket.onclose = function() {
+    setQrConnection('QR reconnecting', false);
+    setTimeout(function() { if (orderServerUrl) openOrderSocket(); }, 3000);
+  };
+  orderSocket.onerror = function() { setQrConnection('QR connection failed', false); };
+}
+
+function addQrOrder(order) {
+  if (!order || !order.id || orderQueue.some(function(item) { return item.serverId === order.id; })) return;
+  orderQueue.push({
+    id: Date.now() + Math.random(),
+    serverId: order.id,
+    source: 'qr',
+    table: order.table,
+    amount: Number(order.total) || 0,
+    items: (order.items || []).map(function(item) {
+      return { name: item.name, emoji: item.emoji || '🍹', qty: item.qty || 1, price: Number(item.price) || 0, total: (Number(item.price) || 0) * (item.qty || 1), spec: item.spec || 'Standard' };
+    }),
+    time: order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
+    payMethod: null
+  });
+}
+
+function loadQrOrder(serverId) {
+  var order = orderQueue.find(function(item) { return item.serverId === serverId; });
+  if (!order) return;
+  billItems = order.items.map(function(item) { return Object.assign({}, item, { uid: Date.now() + Math.random() }); });
+  activeQrOrderId = serverId;
+  document.getElementById('billNoInput').value = document.getElementById('billNoInput').value || '001';
+  document.getElementById('customerName').value = 'Table ' + order.table;
+  renderBill();
+  document.querySelector('.bill-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setQrOrderStatus(serverId, status) {
+  if (!orderServerUrl) return;
+  fetch(orderServerUrl + '/api/order/' + encodeURIComponent(serverId) + '/status', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: status })
+  }).catch(function(error) { console.error('Could not update QR order status:', error); });
+}
 
 function addToQueue(billNo, customer, amount, items) {
   var now = new Date();
@@ -1351,7 +1476,7 @@ function renderQueue() {
   badge.textContent = orderQueue.length;
 
   if (orderQueue.length === 0) {
-    list.innerHTML = '<div class="oq-empty"><span class="icon">✅</span>No pending orders. Print a bill to add one.</div>';
+    list.innerHTML = '<div class="oq-empty"><span class="icon">✅</span>No pending orders.</div>';
     return;
   }
 
@@ -1368,19 +1493,29 @@ function renderQueue() {
       ? '<div class="oq-row-gpay show">GPay: Ask customer to send <strong>₹' + Number(o.amount).toFixed(2) + '</strong> · Bill <strong>#' + o.billNo + '</strong></div>'
       : '<div class="oq-row-gpay"></div>';
 
+    var qrTable = o.source === 'qr'
+      ? '<span class="oq-row-bill">Table ' + escapeQueueText(o.table) + '</span>'
+      : '<span class="oq-row-bill">Bill #' + escapeQueueText(o.billNo) + '</span>';
+    var qrAction = o.source === 'qr'
+      ? '<button class="oq-row-pay-btn" onclick="loadQrOrder(\'' + escapeQueueText(o.serverId) + '\')">Load &amp; Print</button>'
+      : '';
+
     return '<div class="oq-row" id="oqcard-' + o.id + '">' +
       '<div class="oq-row-info">' +
         '<div class="oq-row-main">' +
-          '<span class="oq-row-bill">Bill #' + o.billNo + '</span>' +
+          qrTable +
+          (o.source === 'qr' ? '<span class="oq-row-time">QR order</span>' : '') +
           '<span class="oq-row-time">' + o.time + '</span>' +
         '</div>' +
         '<span class="oq-row-items">' + itemsSummary + '</span>' +
       '</div>' +
       '<span class="oq-row-amount">₹' + Number(o.amount).toFixed(2) + '</span>' +
       '<div class="oq-row-pay">' +
+        qrAction +
+        (o.source === 'qr' ? '' :
         '<button class="oq-row-pay-btn' + cashSel + '" onclick="setPayMethod(' + o.id + ',\'cash\')">💵 Cash</button>' +
         '<button class="oq-row-pay-btn' + gpaySel + '" onclick="setPayMethod(' + o.id + ',\'gpay\')">📱 GPay</button>' +
-        '<button class="oq-row-done' + doneReady + '" onclick="completeOrder(' + o.id + ')" title="Mark as done">✓</button>' +
+        '<button class="oq-row-done' + doneReady + '" onclick="completeOrder(' + o.id + ')" title="Mark as done">✓</button>') +
       '</div>' +
       gpayVerify +
     '</div>';
@@ -1399,7 +1534,9 @@ function completeOrder(id) {
   if (row) {
     row.classList.add('removing');
     setTimeout(function() {
+      var completed = orderQueue.find(function(o) { return o.id === id; });
       orderQueue = orderQueue.filter(function(o) { return o.id !== id; });
+      if (completed && completed.serverId) setQrOrderStatus(completed.serverId, 'served');
       renderQueue();
     }, 300);
   }
