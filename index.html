@@ -1528,15 +1528,19 @@ function renderQueue() {
     var gpaySel = o.payMethod === 'gpay' ? ' selected-gpay' : '';
     var doneReady = o.payMethod ? ' ready' : '';
     var gpayVerify = o.payMethod === 'gpay'
-      ? '<div class="oq-row-gpay show">GPay: Ask customer to send <strong>₹' + Number(o.amount).toFixed(2) + '</strong> · Bill <strong>#' + o.billNo + '</strong></div>'
+      ? '<div class="oq-row-gpay show">GPay: Ask customer to send <strong>₹' + Number(o.amount).toFixed(2) + '</strong> · ' + (o.source === 'qr' ? 'Table <strong>' + escapeQueueText(o.table) + '</strong>' : 'Bill <strong>#' + escapeQueueText(o.billNo) + '</strong>') + '</div>'
       : '<div class="oq-row-gpay"></div>';
 
     var qrTable = o.source === 'qr'
       ? '<span class="oq-row-bill">Table ' + escapeQueueText(o.table) + '</span>'
       : '<span class="oq-row-bill">Bill #' + escapeQueueText(o.billNo) + '</span>';
-    var qrAction = o.source === 'qr'
+    var qrNeedsPrint = o.source === 'qr' && o.status !== 'preparing' && o.status !== 'printed';
+    var qrAction = qrNeedsPrint
       ? '<button class="oq-row-pay-btn" onclick="loadQrOrder(\'' + escapeQueueText(o.serverId) + '\')">Load &amp; Print</button>'
       : '';
+    var paymentActions = '<button class="oq-row-pay-btn' + cashSel + '" onclick="setPayMethod(' + o.id + ',\'cash\')">💵 Cash</button>' +
+      '<button class="oq-row-pay-btn' + gpaySel + '" onclick="setPayMethod(' + o.id + ',\'gpay\')">📱 GPay</button>' +
+      '<button class="oq-row-done' + doneReady + '" onclick="completeOrder(' + o.id + ')" title="Mark as done">✓</button>';
 
     return '<div class="oq-row" id="oqcard-' + o.id + '">' +
       '<div class="oq-row-info">' +
@@ -1550,10 +1554,7 @@ function renderQueue() {
       '<span class="oq-row-amount">₹' + Number(o.amount).toFixed(2) + '</span>' +
       '<div class="oq-row-pay">' +
         qrAction +
-        (o.source === 'qr' ? '' :
-        '<button class="oq-row-pay-btn' + cashSel + '" onclick="setPayMethod(' + o.id + ',\'cash\')">💵 Cash</button>' +
-        '<button class="oq-row-pay-btn' + gpaySel + '" onclick="setPayMethod(' + o.id + ',\'gpay\')">📱 GPay</button>' +
-        '<button class="oq-row-done' + doneReady + '" onclick="completeOrder(' + o.id + ')" title="Mark as done">✓</button>') +
+        (o.source !== 'qr' || !qrNeedsPrint ? paymentActions : '') +
       '</div>' +
       gpayVerify +
     '</div>';
