@@ -1454,10 +1454,33 @@ function updateQrOrder(orderId, order) {
   renderQueue();
 }
 
+function normalizeQrItemPreferences(item) {
+  var source = item.spec || '';
+  var nameMatch = String(item.name || '').match(/\(([^)]*)\)\s*$/);
+  if (nameMatch) source = source || nameMatch[1];
+  var preferenceText = String(source);
+  var normalized = Object.assign({}, item);
+
+  if (normalized.ice == null) {
+    if (/without ice/i.test(preferenceText)) normalized.ice = 'Without Ice';
+    else if (/with ice/i.test(preferenceText)) normalized.ice = 'With Ice';
+  }
+  if (normalized.sugar == null) {
+    if (/no sugar/i.test(preferenceText)) normalized.sugar = 'No Sugar';
+    else if (/less sugar/i.test(preferenceText)) normalized.sugar = 'Less Sugar';
+    else if (/normal sugar|\bnormal\b|with sugar/i.test(preferenceText)) normalized.sugar = 'Normal Sugar';
+  }
+  if (normalized.size == null && /large/i.test(preferenceText)) normalized.size = 'Large';
+  if (!normalized.baseName && nameMatch) normalized.name = String(item.name).replace(/\s*\([^)]*\)\s*$/, '');
+  return normalized;
+}
+
 function loadQrOrder(serverId) {
   var order = orderQueue.find(function(item) { return item.serverId === serverId; });
   if (!order) return;
-  billItems = order.items.map(function(item) { return Object.assign({}, item, { uid: Date.now() + Math.random() }); });
+  billItems = order.items.map(function(item) {
+    return Object.assign(normalizeQrItemPreferences(item), { uid: Date.now() + Math.random() });
+  });
   activeQrOrderId = serverId;
   document.getElementById('billNoInput').value = document.getElementById('billNoInput').value || '001';
   document.getElementById('customerName').value = 'Table ' + order.table;
