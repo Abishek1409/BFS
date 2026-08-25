@@ -1457,7 +1457,7 @@ function updateQrOrder(orderId, order) {
 function normalizeQrItemPreferences(item) {
   var source = item.spec || '';
   var nameMatch = String(item.name || '').match(/\(([^)]*)\)\s*$/);
-  if (nameMatch) source = source || nameMatch[1];
+  if (nameMatch && (!source || source === 'Standard')) source = nameMatch[1];
   var preferenceText = String(source);
   var normalized = Object.assign({}, item);
 
