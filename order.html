@@ -592,8 +592,15 @@
         table: String(tableNum),
         items: cart.map(i => ({
           name: i.name,
+          baseName: i.baseName,
           price: i.price,
-          qty: i.qty
+          qty: i.qty,
+          ice: i.ice,
+          sugar: i.sugar,
+          size: i.size,
+          note: i.note,
+          spec: i.spec || 'Standard',
+          total: i.total
         }))
       };
 
