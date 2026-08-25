@@ -743,9 +743,18 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
 <script>
+if (!window.firebaseConfig) {
+  console.error('Missing firebase-config.js; Firebase order syncing is disabled.');
+} else {
+  firebase.initializeApp(window.firebaseConfig);
+}
+
 /* ===== MENU DATA ===== */
 const MENU = [
   // JUICES
@@ -1352,9 +1361,7 @@ function printBill() {
 
 /* ===== ORDERS QUEUE ===== */
 var orderQueue = [];
-const ORDER_SERVER_URL = 'https://192.168.1.3:3443';
-var orderServerUrl = ORDER_SERVER_URL;
-var orderSocket = null;
+var ordersRef = window.firebaseConfig ? firebase.database().ref('orders') : null;
 
 function escapeQueueText(value) {
   var div = document.createElement('div');
@@ -1374,61 +1381,36 @@ function configureOrderServer() {
 }
 
 function connectOrderServer() {
+  if (!ordersRef) {
+    setQrConnection('Firebase config missing', false);
+    return;
+  }
   setQrConnection('Connecting…', false);
-  fetch(orderServerUrl + '/api/orders')
-    .then(function(response) {
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      return response.json();
-    })
-    .then(function(orders) {
-      orderQueue = orderQueue.filter(function(order) { return !order.serverId; });
-      (Array.isArray(orders) ? orders : [])
-        .filter(function(order) { return order && order.status !== 'served'; })
-        .forEach(addQrOrder);
-      renderQueue();
-      openOrderSocket();
-    })
-    .catch(function(error) {
-      console.error('QR order connection failed:', error);
-      setQrConnection('QR connection failed', false);
-    });
+  ordersRef.off();
+  ordersRef.on('child_added', function(snapshot) {
+    var order = snapshot.val();
+    if (order && order.status !== 'served') addQrOrder(order, snapshot.key);
+    renderQueue();
+    setQrConnection('QR live', true);
+  }, handleOrderSyncError);
+  ordersRef.on('child_changed', function(snapshot) {
+    updateQrOrder(snapshot.key, snapshot.val());
+  }, handleOrderSyncError);
 }
 
-function openOrderSocket() {
-  if (orderSocket) orderSocket.close();
-  var socketUrl = orderServerUrl.replace(/^http/i, 'ws') + '/';
-  orderSocket = new WebSocket(socketUrl);
-  orderSocket.onopen = function() { setQrConnection('QR live', true); };
-  orderSocket.onmessage = function(event) {
-    try {
-      var message = JSON.parse(event.data);
-      if (message.type === 'new_order' && message.order) {
-        addQrOrder(message.order);
-        renderQueue();
-      }
-      if (message.type === 'status_update' && message.order) {
-        var row = orderQueue.find(function(order) { return order.serverId === message.order.id; });
-        if (row && message.order.status === 'served') {
-          orderQueue = orderQueue.filter(function(order) { return order.serverId !== message.order.id; });
-          renderQueue();
-        }
-      }
-    } catch (error) { console.error('Invalid QR order event:', error); }
-  };
-  orderSocket.onclose = function() {
-    setQrConnection('QR reconnecting', false);
-    setTimeout(function() { if (orderServerUrl) openOrderSocket(); }, 3000);
-  };
-  orderSocket.onerror = function() { setQrConnection('QR connection failed', false); };
+function handleOrderSyncError(error) {
+  console.error('QR order connection failed:', error);
+  setQrConnection('QR connection failed', false);
 }
 
-function addQrOrder(order) {
-  if (!order || !order.id || orderQueue.some(function(item) { return item.serverId === order.id; })) return;
+function addQrOrder(order, orderId) {
+  if (!order || !orderId || orderQueue.some(function(item) { return item.serverId === orderId; })) return;
   orderQueue.push({
     id: Date.now() + Math.random(),
-    serverId: order.id,
+    serverId: orderId,
     source: 'qr',
     table: order.table,
+    status: order.status || 'pending',
     amount: Number(order.total) || 0,
     items: (order.items || []).map(function(item) {
       return { name: item.name, emoji: item.emoji || '🍹', qty: item.qty || 1, price: Number(item.price) || 0, total: (Number(item.price) || 0) * (item.qty || 1), spec: item.spec || 'Standard' };
@@ -1436,6 +1418,21 @@ function addQrOrder(order) {
     time: order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
     payMethod: null
   });
+}
+
+function updateQrOrder(orderId, order) {
+  var row = orderQueue.find(function(item) { return item.serverId === orderId; });
+  if (!row) {
+    if (order && order.status !== 'served') addQrOrder(order, orderId);
+    renderQueue();
+    return;
+  }
+  if (!order || order.status === 'served') {
+    orderQueue = orderQueue.filter(function(item) { return item.serverId !== orderId; });
+  } else {
+    row.status = order.status || row.status;
+  }
+  renderQueue();
 }
 
 function loadQrOrder(serverId) {
@@ -1450,10 +1447,9 @@ function loadQrOrder(serverId) {
 }
 
 function setQrOrderStatus(serverId, status) {
-  if (!orderServerUrl) return;
-  fetch(orderServerUrl + '/api/order/' + encodeURIComponent(serverId) + '/status', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: status })
-  }).catch(function(error) { console.error('Could not update QR order status:', error); });
+  if (!ordersRef || !serverId) return;
+  firebase.database().ref('orders/' + serverId + '/status').set(status)
+    .catch(function(error) { console.error('Could not update QR order status:', error); });
 }
 
 function addToQueue(billNo, customer, amount, items) {

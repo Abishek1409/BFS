@@ -1,0 +1,11 @@
+node_modules/
+
+# Local Firebase web configuration
+firebase-config.js
+
+# Credentials and local environment files
+.env
+.env.*
+!.env.example
+serviceAccountKey.json
+firebase-adminsdk-*.json
