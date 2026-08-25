@@ -1,8 +1,5 @@
 node_modules/
 
-# Local Firebase web configuration
-firebase-config.js
-
 # Credentials and local environment files
 .env
 .env.*
