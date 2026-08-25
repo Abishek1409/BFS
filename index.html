@@ -1362,6 +1362,7 @@ function printBill() {
 /* ===== ORDERS QUEUE ===== */
 var orderQueue = [];
 var ordersRef = window.firebaseConfig ? firebase.database().ref('orders') : null;
+var firebaseConnectionRef = window.firebaseConfig ? firebase.database().ref('.info/connected') : null;
 
 function escapeQueueText(value) {
   var div = document.createElement('div');
@@ -1387,11 +1388,14 @@ function connectOrderServer() {
   }
   setQrConnection('Connecting…', false);
   ordersRef.off();
+  firebaseConnectionRef.off();
+  firebaseConnectionRef.on('value', function(snapshot) {
+    setQrConnection(snapshot.val() === true ? 'QR live' : 'QR offline', snapshot.val() === true);
+  }, handleOrderSyncError);
   ordersRef.on('child_added', function(snapshot) {
     var order = snapshot.val();
     if (order && order.status !== 'served') addQrOrder(order, snapshot.key);
     renderQueue();
-    setQrConnection('QR live', true);
   }, handleOrderSyncError);
   ordersRef.on('child_changed', function(snapshot) {
     updateQrOrder(snapshot.key, snapshot.val());
