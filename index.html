@@ -1336,17 +1336,25 @@ function printBill() {
   printWin.document.close();
 
   // Only save to history after successful print
-  if (window.BillHistory) {
-    window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
-      .catch(err => console.error('Bill save failed:', err));
-  }
-
   if (activeQrOrderId) {
-    setQrOrderStatus(activeQrOrderId, 'preparing');
-    orderQueue = orderQueue.filter(function(o) { return o.serverId !== activeQrOrderId; });
+    var printedQrOrderId = activeQrOrderId;
+    var printedQrOrder = orderQueue.find(function(o) { return o.serverId === printedQrOrderId; });
+    var historySave = window.BillHistory
+      ? window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
+      : Promise.reject(new Error('BillHistory is unavailable'));
+    historySave.then(function() {
+      return firebase.database().ref('orders/' + printedQrOrderId).remove();
+    }).catch(function(error) {
+      console.error('Could not save or remove printed QR order:', error);
+    });
+    if (printedQrOrder) printedQrOrder.status = 'printed';
     activeQrOrderId = null;
     renderQueue();
   } else {
+    if (window.BillHistory) {
+      window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
+        .catch(err => console.error('Bill save failed:', err));
+    }
     // Add manually printed bills to the local orders queue.
     addToQueue(billNo, customer, grandTotalAmount, itemsSnapshot);
   }
