@@ -6,6 +6,8 @@
 
   // --- Internal DB connection cache ---
   let _dbPromise = null;
+  const DB_VERSION = 2;
+  const STORE_NAME = 'billsV2';
 
   /**
    * Opens (or creates) the BFSBillHistory IndexedDB database.
@@ -20,12 +22,23 @@
         return reject(new Error('IndexedDB is not supported in this browser.'));
       }
 
-      var request = window.indexedDB.open('BFSBillHistory', 1);
+      var request = window.indexedDB.open('BFSBillHistory', DB_VERSION);
 
       request.onupgradeneeded = function (event) {
         var db = event.target.result;
-        if (!db.objectStoreNames.contains('bills')) {
-          db.createObjectStore('bills', { keyPath: 'billNo' });
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          var newStore = db.createObjectStore(STORE_NAME, { keyPath: 'recordId' });
+          if (db.objectStoreNames.contains('bills')) {
+            var oldStore = event.target.transaction.objectStore('bills');
+            oldStore.openCursor().onsuccess = function (cursorEvent) {
+              var cursor = cursorEvent.target.result;
+              if (!cursor) return;
+              var record = cursor.value;
+              record.recordId = record.date + '_' + record.billNo;
+              newStore.put(record);
+              cursor.continue();
+            };
+          }
         }
       };
 
@@ -81,7 +94,7 @@
   /**
    * Saves (or overwrites) a bill record in IndexedDB.
    * Date and time are auto-generated from the device clock at call time.
-   * @param {string} billNo  - Non-empty bill/invoice number (primary key).
+  * @param {string} billNo  - Non-empty bill/invoice number for display.
    * @param {number} amount  - Finite numeric total in INR.
    * @param {Array}  items   - Optional array of item snapshots.
    * @returns {Promise<void>}
@@ -95,21 +108,26 @@
     }
 
     var now = new Date();
+    var date = _formatDate(now);
     var record = {
+      recordId: date + '_' + billNo,
       billNo: billNo,
       amount: amount,
-      date: _formatDate(now),
+      date: date,
       time: _formatTime(now),
       items: Array.isArray(items) ? items : []
     };
 
     return _getDB().then(function (db) {
       return new Promise(function (resolve, reject) {
-        var tx = db.transaction('bills', 'readwrite');
-        var store = tx.objectStore('bills');
+        var tx = db.transaction(STORE_NAME, 'readwrite');
+        var store = tx.objectStore(STORE_NAME);
         var req = store.put(record);
 
-        req.onsuccess = function () { resolve(); };
+        tx.oncomplete = function () { resolve(); };
+        tx.onabort = function (event) {
+          reject(new Error('Failed to save bill record: ' + (event.target.error || 'transaction aborted')));
+        };
         req.onerror = function (event) {
           reject(new Error('Failed to save bill record: ' + event.target.error));
         };
@@ -124,8 +142,8 @@
   function getAllBillRecords() {
     return _getDB().then(function (db) {
       return new Promise(function (resolve, reject) {
-        var tx = db.transaction('bills', 'readonly');
-        var store = tx.objectStore('bills');
+        var tx = db.transaction(STORE_NAME, 'readonly');
+        var store = tx.objectStore(STORE_NAME);
         var req = store.getAll();
 
         req.onsuccess = function (event) {
