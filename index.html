@@ -1343,6 +1343,8 @@ function printBill() {
       ? window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
       : Promise.reject(new Error('BillHistory is unavailable'));
     historySave.then(function() {
+      return firebase.database().ref('orderStatus/' + printedQrOrderId).set({ billNo: billNo, status: 'billed' });
+    }).then(function() {
       return firebase.database().ref('orders/' + printedQrOrderId).remove();
     }).catch(function(error) {
       console.error('Could not save or remove printed QR order:', error);
