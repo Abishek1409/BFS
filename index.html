@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1339,16 +1339,22 @@ function printBill() {
   if (activeQrOrderId) {
     var printedQrOrderId = activeQrOrderId;
     var printedQrOrder = orderQueue.find(function(o) { return o.serverId === printedQrOrderId; });
-    var historySave = window.BillHistory
-      ? window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
-      : Promise.reject(new Error('BillHistory is unavailable'));
-    historySave.then(function() {
-      return firebase.database().ref('orderStatus/' + printedQrOrderId).set({ billNo: billNo, status: 'billed' });
-    }).then(function() {
-      return firebase.database().ref('orders/' + printedQrOrderId).remove();
-    }).catch(function(error) {
-      console.error('Could not save or remove printed QR order:', error);
-    });
+
+    if (window.firebaseConfig && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+      firebase.database().ref('orderStatus/' + printedQrOrderId).set({ billNo: billNo, status: 'billed' })
+        .then(function() {
+          return firebase.database().ref('orders/' + printedQrOrderId).remove();
+        })
+        .catch(function(error) {
+          console.error('Could not save or remove printed QR order in Firebase:', error);
+        });
+    }
+
+    if (window.BillHistory) {
+      window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
+        .catch(function(err) { console.error('Bill save failed:', err); });
+    }
+
     if (printedQrOrder) printedQrOrder.status = 'printed';
     activeQrOrderId = null;
     renderQueue();
@@ -1495,7 +1501,7 @@ function loadQrOrder(serverId) {
   document.getElementById('billNoInput').value = document.getElementById('billNoInput').value || '001';
   document.getElementById('customerName').value = 'Table ' + order.table;
   renderBill();
-  document.querySelector('.bill-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  printBill();
 }
 
 function setQrOrderStatus(serverId, status) {
