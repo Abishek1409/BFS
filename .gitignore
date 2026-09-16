@@ -6,4 +6,3 @@ node_modules/
 !.env.example
 serviceAccountKey.json
 firebase-adminsdk-*.json
-firebase-config.js
