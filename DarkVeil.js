@@ -75,7 +75,7 @@ void main(){
 
 export function mountDarkVeil(container, options = {}) {
   const {
-    hueShift = 135, // default to match our fresh green/mint branding
+    hueShift = 42, // default to match the black and metallic-gold theme
     noiseIntensity = 0.04,
     scanlineIntensity = 0.08,
     speed = 0.12, // subtle, non-distracting pace

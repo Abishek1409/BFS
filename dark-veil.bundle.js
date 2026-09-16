@@ -3103,7 +3103,7 @@ ${addLineNumbers(fragment2)}`);
   function mountDarkVeil(container, options = {}) {
     const {
       hueShift = 135,
-      // default to match our fresh green/mint branding
+      // default to match the black and metallic-gold theme
       noiseIntensity = 0.04,
       scanlineIntensity = 0.08,
       speed = 0.12,
@@ -3280,8 +3280,8 @@ void main(){
       var root = document.getElementById("gradient-waves-root");
       if (root) {
         mountDarkVeil(root, {
-          hueShift: 140,
-          // Shifts the color profile to a dark neon green/emerald gradient
+          hueShift: 42,
+          // Shifts the color profile to a warm metallic-gold range
           noiseIntensity: 0.03,
           // Delicate grain/noise texture
           scanlineIntensity: 0.06,

@@ -2,8 +2,8 @@
   width: 100%;
   height: 100%;
   display: block;
-  background: radial-gradient(circle at top, rgba(65, 128, 89, 0.38), rgba(0, 0, 0, 0.75) 44%, rgba(0, 0, 0, 1) 100%);
-  filter: saturate(1.1) contrast(1.05);
+  background: radial-gradient(circle at top, rgba(184, 133, 43, 0.34), rgba(0, 0, 0, 0.78) 44%, rgba(0, 0, 0, 1) 100%);
+  filter: saturate(1.15) contrast(1.08);
 }
 
 .gradient-waves-bg {

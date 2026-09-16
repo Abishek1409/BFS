@@ -25091,7 +25091,7 @@ void main() {
           parallax: true,
           parallaxStrength: 0.16,
           mixBlendMode: "screen",
-          linesGradient: ["#ffd21c", "#63e0b5", "#28c89a", "#ff9f43", "#f4fff9"]
+          linesGradient: ["#f5d27a", "#c7922f", "#8f641d", "#e6b957", "#fff8e8"]
         });
       }
     }
