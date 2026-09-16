@@ -7,9 +7,10 @@
   background:
     radial-gradient(
       circle at top,
-      rgba(184, 133, 43, 0.34),
-      rgba(16, 12, 6, 0.9) 42%,
-      rgba(2, 2, 2, 1) 100%);
+      rgba(184, 133, 43, 0.15),
+      rgba(7, 5, 2, 0.96) 42%,
+      rgba(1, 1, 1, 1) 100%);
+    opacity: 0.52;
 }
 .floating-lines-container canvas {
   width: 100%;

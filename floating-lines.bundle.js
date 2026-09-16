@@ -25081,17 +25081,17 @@ void main() {
       if (root) {
         mountFloatingLines(root, {
           enabledWaves: ["top", "middle", "bottom"],
-          lineCount: [8, 12, 18],
+          lineCount: [5, 8, 12],
           lineDistance: [9, 7, 5],
-          animationSpeed: 0.8,
+          animationSpeed: 0.45,
           interactive: true,
           bendRadius: 5,
           bendStrength: -0.6,
           mouseDamping: 0.06,
           parallax: true,
           parallaxStrength: 0.16,
-          mixBlendMode: "screen",
-          linesGradient: ["#f5d27a", "#c7922f", "#8f641d", "#e6b957", "#fff8e8"]
+          mixBlendMode: "normal",
+          linesGradient: ["#b88935", "#8d641f", "#5e4216", "#c1933b", "#e4c36b"]
         });
       }
     }
