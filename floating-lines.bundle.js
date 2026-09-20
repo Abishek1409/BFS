@@ -24732,20 +24732,25 @@ void main() {
       mouseDamping = 0.05,
       parallax = true,
       parallaxStrength = 0.2,
-      mixBlendMode = "screen"
+      mixBlendMode = "screen",
+      maxDpr = 1.25,
+      frameRate = 30
     } = options;
+    const isSmallScreen = window.matchMedia("(max-width: 900px)").matches;
+    const qualityScale = isSmallScreen ? 0.7 : 1;
+    const resolvedLineCount = lineCount.map((count) => Math.max(2, Math.round(count * qualityScale)));
     const scene = new Scene();
     const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     camera.position.z = 1;
-    const renderer = new WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const renderer = new WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
     renderer.domElement.style.display = "block";
     renderer.domElement.style.mixBlendMode = mixBlendMode;
-    const topLineCount = enabledWaves.includes("top") ? resolveWaveCount(lineCount, "top", enabledWaves) : 0;
-    const middleLineCount = enabledWaves.includes("middle") ? resolveWaveCount(lineCount, "middle", enabledWaves) : 0;
-    const bottomLineCount = enabledWaves.includes("bottom") ? resolveWaveCount(lineCount, "bottom", enabledWaves) : 0;
+    const topLineCount = enabledWaves.includes("top") ? resolveWaveCount(resolvedLineCount, "top", enabledWaves) : 0;
+    const middleLineCount = enabledWaves.includes("middle") ? resolveWaveCount(resolvedLineCount, "middle", enabledWaves) : 0;
+    const bottomLineCount = enabledWaves.includes("bottom") ? resolveWaveCount(resolvedLineCount, "bottom", enabledWaves) : 0;
     const topLineDistance = enabledWaves.includes("top") ? resolveWaveDistance(lineDistance, "top", enabledWaves) * 0.01 : 0.01;
     const middleLineDistance = enabledWaves.includes("middle") ? resolveWaveDistance(lineDistance, "middle", enabledWaves) * 0.01 : 0.01;
     const bottomLineDistance = enabledWaves.includes("bottom") ? resolveWaveDistance(lineDistance, "bottom", enabledWaves) * 0.01 : 0.01;
@@ -24836,7 +24841,19 @@ void main() {
     if (ro) ro.observe(container);
     setSize();
     let raf = 0;
-    const renderLoop = () => {
+    let isPageVisible = !document.hidden;
+    let lastFrameTime = 0;
+    const frameInterval = 1e3 / Math.max(1, frameRate);
+    const renderLoop = (time) => {
+      if (!isPageVisible) {
+        raf = 0;
+        return;
+      }
+      if (time - lastFrameTime < frameInterval) {
+        raf = requestAnimationFrame(renderLoop);
+        return;
+      }
+      lastFrameTime = time;
       uniforms.iTime.value = clock.getElapsedTime();
       if (interactive) {
         currentMouse.lerp(targetMouse, mouseDamping);
@@ -24851,9 +24868,18 @@ void main() {
       renderer.render(scene, camera);
       raf = requestAnimationFrame(renderLoop);
     };
-    renderLoop();
+    const onVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      if (isPageVisible && raf === 0) {
+        lastFrameTime = 0;
+        raf = requestAnimationFrame(renderLoop);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    raf = requestAnimationFrame(renderLoop);
     return () => {
       cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       if (ro) ro.disconnect();
       if (interactive) {
         renderer.domElement.removeEventListener("pointermove", handlePointerMove);
@@ -25081,7 +25107,7 @@ void main() {
       if (root) {
         mountFloatingLines(root, {
           enabledWaves: ["top", "middle", "bottom"],
-          lineCount: [5, 8, 12],
+          lineCount: [4, 6, 9],
           lineDistance: [9, 7, 5],
           animationSpeed: 0.45,
           interactive: true,
@@ -25091,6 +25117,8 @@ void main() {
           parallax: true,
           parallaxStrength: 0.16,
           mixBlendMode: "normal",
+          maxDpr: 1.25,
+          frameRate: 30,
           linesGradient: ["#b88935", "#8d641f", "#5e4216", "#c1933b", "#e4c36b"]
         });
       }
