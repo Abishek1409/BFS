@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="34908.jpg" type="image/jpeg" />
   <title>BFS &ndash; Billing System | Best Fruits Stall</title>
   <link rel="stylesheet" href="FloatingLines.css" />
   <style>
@@ -41,6 +41,14 @@
       color: #ffffff; padding: 18px 32px;
       display: flex; align-items: center; justify-content: space-between;
       box-shadow: 0 4px 18px rgba(0,0,0,.3);
+    }
+    .brand-lockup {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .site-logo {
+      width: 72px; height: 72px; object-fit: contain; border-radius: 16px;
+      background: rgba(0,0,0,0.06); box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+      display: block;
     }
     .app-header h1 {
       font-family: 'Trebuchet MS', 'Arial', sans-serif; font-size: 1.7rem; letter-spacing: 0;
@@ -573,9 +581,12 @@
 
 <!-- HEADER -->
 <header class="app-header">
-  <div>
-    <h1>&#x1F379; Best Fruits Stall</h1>
-    <small>BFS Billing System &mdash; 100% Offline &amp; Frontend Only</small>
+  <div class="brand-lockup">
+    <img src="34908.jpg" alt="Best Fruits Stall logo" class="site-logo" />
+    <div>
+      <h1>Best Fruits Stall</h1>
+      <small>BFS Billing System &mdash; 100% Offline &amp; Frontend Only</small>
+    </div>
   </div>
   <div class="bill-badge" id="headerBillNo">Bill #001</div>
   <button class="hist-btn" onclick="openHistDrawer()">&#x1F4DC; History</button>

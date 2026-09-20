@@ -42,6 +42,14 @@
       box-shadow: 0 4px 18px rgba(0,0,0,.3);
       position: sticky; top: 0; z-index: 50;
     }
+    .brand-lockup {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .site-logo {
+      width: 56px; height: 56px; object-fit: contain; border-radius: 14px;
+      background: rgba(0,0,0,0.06); box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+      display: block;
+    }
     .app-header h1 {
       font-size: 1.25rem; font-weight: 800; color: #ffffff; letter-spacing: .3px;
     }
@@ -255,7 +263,10 @@
 
   <!-- Header -->
   <header class="app-header" id="appHeader" style="display:none">
-    <h1>&#x1F379; Best Fruits Stall</h1>
+    <div class="brand-lockup">
+      <img src="34908.jpg" alt="Best Fruits Stall logo" class="site-logo" />
+      <h1>Best Fruits Stall</h1>
+    </div>
     <div class="table-badge" id="tableBadge">Table —</div>
   </header>
 
