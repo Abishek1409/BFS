@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preference Symbol Validation Tests</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Trebuchet MS', Arial, sans-serif;
+      background: #010101;
+      color: #fff8e8;
+      padding: 24px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #d9a83e;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    h2 {
+      color: #ffe08a;
+      margin: 24px 0 12px 0;
+      border-bottom: 2px solid rgba(255, 215, 122, 0.3);
+      padding-bottom: 8px;
+    }
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .test-card {
+      background: rgba(4, 4, 3, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .test-card.pass { border-color: #2ecc71; }
+    .test-card.fail { border-color: #e74c3c; }
+    .test-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #ffe08a;
+      margin-bottom: 12px;
+    }
+    .test-data {
+      font-size: 0.85rem;
+      color: #c8b98f;
+      margin-bottom: 8px;
+    }
+    .test-result {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      margin-top: 12px;
+    }
+    .symbol-display {
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .symbol-thermal {
+      padding: 8px;
+      background: rgba(217, 168, 62, 0.12);
+      border-radius: 6px;
+      min-width: 50px;
+      text-align: center;
+    }
+    .symbol-browser {
+      padding: 8px;
+      background: rgba(46, 125, 79, 0.12);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 50px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-badge.pass {
+      background: #2ecc71;
+      color: #fff;
+    }
+    .status-badge.fail {
+      background: #e74c3c;
+      color: #fff;
+    }
+    .summary {
+      background: rgba(25, 19, 8, 0.78);
+      border: 2px solid rgba(255, 215, 122, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .summary-stats {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      flex: 1;
+      min-width: 150px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #e8bd58;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: #c8b98f;
+      margin-top: 4px;
+    }
+    .legend {
+      background: rgba(25, 19, 8, 0.78);
+      border: 1px solid rgba(255, 215, 122, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .legend-title {
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #ffe08a;
+    }
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+    .legend-symbol {
+      font-size: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Thermal Printer Preference Symbol Validation</h1>
+    
+    <div class="summary">
+      <h2 style="margin-top: 0;">Test Summary</h2>
+      <div class="summary-stats">
+        <div class="stat">
+          <div class="stat-value" id="totalTests">0</div>
+          <div class="stat-label">Total Tests</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" style="color: #2ecc71;" id="passedTests">0</div>
+          <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" style="color: #e74c3c;" id="failedTests">0</div>
+          <div class="stat-label">Failed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-title">Expected Symbol Mappings</div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <span class="legend-symbol">■</span>
+          <span>With Ice + With Sugar</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol">□</span>
+          <span>Without Ice + Without Sugar</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol">◧</span>
+          <span>With Ice + No Sugar</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol">▦</span>
+          <span>Without Ice + With Sugar</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Unicode Mode Tests</h2>
+    <div class="test-grid" id="unicodeTests"></div>
+
+    <h2>ASCII Fallback Mode Tests</h2>
+    <div class="test-grid" id="asciiTests"></div>
+
+    <h2>No Preference Tests</h2>
+    <div class="test-grid" id="noPreferenceTests"></div>
+  </div>
+
+  <script src="escpos-receipt.js"></script>
+  <script>
+    // Test cases covering all preference combinations
+    const testCases = [
+      {
+        name: 'With Ice + With Sugar',
+        item: { ice: 'With Ice', sugar: 'Normal Sugar' },
+        expectedUnicode: '■',
+        expectedASCII: '[X]',
+        browserSVG: '<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="#000" stroke="#000" stroke-width="1"/></svg>'
+      },
+      {
+        name: 'Without Ice + Without Sugar',
+        item: { ice: 'Without Ice', sugar: 'No Sugar' },
+        expectedUnicode: '□',
+        expectedASCII: '[ ]',
+        browserSVG: '<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/></svg>'
+      },
+      {
+        name: 'With Ice + No Sugar',
+        item: { ice: 'With Ice', sugar: 'No Sugar' },
+        expectedUnicode: '◧',
+        expectedASCII: '[/]',
+        browserSVG: '<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/><rect x="1" y="1" width="6" height="12" fill="#000"/></svg>'
+      },
+      {
+        name: 'Without Ice + With Sugar',
+        item: { ice: 'Without Ice', sugar: 'Normal Sugar' },
+        expectedUnicode: '▦',
+        expectedASCII: '[#]',
+        browserSVG: '<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/><line x1="0.5" y1="7" x2="13.5" y2="7" stroke="#000" stroke-width="1.5"/><line x1="7" y1="0.5" x2="7" y2="13.5" stroke="#000" stroke-width="1.5"/></svg>'
+      }
+    ];
+
+    const noPreferenceTestCases = [
+      {
+        name: 'No ice, no sugar preference',
+        item: {},
+        expectedUnicode: '',
+        expectedASCII: ''
+      },
+      {
+        name: 'Only ice preference',
+        item: { ice: 'With Ice' },
+        expectedUnicode: '',
+        expectedASCII: ''
+      },
+      {
+        name: 'Only sugar preference',
+        item: { sugar: 'Normal Sugar' },
+        expectedUnicode: '',
+        expectedASCII: ''
+      }
+    ];
+
+    let totalTests = 0;
+    let passedTests = 0;
+    let failedTests = 0;
+
+    function runTest(testCase, mode, container) {
+      totalTests++;
+      
+      // Set the mode
+      if (typeof setASCIIFallback === 'function') {
+        setASCIIFallback(mode === 'ascii');
+      }
+      
+      // Get the symbol from the function
+      const result = typeof getPreferenceSymbol === 'function' 
+        ? getPreferenceSymbol(testCase.item)
+        : 'Function not found';
+      
+      // Determine expected value
+      const expected = mode === 'unicode' ? testCase.expectedUnicode : testCase.expectedASCII;
+      
+      // Check if test passed
+      const passed = result === expected;
+      if (passed) {
+        passedTests++;
+      } else {
+        failedTests++;
+      }
+      
+      // Create test card
+      const card = document.createElement('div');
+      card.className = `test-card ${passed ? 'pass' : 'fail'}`;
+      card.innerHTML = `
+        <div class="test-title">${testCase.name}</div>
+        <div class="test-data">
+          <strong>Ice:</strong> ${testCase.item.ice || 'None'}<br>
+          <strong>Sugar:</strong> ${testCase.item.sugar || 'None'}
+        </div>
+        <div class="test-result">
+          <div>
+            <div style="font-size: 0.75rem; color: #c8b98f; margin-bottom: 4px;">Thermal</div>
+            <div class="symbol-display">
+              <div class="symbol-thermal">${result || '(empty)'}</div>
+            </div>
+          </div>
+          ${testCase.browserSVG ? `
+          <div>
+            <div style="font-size: 0.75rem; color: #c8b98f; margin-bottom: 4px;">Browser</div>
+            <div class="symbol-display">
+              <div class="symbol-browser">${testCase.browserSVG}</div>
+            </div>
+          </div>
+          ` : ''}
+        </div>
+        <div style="margin-top: 12px;">
+          <span class="status-badge ${passed ? 'pass' : 'fail'}">
+            ${passed ? '✓ Pass' : '✗ Fail'}
+          </span>
+          ${!passed ? `<div style="margin-top: 8px; font-size: 0.8rem; color: #e74c3c;">Expected: "${expected}", Got: "${result}"</div>` : ''}
+        </div>
+      `;
+      
+      container.appendChild(card);
+    }
+
+    function runAllTests() {
+      const unicodeContainer = document.getElementById('unicodeTests');
+      const asciiContainer = document.getElementById('asciiTests');
+      const noPreferenceContainer = document.getElementById('noPreferenceTests');
+      
+      // Run Unicode tests
+      testCases.forEach(test => runTest(test, 'unicode', unicodeContainer));
+      
+      // Run ASCII tests
+      testCases.forEach(test => runTest(test, 'ascii', asciiContainer));
+      
+      // Run no preference tests (Unicode mode)
+      noPreferenceTestCases.forEach(test => runTest(test, 'unicode', noPreferenceContainer));
+      
+      // Update summary
+      document.getElementById('totalTests').textContent = totalTests;
+      document.getElementById('passedTests').textContent = passedTests;
+      document.getElementById('failedTests').textContent = failedTests;
+      
+      // Log results to console
+      console.log('='.repeat(60));
+      console.log('THERMAL PRINTER PREFERENCE SYMBOL VALIDATION RESULTS');
+      console.log('='.repeat(60));
+      console.log(`Total Tests: ${totalTests}`);
+      console.log(`Passed: ${passedTests} ✓`);
+      console.log(`Failed: ${failedTests} ✗`);
+      console.log(`Success Rate: ${((passedTests/totalTests) * 100).toFixed(1)}%`);
+      console.log('='.repeat(60));
+      
+      if (failedTests === 0) {
+        console.log('🎉 All tests passed! Preference symbols render correctly.');
+      } else {
+        console.error(`⚠️  ${failedTests} test(s) failed. Please review the output above.`);
+      }
+    }
+
+    // Run tests when page loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', runAllTests);
+    } else {
+      runAllTests();
+    }
+  </script>
+</body>
+</html>

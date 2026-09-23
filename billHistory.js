@@ -97,9 +97,10 @@
   * @param {string} billNo  - Non-empty bill/invoice number for display.
    * @param {number} amount  - Finite numeric total in INR.
    * @param {Array}  items   - Optional array of item snapshots.
+   * @param {string} printMethod - Optional print method ('browser' or 'thermal'), defaults to 'browser'.
    * @returns {Promise<void>}
    */
-  function saveBillRecord(billNo, amount, items) {
+  function saveBillRecord(billNo, amount, items, printMethod) {
     if (typeof billNo !== 'string' || billNo.trim() === '') {
       return Promise.reject(new Error('billNo must be a non-empty string'));
     }
@@ -115,7 +116,10 @@
       amount: amount,
       date: date,
       time: _formatTime(now),
-      items: Array.isArray(items) ? items : []
+      items: Array.isArray(items) ? items : [],
+      printMethod: (typeof printMethod === 'string' && (printMethod === 'browser' || printMethod === 'thermal')) 
+        ? printMethod 
+        : 'browser'
     };
 
     return _getDB().then(function (db) {

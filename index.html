@@ -284,6 +284,68 @@
     .total-row.grand { font-size: 1rem; font-weight: 800; color: var(--text); border-top: 2px solid var(--border); padding-top: 6px; margin-top: 4px; }
 
     .bill-actions { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+    
+    .print-method-selector {
+      display: flex; gap: 6px; padding: 8px; border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-subtle);
+    }
+    .print-method-option {
+      flex: 1; display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 6px; cursor: pointer;
+      border: 1.5px solid transparent; background: transparent;
+      font-size: .78rem; font-weight: 600; color: var(--muted);
+      transition: all .18s; font-family: inherit;
+    }
+    .print-method-option:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+    .print-method-option input[type="radio"] {
+      appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid var(--border); background: transparent;
+      cursor: pointer; transition: all .18s;
+    }
+    .print-method-option input[type="radio"]:checked {
+      border-color: var(--accent); background: var(--accent);
+      box-shadow: 0 0 0 2px rgba(217, 168, 62, 0.2);
+    }
+    .print-method-option:has(input:checked) {
+      background: rgba(217, 168, 62, 0.12); border-color: var(--accent);
+      color: var(--accent-light);
+    }
+    
+    .browser-warning-icon {
+      font-size: .7rem;
+      opacity: 0.8;
+      cursor: help;
+    }
+    
+    .printer-connection {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 10px; border-radius: 6px; font-size: .75rem;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-subtle);
+    }
+    .printer-status {
+      display: flex; align-items: center; gap: 6px; color: var(--muted);
+    }
+    .printer-status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #666;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .printer-status.connected .printer-status-dot {
+      background: var(--accent); animation: none;
+    }
+    .printer-status.connecting .printer-status-dot {
+      background: #f59e0b; animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .btn-connect-printer {
+      background: var(--card2); color: var(--accent); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 6px; font-size: .72rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all .18s;
+    }
+    .btn-connect-printer:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    
     .btn-print {
       background: var(--accent);
       color: #fff; padding: 11px; border-radius: 8px; font-size: .9rem; font-weight: 700;
@@ -571,9 +633,111 @@
       .menu-grid { max-height: 55vh; }
       .bill-items-list { max-height: 30vh; }
     }
+    
+    /* === Toast Notification System === */
+    .toast-container {
+      position: fixed; top: 80px; right: 20px; z-index: 2000;
+      display: flex; flex-direction: column; gap: 10px;
+      max-width: 400px; pointer-events: none;
+    }
+    .toast {
+      background: rgba(12, 10, 7, 0.95); 
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      display: flex; align-items: flex-start; gap: 12px;
+      pointer-events: auto;
+      animation: toastSlideIn 0.3s ease forwards;
+      min-width: 300px;
+    }
+    .toast.removing {
+      animation: toastSlideOut 0.3s ease forwards;
+    }
+    @keyframes toastSlideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes toastSlideOut {
+      from { transform: translateX(0) scale(1); opacity: 1; }
+      to { transform: translateX(120%) scale(0.9); opacity: 0; }
+    }
+    .toast-icon {
+      flex-shrink: 0; font-size: 1.3rem; line-height: 1;
+    }
+    .toast-content {
+      flex: 1; display: flex; flex-direction: column; gap: 4px;
+    }
+    .toast-title {
+      font-size: .88rem; font-weight: 700; color: var(--text);
+    }
+    .toast-message {
+      font-size: .78rem; color: var(--muted); line-height: 1.4;
+    }
+    .toast-actions {
+      display: flex; gap: 8px; margin-top: 6px;
+    }
+    .toast-btn {
+      padding: 4px 10px; border-radius: 6px; font-size: .72rem;
+      font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: all .18s; border: none;
+    }
+    .toast-btn-primary {
+      background: var(--accent); color: #fff;
+    }
+    .toast-btn-primary:hover {
+      background: var(--accent-light);
+    }
+    .toast-btn-secondary {
+      background: rgba(255, 255, 255, 0.1); color: var(--text);
+    }
+    .toast-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .toast-close {
+      flex-shrink: 0; background: none; border: none;
+      color: var(--muted); cursor: pointer; font-size: 1.1rem;
+      line-height: 1; padding: 0; width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: color .18s;
+    }
+    .toast-close:hover { color: var(--text); }
+    
+    .toast.success { border-left: 4px solid var(--accent); }
+    .toast.success .toast-icon { color: var(--accent); }
+    
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.error .toast-icon { color: var(--danger); }
+    
+    .toast.warning { border-left: 4px solid #f59e0b; }
+    .toast.warning .toast-icon { color: #f59e0b; }
+    
+    .toast.info { border-left: 4px solid #3b82f6; }
+    .toast.info .toast-icon { color: #3b82f6; }
+    
+    /* Loading indicator for print status */
+    .print-loading {
+      display: none; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 6px; font-size: .75rem;
+      background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent);
+      color: var(--accent); margin-top: 8px;
+    }
+    .print-loading.show { display: flex; }
+    .print-spinner {
+      width: 14px; height: 14px; border: 2px solid var(--accent);
+      border-top-color: transparent; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 
 <div id="gradient-waves-root" class="gradient-waves-bg" aria-hidden="true"></div>
 
@@ -613,8 +777,8 @@
   <div class="hist-summary" id="histSummary"></div>
   <div class="hist-table-wrap">
     <table class="hist-table">
-      <thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Items</th><th>Amount</th></tr></thead>
-      <tbody id="histTableBody"><tr><td colspan="6" class="hist-empty">Loading…</td></tr></tbody>
+      <thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Method</th><th>Items</th><th>Amount</th></tr></thead>
+      <tbody id="histTableBody"><tr><td colspan="7" class="hist-empty">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -719,6 +883,36 @@
       <div class="total-row grand"><span>TOTAL</span><span id="grandTotal">&#x20B9;0.00</span></div>
     </div>
     <div class="bill-actions">
+      <!-- Print Method Selector -->
+      <div class="print-method-selector">
+        <label class="print-method-option">
+          <input type="radio" name="printMethod" value="browser" checked onchange="savePrintMethod()">
+          <span>🖨️ Browser Print</span>
+        </label>
+        <label class="print-method-option">
+          <input type="radio" name="printMethod" value="thermal" onchange="savePrintMethod()">
+          <span>🧾 Thermal Print</span>
+        </label>
+      </div>
+      
+      <!-- Printer Connection Indicator (shown only for thermal print) -->
+      <div class="printer-connection" id="printerConnection" style="display:none;">
+        <div class="printer-status" id="printerStatus">
+          <span class="printer-status-dot"></span>
+          <span id="printerStatusText">Disconnected</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn-connect-printer" id="connectPrinterBtn" onclick="handleConnectPrinter()">Connect</button>
+          <button class="btn-connect-printer" id="printerSettingsBtn" onclick="showPrinterSettings()" style="display:none;" title="Printer Settings">⚙️</button>
+        </div>
+      </div>
+      
+      <!-- Print Loading Indicator -->
+      <div class="print-loading" id="printLoading">
+        <div class="print-spinner"></div>
+        <span id="printLoadingText">Generating receipt...</span>
+      </div>
+      
       <button class="btn-print" id="printBtn" onclick="printBill()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         <span id="printBtnLabel">Print Bill</span>
@@ -765,6 +959,8 @@
 <script src="firebase-config.js"></script>
 <script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
+<script src="printer-comm.js"></script>
+<script src="escpos-receipt.js"></script>
 <script>
 if (!window.firebaseConfig) {
   console.error('Missing firebase-config.js; Firebase order syncing is disabled.');
@@ -833,6 +1029,789 @@ function getLocalTodayDate() {
   return `${year}-${month}-${day}`;
 }
 
+/* ===== BROWSER COMPATIBILITY DETECTION ===== */
+/**
+ * Check if Web Serial API is supported in the current browser
+ * @returns {boolean} True if Web Serial API is available
+ */
+function isWebSerialSupported() {
+  return 'serial' in navigator;
+}
+
+/**
+ * Get browser information for compatibility messaging
+ * @returns {Object} Browser name and recommended alternatives
+ */
+function getBrowserInfo() {
+  const ua = navigator.userAgent;
+  let browserName = 'Unknown';
+  let isSupported = isWebSerialSupported();
+  
+  if (ua.includes('Firefox')) {
+    browserName = 'Firefox';
+  } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+    browserName = 'Safari';
+  } else if (ua.includes('Edg/')) {
+    browserName = 'Edge';
+  } else if (ua.includes('Chrome')) {
+    browserName = 'Chrome';
+  }
+  
+  return {
+    name: browserName,
+    supported: isSupported,
+    recommended: isSupported ? null : 'Chrome or Edge'
+  };
+}
+
+/**
+ * Show browser compatibility warning for unsupported browsers
+ * Displays an info toast with browser requirements
+ */
+function showBrowserCompatibilityWarning() {
+  const browserInfo = getBrowserInfo();
+  
+  if (!browserInfo.supported) {
+    showToast({
+      type: 'warning',
+      title: 'Thermal Printing Not Available',
+      message: `Your browser (${browserInfo.name}) doesn't support thermal printing. Please use ${browserInfo.recommended} for thermal printer support. Browser printing is still available.`,
+      duration: 0, // Don't auto-dismiss
+      actions: [
+        {
+          label: 'Understood',
+          onClick: () => {},
+          primary: true
+        },
+        {
+          label: 'Learn More',
+          onClick: () => window.open('https://caniuse.com/web-serial', '_blank'),
+          primary: false
+        }
+      ]
+    });
+    
+    // Store that we've shown the warning to avoid showing it repeatedly
+    safeSetStorage('bfsBrowserWarningShown', 'true');
+  }
+}
+
+/**
+ * Check if browser warning should be shown
+ * Shows warning once per session for unsupported browsers
+ */
+function checkBrowserCompatibility() {
+  if (!isWebSerialSupported()) {
+    const warningShown = safeGetStorage('bfsBrowserWarningShown');
+    
+    // Show warning on first load or when accessing thermal printing
+    if (!warningShown) {
+      // Delay showing warning slightly to not overwhelm user on page load
+      setTimeout(() => {
+        showBrowserCompatibilityWarning();
+      }, 1500);
+    }
+  }
+}
+
+/* ===== PRINT METHOD MANAGEMENT ===== */
+/**
+ * Get the selected print method from localStorage or default to 'browser'
+ * If Web Serial API is not supported, always return 'browser'
+ * @returns {string} 'browser' or 'thermal'
+ */
+function getPrintMethod() {
+  // Force browser print if Web Serial API not supported
+  if (!isWebSerialSupported()) {
+    return 'browser';
+  }
+  
+  const saved = safeGetStorage('bfsPrintMethod');
+  return saved === 'thermal' ? 'thermal' : 'browser';
+}
+
+/**
+ * Save the selected print method to localStorage
+ * Prevents selecting thermal print in unsupported browsers
+ */
+function savePrintMethod() {
+  const selected = document.querySelector('input[name="printMethod"]:checked');
+  if (selected) {
+    const method = selected.value;
+    
+    // Prevent thermal selection in unsupported browsers
+    if (method === 'thermal' && !isWebSerialSupported()) {
+      // Show warning and revert to browser print
+      showBrowserCompatibilityWarning();
+      
+      const browserRadio = document.querySelector('input[name="printMethod"][value="browser"]');
+      if (browserRadio) {
+        browserRadio.checked = true;
+      }
+      return;
+    }
+    
+    safeSetStorage('bfsPrintMethod', method);
+    
+    // Show/hide printer connection indicator based on selection
+    const connectionEl = document.getElementById('printerConnection');
+    if (connectionEl) {
+      connectionEl.style.display = method === 'thermal' ? '' : 'none';
+    }
+    
+    console.log('Print method set to:', method);
+  }
+}
+
+/**
+ * Load saved print method preference on page load
+ * Automatically disables thermal print option in unsupported browsers
+ */
+function loadPrintMethodPreference() {
+  const webSerialSupported = isWebSerialSupported();
+  const method = getPrintMethod(); // This will return 'browser' if Web Serial not supported
+  const radioBtn = document.querySelector(`input[name="printMethod"][value="${method}"]`);
+  
+  if (radioBtn) {
+    radioBtn.checked = true;
+  }
+  
+  // Handle unsupported browsers
+  if (!webSerialSupported) {
+    // Disable thermal print option
+    const thermalRadio = document.querySelector('input[name="printMethod"][value="thermal"]');
+    const thermalLabel = thermalRadio ? thermalRadio.closest('.print-method-option') : null;
+    
+    if (thermalRadio) {
+      thermalRadio.disabled = true;
+    }
+    
+    if (thermalLabel) {
+      thermalLabel.style.opacity = '0.5';
+      thermalLabel.style.cursor = 'not-allowed';
+      thermalLabel.title = 'Thermal printing requires Chrome or Edge browser';
+      
+      // Add tooltip icon to thermal print option
+      const labelText = thermalLabel.querySelector('span');
+      if (labelText && !labelText.querySelector('.browser-warning-icon')) {
+        labelText.innerHTML = labelText.innerHTML + ' <span class="browser-warning-icon" title="Not supported in this browser">⚠️</span>';
+      }
+    }
+    
+    // Force browser print radio to be checked
+    const browserRadio = document.querySelector('input[name="printMethod"][value="browser"]');
+    if (browserRadio) {
+      browserRadio.checked = true;
+    }
+    
+    // Hide printer connection controls since they won't be needed
+    const connectionEl = document.getElementById('printerConnection');
+    if (connectionEl) {
+      connectionEl.style.display = 'none';
+    }
+  } else {
+    // Show/hide printer connection indicator based on selection for supported browsers
+    const connectionEl = document.getElementById('printerConnection');
+    if (connectionEl) {
+      connectionEl.style.display = method === 'thermal' ? '' : 'none';
+    }
+  }
+}
+
+/* ===== TOAST NOTIFICATION SYSTEM ===== */
+/**
+ * Show toast notification with optional actions
+ * @param {Object} options - Toast configuration
+ * @param {string} options.type - 'success', 'error', 'warning', 'info'
+ * @param {string} options.title - Toast title
+ * @param {string} options.message - Toast message
+ * @param {number} options.duration - Auto-dismiss duration in ms (0 = no auto-dismiss)
+ * @param {Array} options.actions - Array of action buttons {label, onClick, primary}
+ */
+function showToast(options) {
+  const {
+    type = 'info',
+    title,
+    message,
+    duration = 3000,
+    actions = []
+  } = options;
+
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+
+  // Icon based on type
+  const icons = {
+    success: '✓',
+    error: '✕',
+    warning: '⚠',
+    info: 'ℹ'
+  };
+
+  // Build toast HTML
+  let actionsHTML = '';
+  if (actions.length > 0) {
+    actionsHTML = '<div class="toast-actions">';
+    actions.forEach((action, index) => {
+      const btnClass = action.primary ? 'toast-btn-primary' : 'toast-btn-secondary';
+      actionsHTML += `<button class="toast-btn ${btnClass}" data-action="${index}">${action.label}</button>`;
+    });
+    actionsHTML += '</div>';
+  }
+
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type]}</div>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      ${message ? `<div class="toast-message">${message}</div>` : ''}
+      ${actionsHTML}
+    </div>
+    <button class="toast-close" aria-label="Close">×</button>
+  `;
+
+  // Add to container
+  container.appendChild(toast);
+
+  // Attach action button handlers
+  actions.forEach((action, index) => {
+    const btn = toast.querySelector(`[data-action="${index}"]`);
+    if (btn) {
+      btn.onclick = () => {
+        if (action.onClick) action.onClick();
+        dismissToast(toast);
+      };
+    }
+  });
+
+  // Close button handler
+  const closeBtn = toast.querySelector('.toast-close');
+  if (closeBtn) {
+    closeBtn.onclick = () => dismissToast(toast);
+  }
+
+  // Auto-dismiss
+  if (duration > 0) {
+    setTimeout(() => dismissToast(toast), duration);
+  }
+
+  return toast;
+}
+
+/**
+ * Dismiss a toast notification
+ * @param {HTMLElement} toast - Toast element to dismiss
+ */
+function dismissToast(toast) {
+  if (!toast || toast.classList.contains('removing')) return;
+  
+  toast.classList.add('removing');
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, 300);
+}
+
+/**
+ * Show success toast
+ * @param {string} title - Success title
+ * @param {string} message - Success message
+ */
+function showSuccessToast(title, message) {
+  showToast({ type: 'success', title, message, duration: 3000 });
+}
+
+/**
+ * Show error toast
+ * @param {string} title - Error title
+ * @param {string} message - Error message
+ * @param {Array} actions - Optional action buttons
+ */
+function showErrorToast(title, message, actions = []) {
+  showToast({ type: 'error', title, message, duration: 0, actions });
+}
+
+/**
+ * Show warning toast
+ * @param {string} title - Warning title
+ * @param {string} message - Warning message
+ */
+function showWarningToast(title, message) {
+  showToast({ type: 'warning', title, message, duration: 4000 });
+}
+
+/**
+ * Show info toast
+ * @param {string} title - Info title
+ * @param {string} message - Info message
+ */
+function showInfoToast(title, message) {
+  showToast({ type: 'info', title, message, duration: 3000 });
+}
+
+/**
+ * Show/hide print loading indicator
+ * @param {boolean} show - Whether to show or hide
+ * @param {string} text - Loading text
+ */
+function setPrintLoading(show, text = 'Generating receipt...') {
+  const loadingEl = document.getElementById('printLoading');
+  const loadingTextEl = document.getElementById('printLoadingText');
+  const printBtn = document.getElementById('printBtn');
+  
+  if (!loadingEl) return;
+  
+  if (show) {
+    loadingEl.classList.add('show');
+    if (loadingTextEl) loadingTextEl.textContent = text;
+    if (printBtn) printBtn.disabled = true;
+  } else {
+    loadingEl.classList.remove('show');
+    if (printBtn) printBtn.disabled = false;
+  }
+}
+
+/* ===== PRINTER CONNECTION MANAGEMENT ===== */
+/**
+ * Update printer status UI indicator
+ * @param {string} status - 'connected', 'disconnected', or 'connecting'
+ * @param {string} message - Status message to display
+ */
+function updatePrinterStatus(status, message) {
+  const statusEl = document.getElementById('printerStatus');
+  const statusTextEl = document.getElementById('printerStatusText');
+  const connectBtn = document.getElementById('connectPrinterBtn');
+  const settingsBtn = document.getElementById('printerSettingsBtn');
+  
+  if (!statusEl || !statusTextEl || !connectBtn) return;
+  
+  // Remove all status classes
+  statusEl.classList.remove('connected', 'connecting', 'disconnected');
+  
+  // Add appropriate status class
+  statusEl.classList.add(status);
+  
+  // Update status text
+  statusTextEl.textContent = message;
+  
+  // Update button state
+  if (status === 'connected') {
+    connectBtn.textContent = 'Disconnect';
+    connectBtn.onclick = handleDisconnectPrinter;
+    // Show settings button when connected
+    if (settingsBtn) settingsBtn.style.display = 'block';
+  } else if (status === 'connecting') {
+    connectBtn.textContent = 'Connecting...';
+    connectBtn.disabled = true;
+    if (settingsBtn) settingsBtn.style.display = 'none';
+  } else {
+    connectBtn.textContent = 'Connect';
+    connectBtn.disabled = false;
+    connectBtn.onclick = handleConnectPrinter;
+    if (settingsBtn) settingsBtn.style.display = 'none';
+  }
+}
+
+/**
+ * Show printer settings dialog
+ */
+function showPrinterSettings() {
+  const currentSupport = localStorage.getItem('printerUnicodeSupport') === 'true';
+  const currentMode = currentSupport ? 'Unicode' : 'ASCII';
+  const currentSymbols = currentSupport ? '■ □ ◧ ▦' : '[X] [ ] [/] [#]';
+  
+  showToast({
+    type: 'info',
+    title: 'Printer Settings',
+    message: `Current character set: ${currentMode}\nSymbols: ${currentSymbols}\n\nSwitch if symbols don't print correctly.`,
+    duration: 0,
+    actions: [
+      {
+        label: currentSupport ? 'Switch to ASCII' : 'Switch to Unicode',
+        onClick: () => togglePrinterCharacterSet(),
+        primary: true
+      },
+      {
+        label: 'Test Print',
+        onClick: () => testPrinterSymbols(),
+        primary: false
+      }
+    ]
+  });
+}
+
+/**
+ * Test printer symbol rendering
+ * Prints a small test pattern to verify symbol support
+ */
+async function testPrinterSymbols() {
+  if (typeof isConnected === 'undefined' || !isConnected()) {
+    showErrorToast('No Printer', 'Please connect a printer first');
+    return;
+  }
+  
+  try {
+    setPrintLoading(true, 'Printing test pattern...');
+    
+    // Create a minimal test receipt with all symbols
+    const testBillData = {
+      billNo: 'TEST',
+      customerName: 'Character Set Test',
+      items: [
+        { name: 'With Ice + Sugar', qty: 1, ice: 'With Ice', sugar: 'Normal Sugar' },
+        { name: 'No Ice + No Sugar', qty: 1, ice: 'Without Ice', sugar: 'No Sugar' },
+        { name: 'With Ice + No Sugar', qty: 1, ice: 'With Ice', sugar: 'No Sugar' },
+        { name: 'No Ice + Sugar', qty: 1, ice: 'Without Ice', sugar: 'Normal Sugar' }
+      ],
+      subtotal: 0,
+      grandTotal: 0,
+      date: new Date()
+    };
+    
+    const escposData = generateESCPOSReceipt(testBillData);
+    await sendToPrinter(escposData);
+    
+    setPrintLoading(false);
+    showSuccessToast('Test Complete', 'Check the printed symbols. If they look wrong, switch character sets.');
+  } catch (error) {
+    setPrintLoading(false);
+    showErrorToast('Test Failed', error.message);
+  }
+}
+
+/**
+ * Handle printer connection request
+ */
+async function handleConnectPrinter() {
+  // Check if Web Serial API is supported
+  if (!('serial' in navigator)) {
+    showErrorToast(
+      'Browser Not Supported',
+      'Thermal printing requires Web Serial API. Please use Chrome or Edge browser.',
+      [
+        {
+          label: 'Learn More',
+          onClick: () => window.open('https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API', '_blank'),
+          primary: false
+        }
+      ]
+    );
+    return;
+  }
+  
+  try {
+    updatePrinterStatus('connecting', 'Connecting...');
+    
+    // Import the printer communication module
+    if (typeof connectThermalPrinter === 'undefined') {
+      updatePrinterStatus('disconnected', 'Disconnected');
+      showErrorToast(
+        'Module Not Loaded',
+        'Printer communication module not loaded. Please refresh the page.',
+        [
+          {
+            label: 'Refresh',
+            onClick: () => location.reload(),
+            primary: true
+          }
+        ]
+      );
+      return;
+    }
+    
+    await connectThermalPrinter();
+    
+    // Check printer character set capability and store in localStorage
+    await detectPrinterCharacterSet();
+    
+    // Get port info for display
+    const portInfo = getPortInfo();
+    let printerName = 'Thermal Printer';
+    
+    if (portInfo && portInfo.usbVendorId) {
+      const vendorNames = {
+        0x04b8: 'Epson',
+        0x0483: 'Star',
+        0x1504: 'Citizen',
+        0x0416: 'Bixolon',
+        0x1CB0: 'Xprinter'
+      };
+      printerName = vendorNames[portInfo.usbVendorId] || 'Thermal Printer';
+    }
+    
+    updatePrinterStatus('connected', printerName + ' connected');
+    showSuccessToast('Printer Connected', `${printerName} is ready to print`);
+    console.log('Printer connected successfully');
+    
+  } catch (error) {
+    console.error('Printer connection error:', error);
+    
+    // Log compatibility information for debugging
+    console.log('Connection failure details:', {
+      webSerial: 'serial' in navigator,
+      browser: navigator.userAgent,
+      error: error.message
+    });
+    
+    updatePrinterStatus('disconnected', 'Disconnected');
+    
+    // Handle specific error types with detailed messages
+    if (error.message.includes('No printer selected')) {
+      // User cancelled the selection dialog - no error message needed
+      return;
+    } else if (error.message.includes('Permission denied') || error.message.includes('SecurityError')) {
+      showErrorToast(
+        'Permission Denied',
+        'Browser permission to access the printer was denied. You can use browser print instead.',
+        [
+          {
+            label: 'Retry Connection',
+            onClick: () => handleConnectPrinter(),
+            primary: true
+          },
+          {
+            label: 'Use Browser Print',
+            onClick: () => {
+              // Switch to browser print method
+              const browserRadio = document.querySelector('input[name="printMethod"][value="browser"]');
+              if (browserRadio) {
+                browserRadio.checked = true;
+                savePrintMethod();
+              }
+              showInfoToast('Switched to Browser Print', 'You can now print using your browser\'s print dialog');
+            },
+            primary: false
+          },
+          {
+            label: 'Help',
+            onClick: () => {
+              showToast({
+                type: 'info',
+                title: 'How to Allow Printer Access',
+                message: '1. Click the lock icon in the address bar\n2. Find "Serial ports" permission\n3. Change to "Allow"\n4. Retry connection',
+                duration: 0
+              });
+            },
+            primary: false
+          }
+        ]
+      );
+    } else if (error.message.includes('Connection refused') || error.message.includes('Failed to establish')) {
+      showErrorToast(
+        'Connection Refused',
+        'Printer is not responding. You can troubleshoot or use browser print.',
+        [
+          {
+            label: 'Retry',
+            onClick: () => handleConnectPrinter(),
+            primary: true
+          },
+          {
+            label: 'Use Browser Print',
+            onClick: () => {
+              // Switch to browser print method
+              const browserRadio = document.querySelector('input[name="printMethod"][value="browser"]');
+              if (browserRadio) {
+                browserRadio.checked = true;
+                savePrintMethod();
+              }
+              showInfoToast('Switched to Browser Print', 'You can now print using your browser\'s print dialog');
+            },
+            primary: false
+          },
+          {
+            label: 'Troubleshoot',
+            onClick: () => {
+              showToast({
+                type: 'info',
+                title: 'Troubleshooting Steps',
+                message: '• Check printer power\n• Verify USB connection\n• Try a different USB port\n• Restart the printer',
+                duration: 0
+              });
+            },
+            primary: false
+          }
+        ]
+      );
+    } else if (error.message.includes('not supported')) {
+      // Web Serial API not supported - offer to switch to browser print
+      console.warn('Web Serial API not supported, browser print remains available');
+      
+      showErrorToast(
+        'Browser Not Supported',
+        'Your browser does not support thermal printing. Browser print is still available.',
+        [
+          {
+            label: 'Use Browser Print',
+            onClick: () => {
+              // Switch to browser print method
+              const browserRadio = document.querySelector('input[name="printMethod"][value="browser"]');
+              if (browserRadio) {
+                browserRadio.checked = true;
+                savePrintMethod();
+              }
+              showInfoToast('Switched to Browser Print', 'You can now print using your browser\'s print dialog');
+            },
+            primary: true
+          },
+          {
+            label: 'Learn More',
+            onClick: () => window.open('https://caniuse.com/web-serial', '_blank'),
+            primary: false
+          }
+        ]
+      );
+    } else {
+      // Generic connection error with fallback option
+      showErrorToast(
+        'Connection Failed',
+        error.message || 'Failed to connect to printer. You can retry or use browser print.',
+        [
+          {
+            label: 'Retry',
+            onClick: () => handleConnectPrinter(),
+            primary: true
+          },
+          {
+            label: 'Use Browser Print',
+            onClick: () => {
+              // Switch to browser print method
+              const browserRadio = document.querySelector('input[name="printMethod"][value="browser"]');
+              if (browserRadio) {
+                browserRadio.checked = true;
+                savePrintMethod();
+              }
+              showInfoToast('Switched to Browser Print', 'You can now print using your browser\'s print dialog');
+            },
+            primary: false
+          }
+        ]
+      );
+    }
+  }
+}
+
+/**
+ * Detect printer character set capabilities
+ * Tests if printer supports Unicode box-drawing characters
+ */
+async function detectPrinterCharacterSet() {
+  try {
+    // Check if we already detected capabilities
+    const storedCapability = localStorage.getItem('printerUnicodeSupport');
+    
+    if (storedCapability !== null) {
+      const supportsUnicode = storedCapability === 'true';
+      if (typeof setASCIIFallback !== 'undefined') {
+        setASCIIFallback(!supportsUnicode);
+      }
+      console.log(`Using ${supportsUnicode ? 'Unicode' : 'ASCII'} symbols for printer`);
+      return;
+    }
+    
+    // Send a test pattern to detect character set support
+    // Most modern thermal printers support Unicode, but some older models don't
+    try {
+      // Try to get printer status which might give us hints about capabilities
+      if (typeof getPrinterStatus !== 'undefined') {
+        const status = await getPrinterStatus();
+        
+        // Check vendor - some vendors are known to support Unicode better
+        const portInfo = getPortInfo();
+        if (portInfo && portInfo.usbVendorId) {
+          // Epson, Star, and Bixolon generally support Unicode well
+          const unicodeVendors = [0x04b8, 0x0483, 0x0416];
+          if (unicodeVendors.includes(portInfo.usbVendorId)) {
+            localStorage.setItem('printerUnicodeSupport', 'true');
+            if (typeof setASCIIFallback !== 'undefined') {
+              setASCIIFallback(false);
+            }
+            console.log('Printer supports Unicode characters (vendor detected)');
+            
+            // Show info toast about character set
+            showInfoToast(
+              'Unicode Support Detected',
+              'Printer will use enhanced symbols (■ □ ◧ ▦) for preferences'
+            );
+            return;
+          }
+        }
+      }
+    } catch (statusError) {
+      console.warn('Could not check printer status for character set detection:', statusError);
+    }
+    
+    // Default to Unicode support for modern printers
+    // User can manually switch if symbols don't print correctly
+    localStorage.setItem('printerUnicodeSupport', 'true');
+    if (typeof setASCIIFallback !== 'undefined') {
+      setASCIIFallback(false);
+    }
+    console.log('Defaulting to Unicode character support');
+    
+    // Show info with option to switch to ASCII if needed
+    showToast({
+      type: 'info',
+      title: 'Character Set: Unicode',
+      message: 'If symbols don\'t print correctly, switch to ASCII mode in printer settings.',
+      duration: 5000
+    });
+    
+  } catch (error) {
+    console.warn('Could not detect printer character set:', error);
+    // Default to Unicode support
+    localStorage.setItem('printerUnicodeSupport', 'true');
+    if (typeof setASCIIFallback !== 'undefined') {
+      setASCIIFallback(false);
+    }
+  }
+}
+
+/**
+ * Toggle between Unicode and ASCII character sets for printer
+ * Called when user manually switches character set preference
+ */
+function togglePrinterCharacterSet() {
+  const currentSupport = localStorage.getItem('printerUnicodeSupport') === 'true';
+  const newSupport = !currentSupport;
+  
+  localStorage.setItem('printerUnicodeSupport', newSupport.toString());
+  
+  if (typeof setASCIIFallback !== 'undefined') {
+    setASCIIFallback(!newSupport);
+  }
+  
+  const mode = newSupport ? 'Unicode' : 'ASCII';
+  const symbols = newSupport ? '■ □ ◧ ▦' : '[X] [ ] [/] [#]';
+  
+  showSuccessToast(
+    `Character Set: ${mode}`,
+    `Printer will use ${mode} symbols: ${symbols}`
+  );
+  
+  console.log(`Switched to ${mode} character set for printer`);
+}
+
+/**
+ * Handle printer disconnection request
+ */
+async function handleDisconnectPrinter() {
+  try {
+    if (typeof disconnectPrinter !== 'undefined') {
+      await disconnectPrinter();
+    }
+    updatePrinterStatus('disconnected', 'Disconnected');
+    console.log('Printer disconnected');
+  } catch (error) {
+    console.error('Disconnect error:', error);
+    updatePrinterStatus('disconnected', 'Disconnected');
+  }
+}
+
 function checkAndResetDailyCounter() {
   const today = getLocalTodayDate();
   const storedData = safeGetStorage('bfsBillData');
@@ -859,10 +1838,34 @@ function init() {
   const billNoEl = document.getElementById('billNoInput');
   if (billNoEl) billNoEl.value = pad;
   updateHeaderBill(pad);
+  
+  // Check browser compatibility for thermal printing
+  checkBrowserCompatibility();
+  
+  // Load print method preference (will automatically handle unsupported browsers)
+  loadPrintMethodPreference();
+  
+  // Load printer character set preference
+  loadPrinterCharacterSetPreference();
+  
   buildCategoryTabs();
   renderMenuGrid("All");
   renderQueue();
   connectOrderServer();
+}
+
+/**
+ * Load printer character set preference from localStorage
+ */
+function loadPrinterCharacterSetPreference() {
+  const storedSupport = localStorage.getItem('printerUnicodeSupport');
+  if (storedSupport !== null) {
+    const supportsUnicode = storedSupport === 'true';
+    if (typeof setASCIIFallback !== 'undefined') {
+      setASCIIFallback(!supportsUnicode);
+    }
+    console.log(`Loaded printer character set: ${supportsUnicode ? 'Unicode' : 'ASCII'}`);
+  }
 }
 
 if (document.readyState === 'loading') {
@@ -1125,7 +2128,7 @@ function loadHistory() {
 
   promise.then(renderHistoryTable).catch(function(e) {
     document.getElementById('histTableBody').innerHTML =
-      '<tr><td colspan="5" class="hist-empty">Error: ' + e.message + '</td></tr>';
+      '<tr><td colspan="7" class="hist-empty">Error: ' + e.message + '</td></tr>';
   });
 }
 
@@ -1134,7 +2137,7 @@ function renderHistoryTable(records) {
   const summary = document.getElementById('histSummary');
 
   if (!records || records.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="hist-empty">No records found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="hist-empty">No records found.</td></tr>';
     summary.textContent = '';
     return;
   }
@@ -1149,11 +2152,34 @@ function renderHistoryTable(records) {
           return it.emoji + ' ' + it.name + ' x' + it.qty + (it.spec && it.spec !== 'Standard' ? ' (' + it.spec + ')' : '');
         }).join('<br>')
       : '<span style="color:#737373">—</span>';
+    
+    // Print method indicator with icon
+    const printMethod = r.printMethod || 'browser';
+    let methodIcon = '';
+    let methodText = '';
+    let methodColor = '';
+    
+    if (printMethod === 'thermal') {
+      methodIcon = '🖨️';
+      methodText = 'Thermal';
+      methodColor = '#d9a83e';
+    } else {
+      methodIcon = '🌐';
+      methodText = 'Browser';
+      methodColor = '#94a3b8';
+    }
+    
+    const methodCell = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:.75rem;color:' + methodColor + '">' +
+      '<span style="font-size:.9rem">' + methodIcon + '</span>' +
+      '<span>' + methodText + '</span>' +
+      '</span>';
+    
     return '<tr>' +
       '<td>' + (i + 1) + '</td>' +
       '<td><strong>#' + r.billNo + '</strong></td>' +
       '<td>' + r.date + '</td>' +
       '<td>' + r.time + '</td>' +
+      '<td>' + methodCell + '</td>' +
       '<td style="font-size:.78rem;line-height:1.6">' + itemList + '</td>' +
       '<td class="hist-amount">₹' + Number(r.amount).toFixed(2) + '</td>' +
       '</tr>';
@@ -1196,11 +2222,17 @@ function downloadHistory() {
       const itemList = (r.items && r.items.length)
         ? r.items.map(function(it){ return it.emoji + ' ' + it.name + ' x' + it.qty + (it.spec && it.spec !== 'Standard' ? ' (' + it.spec + ')' : ''); }).join('<br>')
         : '—';
+      
+      // Print method for export
+      const printMethod = r.printMethod || 'browser';
+      const methodText = printMethod === 'thermal' ? '🖨️ Thermal' : '🌐 Browser';
+      
       return '<tr>' +
         '<td>' + (i+1) + '</td>' +
         '<td><strong>#' + r.billNo + '</strong></td>' +
         '<td>' + r.date + '</td>' +
         '<td>' + r.time + '</td>' +
+        '<td style="font-size:.8rem">' + methodText + '</td>' +
         '<td style="font-size:.8rem;line-height:1.7">' + itemList + '</td>' +
         '<td style="color:#b45309;font-weight:700;">&#x20B9;' + Number(r.amount).toFixed(2) + '</td>' +
         '</tr>';
@@ -1221,8 +2253,8 @@ function downloadHistory() {
       '</style></head><body>' +
       '<h2>&#x1F4DC; Bill History — Best Fruits Stall</h2>' +
       '<div class="meta">' + label + ' &nbsp;|&nbsp; Generated: ' + new Date().toLocaleString('en-IN') + '</div>' +
-      '<table><thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Items</th><th>Amount</th></tr></thead>' +
-      '<tbody>' + (rows || '<tr><td colspan="6" style="text-align:center;color:#a3a3a3;padding:32px">No records found.</td></tr>') + '</tbody></table>' +
+      '<table><thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Method</th><th>Items</th><th>Amount</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="7" style="text-align:center;color:#a3a3a3;padding:32px">No records found.</td></tr>') + '</tbody></table>' +
       '<div class="summary">' + records.length + ' bill' + (records.length !== 1 ? 's' : '') +
         ' &nbsp;·&nbsp; Total: <strong>&#x20B9;' + total.toFixed(2) + '</strong></div>' +
       '</body></html>';
@@ -1237,9 +2269,55 @@ function downloadHistory() {
 }
 
 
+/**
+ * Main print bill function - routes to appropriate print method
+ * Ensures browser print always works as backup if thermal print fails
+ */
 function printBill() {
-  if (billItems.length === 0) { alert('Add at least one item before printing!'); return; }
+  if (billItems.length === 0) { 
+    alert('Add at least one item before printing!'); 
+    return; 
+  }
 
+  const printMethod = getPrintMethod();
+  
+  if (printMethod === 'thermal') {
+    // Attempt thermal print with automatic fallback
+    try {
+      printThermalReceipt();
+    } catch (error) {
+      // If thermal print completely fails, fall back to browser print
+      console.error('Thermal print method failed, falling back to browser print:', error);
+      
+      showWarningToast(
+        'Falling Back to Browser Print',
+        'Thermal printing failed. Using browser print as backup...'
+      );
+      
+      setTimeout(() => {
+        try {
+          printBrowserReceipt();
+        } catch (browserError) {
+          console.error('Browser print also failed:', browserError);
+          alert('Print failed. Please check your printer settings and try again.');
+        }
+      }, 500);
+    }
+  } else {
+    // Use browser print directly
+    try {
+      printBrowserReceipt();
+    } catch (error) {
+      console.error('Browser print failed:', error);
+      alert('Print failed. Please check your printer settings and try again.');
+    }
+  }
+}
+
+/**
+ * Print receipt using browser print dialog (original implementation)
+ */
+function printBrowserReceipt() {
   const billNo   = document.getElementById('billNoInput').value;
   const customer = document.getElementById('customerName').value.trim();
   const now      = new Date();
@@ -1353,6 +2431,278 @@ function printBill() {
   printWin.document.close();
 
   // Only save to history after successful print
+  saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer, 'browser');
+  
+  // Auto-advance to next bill after printing
+  clearCurrentBill();
+}
+
+/**
+ * Print receipt using thermal printer with ESC/POS commands
+ */
+async function printThermalReceipt() {
+  // Check if modules are loaded
+  if (typeof generateESCPOSReceipt === 'undefined' || typeof sendToPrinter === 'undefined') {
+    showErrorToast(
+      'Module Not Loaded',
+      'Thermal printer modules not loaded. Please refresh the page.',
+      [
+        {
+          label: 'Refresh',
+          onClick: () => location.reload(),
+          primary: true
+        }
+      ]
+    );
+    return;
+  }
+
+  // Check if printer is connected
+  if (typeof isConnected === 'undefined' || !isConnected()) {
+    showErrorToast(
+      'No Printer Connected',
+      'Please connect a thermal printer before printing.',
+      [
+        {
+          label: 'Connect Printer',
+          onClick: () => handleConnectPrinter(),
+          primary: true
+        }
+      ]
+    );
+    return;
+  }
+
+  const billNo   = document.getElementById('billNoInput').value;
+  const customer = document.getElementById('customerName').value.trim();
+  const now      = new Date();
+
+  const grandTotalAmount = billItems.reduce((s, i) => s + i.total, 0);
+  const itemsSnapshot = billItems.map(function(it) {
+    var parts = [];
+    if (it.ice) parts.push(it.ice);
+    if (it.sugar && it.sugar !== 'Normal Sugar') parts.push(it.sugar);
+    if (it.size  && it.size  !== 'Regular')      parts.push(it.size);
+    if (it.note) parts.push(it.note);
+    return { 
+      name: it.name, 
+      emoji: it.emoji, 
+      qty: it.qty, 
+      price: it.price, 
+      total: it.total, 
+      ice: it.ice,
+      sugar: it.sugar,
+      size: it.size,
+      note: it.note,
+      spec: parts.join(', ') || 'Standard' 
+    };
+  });
+
+  try {
+    // Show loading indicator
+    setPrintLoading(true, 'Generating receipt...');
+    
+    // Prepare bill data for ESC/POS generation
+    const billData = {
+      billNo: billNo,
+      customerName: customer,
+      items: itemsSnapshot,
+      subtotal: grandTotalAmount,
+      grandTotal: grandTotalAmount,
+      date: now
+    };
+
+    // Generate ESC/POS receipt
+    const escposData = generateESCPOSReceipt(billData);
+    
+    // Check printer status before sending
+    if (typeof getPrinterStatus !== 'undefined') {
+      setPrintLoading(true, 'Checking printer status...');
+      const status = await getPrinterStatus();
+      
+      if (status.status === 'offline') {
+        setPrintLoading(false);
+        showErrorToast(
+          'Printer Offline',
+          'The printer is offline. Please check the power and connection.',
+          [
+            {
+              label: 'Check Status',
+              onClick: async () => {
+                const newStatus = await getPrinterStatus();
+                if (newStatus.ready) {
+                  showSuccessToast('Printer Ready', 'Printer is now online');
+                } else {
+                  showErrorToast('Still Offline', newStatus.message);
+                }
+              },
+              primary: false
+            },
+            {
+              label: 'Retry',
+              onClick: () => printThermalReceipt(),
+              primary: true
+            }
+          ]
+        );
+        return;
+      } else if (status.status === 'paper_out') {
+        setPrintLoading(false);
+        showErrorToast(
+          'Paper Out',
+          'The printer is out of paper. Please load paper and try again.',
+          [
+            {
+              label: 'Retry',
+              onClick: () => printThermalReceipt(),
+              primary: true
+            }
+          ]
+        );
+        return;
+      }
+    }
+    
+    // Send to printer
+    setPrintLoading(true, 'Printing...');
+    await sendToPrinter(escposData);
+    
+    setPrintLoading(false);
+    showSuccessToast('Print Successful', `Bill #${billNo} printed successfully`);
+    console.log('Thermal receipt printed successfully');
+    
+    // Save to history after successful print
+    saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer, 'thermal');
+    
+    // Auto-advance to next bill after printing
+    clearCurrentBill();
+    
+  } catch (error) {
+    console.error('Thermal print error:', error);
+    setPrintLoading(false);
+    
+    // Log compatibility information for debugging
+    console.log('Browser compatibility:', {
+      webSerial: 'serial' in navigator,
+      userAgent: navigator.userAgent,
+      error: error.message
+    });
+    
+    // Handle specific printing errors with fallback options
+    if (error.message.includes('No printer connected')) {
+      showErrorToast(
+        'Printer Disconnected',
+        'The printer was disconnected. Would you like to use browser print instead?',
+        [
+          {
+            label: 'Use Browser Print',
+            onClick: () => {
+              showInfoToast('Switching to Browser Print', 'Using browser print dialog...');
+              setTimeout(() => printBrowserReceipt(), 500);
+            },
+            primary: true
+          },
+          {
+            label: 'Reconnect Printer',
+            onClick: () => handleConnectPrinter(),
+            primary: false
+          }
+        ]
+      );
+    } else if (error.message.includes('Transmission timeout') || error.message.includes('not responding')) {
+      showErrorToast(
+        'Printer Not Responding',
+        'The printer is not responding. You can try again or use browser print.',
+        [
+          {
+            label: 'Use Browser Print',
+            onClick: () => {
+              showInfoToast('Switching to Browser Print', 'Using browser print dialog...');
+              setTimeout(() => printBrowserReceipt(), 500);
+            },
+            primary: true
+          },
+          {
+            label: 'Retry Thermal Print',
+            onClick: () => printThermalReceipt(),
+            primary: false
+          },
+          {
+            label: 'Reconnect',
+            onClick: () => {
+              handleDisconnectPrinter();
+              setTimeout(() => handleConnectPrinter(), 500);
+            },
+            primary: false
+          }
+        ]
+      );
+    } else if (error.message.includes('disconnected during transmission')) {
+      showErrorToast(
+        'Connection Lost',
+        'Printer was disconnected during printing. Use browser print as backup?',
+        [
+          {
+            label: 'Use Browser Print',
+            onClick: () => {
+              showInfoToast('Switching to Browser Print', 'Using browser print dialog...');
+              setTimeout(() => printBrowserReceipt(), 500);
+            },
+            primary: true
+          },
+          {
+            label: 'Reconnect Printer',
+            onClick: () => handleConnectPrinter(),
+            primary: false
+          }
+        ]
+      );
+    } else if (error.message.includes('Web Serial API not supported')) {
+      // Web Serial API error - fallback to browser print automatically
+      showWarningToast(
+        'Thermal Print Unavailable',
+        'Your browser doesn\'t support thermal printing. Switching to browser print...'
+      );
+      
+      // Log for debugging
+      console.warn('Web Serial API not supported, falling back to browser print');
+      
+      // Automatically fallback to browser print after a short delay
+      setTimeout(() => printBrowserReceipt(), 1000);
+    } else {
+      // Generic print error with fallback option
+      showErrorToast(
+        'Thermal Print Failed',
+        error.message || 'Failed to print receipt. Would you like to use browser print instead?',
+        [
+          {
+            label: 'Use Browser Print',
+            onClick: () => {
+              showInfoToast('Switching to Browser Print', 'Using browser print dialog...');
+              setTimeout(() => printBrowserReceipt(), 500);
+            },
+            primary: true
+          },
+          {
+            label: 'Retry Thermal Print',
+            onClick: () => printThermalReceipt(),
+            primary: false
+          }
+        ]
+      );
+    }
+  }
+}
+
+/**
+ * Save bill to history (extracted common logic)
+ * @param {string} billNo - Bill number
+ * @param {number} amount - Total amount
+ * @param {Array} items - Bill items snapshot
+ * @param {string} customer - Customer name
+ * @param {string} printMethod - Print method used ('browser' or 'thermal')
+ */
+function saveBillToHistory(billNo, amount, items, customer, printMethod) {
   if (activeQrOrderId) {
     var printedQrOrderId = activeQrOrderId;
     var printedQrOrder = orderQueue.find(function(o) { return o.serverId === printedQrOrderId; });
@@ -1368,7 +2718,7 @@ function printBill() {
     }
 
     if (window.BillHistory) {
-      window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
+      window.BillHistory.saveBillRecord(billNo, amount, items, printMethod)
         .catch(function(err) { console.error('Bill save failed:', err); });
     }
 
@@ -1377,14 +2727,18 @@ function printBill() {
     renderQueue();
   } else {
     if (window.BillHistory) {
-      window.BillHistory.saveBillRecord(billNo, grandTotalAmount, itemsSnapshot)
-        .catch(err => console.error('Bill save failed:', err));
+      window.BillHistory.saveBillRecord(billNo, amount, items, printMethod)
+        .catch(function(err) { console.error('Bill save failed:', err); });
     }
     // Add manually printed bills to the local orders queue.
-    addToQueue(billNo, customer, grandTotalAmount, itemsSnapshot);
+    addToQueue(billNo, customer, amount, items);
   }
+}
 
-  // Auto-advance to next bill after printing
+/**
+ * Clear current bill and advance counter (extracted common logic)
+ */
+function clearCurrentBill() {
   billItems = [];
   advanceBillCounter();
   const custEl = document.getElementById('customerName');

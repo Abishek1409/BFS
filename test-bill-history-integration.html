@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bill History Integration Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    .success { background-color: #d4edda; border-color: #c3e6cb; }
+    .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h1>Bill History Integration Test</h1>
+  <p>This test verifies that the print method is correctly stored and displayed in bill history records.</p>
+
+  <div class="test-section">
+    <h2>Test Controls</h2>
+    <button onclick="testBrowserPrint()">Save Browser Print Bill</button>
+    <button onclick="testThermalPrint()">Save Thermal Print Bill</button>
+    <button onclick="loadHistory()">Load History</button>
+    <button onclick="clearHistory()">Clear Test Data</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="results"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Bill History Records</h2>
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Bill No.</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Print Method</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody">
+        <tr><td colspan="5">No records loaded</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script src="billHistory.js"></script>
+  <script>
+    let testBillCounter = 1;
+
+    function log(message, isError = false) {
+      const results = document.getElementById('results');
+      const p = document.createElement('p');
+      p.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      p.style.color = isError ? 'red' : 'green';
+      results.appendChild(p);
+    }
+
+    async function testBrowserPrint() {
+      try {
+        const billNo = 'TEST-' + (testBillCounter++);
+        const amount = 150.00;
+        const items = [
+          { name: 'Mango Juice', emoji: '🥭', qty: 2, price: 50, total: 100, spec: 'With Ice' },
+          { name: 'Orange Juice', emoji: '🍊', qty: 1, price: 50, total: 50, spec: 'No Sugar' }
+        ];
+        
+        await BillHistory.saveBillRecord(billNo, amount, items, 'browser');
+        log(`✓ Browser print bill saved: ${billNo}`);
+        loadHistory();
+      } catch (error) {
+        log(`✗ Error saving browser print bill: ${error.message}`, true);
+      }
+    }
+
+    async function testThermalPrint() {
+      try {
+        const billNo = 'TEST-' + (testBillCounter++);
+        const amount = 200.00;
+        const items = [
+          { name: 'Strawberry Shake', emoji: '🍓', qty: 1, price: 80, total: 80, spec: 'Large' },
+          { name: 'Banana Shake', emoji: '🍌', qty: 2, price: 60, total: 120, spec: 'Regular' }
+        ];
+        
+        await BillHistory.saveBillRecord(billNo, amount, items, 'thermal');
+        log(`✓ Thermal print bill saved: ${billNo}`);
+        loadHistory();
+      } catch (error) {
+        log(`✗ Error saving thermal print bill: ${error.message}`, true);
+      }
+    }
+
+    async function loadHistory() {
+      try {
+        const records = await BillHistory.getAllBillRecords();
+        const tbody = document.getElementById('historyBody');
+        
+        if (records.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No records found</td></tr>';
+          log('No records in history');
+          return;
+        }
+
+        tbody.innerHTML = records.map(r => {
+          const printMethod = r.printMethod || 'browser';
+          const methodIcon = printMethod === 'thermal' ? '🖨️' : '🌐';
+          const methodText = printMethod === 'thermal' ? 'Thermal' : 'Browser';
+          const methodColor = printMethod === 'thermal' ? '#d9a83e' : '#94a3b8';
+          
+          return `
+            <tr>
+              <td>${r.billNo}</td>
+              <td>${r.date}</td>
+              <td>${r.time}</td>
+              <td style="color: ${methodColor}">
+                <span style="margin-right: 5px">${methodIcon}</span>
+                ${methodText}
+              </td>
+              <td>₹${r.amount.toFixed(2)}</td>
+            </tr>
+          `;
+        }).join('');
+        
+        log(`✓ Loaded ${records.length} record(s) from history`);
+        
+        // Verify print method field exists in records
+        const hasMethod = records.every(r => r.printMethod !== undefined);
+        if (hasMethod) {
+          log('✓ All records have printMethod field');
+        } else {
+          log('⚠ Some records missing printMethod field', true);
+        }
+      } catch (error) {
+        log(`✗ Error loading history: ${error.message}`, true);
+      }
+    }
+
+    async function clearHistory() {
+      try {
+        const db = await BillHistory._getDB();
+        const tx = db.transaction('billsV2', 'readwrite');
+        const store = tx.objectStore('billsV2');
+        
+        await new Promise((resolve, reject) => {
+          const req = store.clear();
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+        
+        log('✓ All test records cleared');
+        loadHistory();
+      } catch (error) {
+        log(`✗ Error clearing history: ${error.message}`, true);
+      }
+    }
+
+    // Load history on page load
+    window.addEventListener('load', () => {
+      log('Test page loaded. Ready to test bill history integration.');
+      loadHistory();
+    });
+  </script>
+</body>
+</html>
