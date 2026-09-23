@@ -285,36 +285,30 @@
 
     .bill-actions { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
     
-    .print-method-selector {
-      display: flex; gap: 6px; padding: 8px; border-radius: 8px;
+    .wifi-printer-status {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 10px; border-radius: 8px;
       background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-subtle);
     }
-    .print-method-option {
-      flex: 1; display: flex; align-items: center; gap: 6px;
-      padding: 6px 10px; border-radius: 6px; cursor: pointer;
-      border: 1.5px solid transparent; background: transparent;
-      font-size: .78rem; font-weight: 600; color: var(--muted);
-      transition: all .18s; font-family: inherit;
+    .printer-status-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 8px; border-radius: 6px;
+      background: rgba(255, 255, 255, 0.02);
     }
-    .print-method-option:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
-    .print-method-option input[type="radio"] {
-      appearance: none; width: 14px; height: 14px; border-radius: 50%;
-      border: 2px solid var(--border); background: transparent;
-      cursor: pointer; transition: all .18s;
+    .printer-info {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .8rem; font-weight: 600; color: var(--text);
     }
-    .print-method-option input[type="radio"]:checked {
-      border-color: var(--accent); background: var(--accent);
-      box-shadow: 0 0 0 2px rgba(217, 168, 62, 0.2);
+    .printer-ip {
+      font-size: .72rem; color: var(--muted); font-family: 'Courier New', monospace;
     }
-    .print-method-option:has(input:checked) {
-      background: rgba(217, 168, 62, 0.12); border-color: var(--accent);
-      color: var(--accent-light);
+    .btn-configure-printers {
+      background: var(--card2); color: var(--accent); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 6px; font-size: .82rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all .18s; width: 100%;
     }
-    
-    .browser-warning-icon {
-      font-size: .7rem;
-      opacity: 0.8;
-      cursor: help;
+    .btn-configure-printers:hover {
+      background: var(--accent); color: #fff; border-color: var(--accent);
     }
     
     .printer-connection {
@@ -883,28 +877,23 @@
       <div class="total-row grand"><span>TOTAL</span><span id="grandTotal">&#x20B9;0.00</span></div>
     </div>
     <div class="bill-actions">
-      <!-- Print Method Selector -->
-      <div class="print-method-selector">
-        <label class="print-method-option">
-          <input type="radio" name="printMethod" value="browser" checked onchange="savePrintMethod()">
-          <span>🖨️ Browser Print</span>
-        </label>
-        <label class="print-method-option">
-          <input type="radio" name="printMethod" value="thermal" onchange="savePrintMethod()">
-          <span>🧾 Thermal Print</span>
-        </label>
-      </div>
-      
-      <!-- Printer Connection Indicator (shown only for thermal print) -->
-      <div class="printer-connection" id="printerConnection" style="display:none;">
-        <div class="printer-status" id="printerStatus">
-          <span class="printer-status-dot"></span>
-          <span id="printerStatusText">Disconnected</span>
+      <!-- WiFi Printer Status -->
+      <div class="wifi-printer-status">
+        <div class="printer-status-item">
+          <div class="printer-info">
+            <span class="printer-status-dot" id="printer1Dot"></span>
+            <span id="printer1Name">Printer 1</span>
+          </div>
+          <span class="printer-ip" id="printer1IP">Not configured</span>
         </div>
-        <div style="display: flex; gap: 6px;">
-          <button class="btn-connect-printer" id="connectPrinterBtn" onclick="handleConnectPrinter()">Connect</button>
-          <button class="btn-connect-printer" id="printerSettingsBtn" onclick="showPrinterSettings()" style="display:none;" title="Printer Settings">⚙️</button>
+        <div class="printer-status-item">
+          <div class="printer-info">
+            <span class="printer-status-dot" id="printer2Dot"></span>
+            <span id="printer2Name">Printer 2</span>
+          </div>
+          <span class="printer-ip" id="printer2IP">Not configured</span>
         </div>
+        <button class="btn-configure-printers" onclick="showPrinterConfig()">⚙️ Configure Printers</button>
       </div>
       
       <!-- Print Loading Indicator -->
@@ -915,7 +904,7 @@
       
       <button class="btn-print" id="printBtn" onclick="printBill()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        <span id="printBtnLabel">Print Bill</span>
+        <span id="printBtnLabel">Print Receipt</span>
       </button>
       <button class="btn-clear" onclick="clearBill()">&#x1F5D1; Clear &amp; New Bill</button>
     </div>
@@ -923,6 +912,57 @@
 
 </div>
 
+</div>
+
+<!-- Printer Configuration Modal -->
+<div class="overlay" id="printerConfigOverlay">
+  <div class="modal" style="width: 500px; max-width: 95vw;">
+    <h3>🖨️ Configure WiFi Printers</h3>
+    <p style="font-size: .85rem; color: var(--muted); margin-bottom: 18px;">
+      Enter the IP addresses of your WiFi thermal printers
+    </p>
+    
+    <!-- Printer 1 Config -->
+    <div class="form-row">
+      <label>Printer 1 Name</label>
+      <input type="text" id="configPrinter1Name" placeholder="e.g., Counter Printer" value="Printer 1" />
+    </div>
+    <div class="form-row">
+      <label>Printer 1 IP Address</label>
+      <input type="text" id="configPrinter1IP" placeholder="e.g., 192.168.1.100" pattern="^(\d{1,3}\.){3}\d{1,3}$" />
+    </div>
+    <div class="form-row">
+      <label>Printer 1 Port</label>
+      <input type="number" id="configPrinter1Port" value="9100" min="1" max="65535" />
+    </div>
+    <button class="btn btn-secondary" onclick="testPrinter('printer1')" style="width: 100%; margin-bottom: 10px;">
+      Test Printer 1 Connection
+    </button>
+    
+    <div style="border-top: 1px solid var(--border); margin: 18px 0;"></div>
+    
+    <!-- Printer 2 Config -->
+    <div class="form-row">
+      <label>Printer 2 Name</label>
+      <input type="text" id="configPrinter2Name" placeholder="e.g., Kitchen Printer" value="Printer 2" />
+    </div>
+    <div class="form-row">
+      <label>Printer 2 IP Address</label>
+      <input type="text" id="configPrinter2IP" placeholder="e.g., 192.168.1.101" pattern="^(\d{1,3}\.){3}\d{1,3}$" />
+    </div>
+    <div class="form-row">
+      <label>Printer 2 Port</label>
+      <input type="number" id="configPrinter2Port" value="9100" min="1" max="65535" />
+    </div>
+    <button class="btn btn-secondary" onclick="testPrinter('printer2')" style="width: 100%; margin-bottom: 10px;">
+      Test Printer 2 Connection
+    </button>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closePrinterConfig()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePrinterConfiguration()">Save Configuration</button>
+    </div>
+  </div>
 </div>
 
 <!-- REPORTS DRAWER -->
@@ -959,7 +999,7 @@
 <script src="firebase-config.js"></script>
 <script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
-<script src="printer-comm.js"></script>
+<script src="wifi-printer-comm.js"></script>
 <script src="escpos-receipt.js"></script>
 <script>
 if (!window.firebaseConfig) {
@@ -1029,194 +1069,139 @@ function getLocalTodayDate() {
   return `${year}-${month}-${day}`;
 }
 
-/* ===== BROWSER COMPATIBILITY DETECTION ===== */
-/**
- * Check if Web Serial API is supported in the current browser
- * @returns {boolean} True if Web Serial API is available
- */
-function isWebSerialSupported() {
-  return 'serial' in navigator;
-}
+/* ===== WIFI PRINTER MANAGEMENT ===== */
 
 /**
- * Get browser information for compatibility messaging
- * @returns {Object} Browser name and recommended alternatives
+ * Update printer status UI
  */
-function getBrowserInfo() {
-  const ua = navigator.userAgent;
-  let browserName = 'Unknown';
-  let isSupported = isWebSerialSupported();
+function updatePrinterStatusUI() {
+  const status = getPrintersStatus();
   
-  if (ua.includes('Firefox')) {
-    browserName = 'Firefox';
-  } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
-    browserName = 'Safari';
-  } else if (ua.includes('Edg/')) {
-    browserName = 'Edge';
-  } else if (ua.includes('Chrome')) {
-    browserName = 'Chrome';
+  // Update Printer 1
+  const p1Dot = document.getElementById('printer1Dot');
+  const p1Name = document.getElementById('printer1Name');
+  const p1IP = document.getElementById('printer1IP');
+  
+  if (p1Dot) {
+    p1Dot.className = 'printer-status-dot';
+    if (status.printer1.connected) {
+      p1Dot.classList.add('connected');
+    }
+  }
+  if (p1Name) p1Name.textContent = status.printer1.name;
+  if (p1IP) {
+    p1IP.textContent = status.printer1.ip || 'Not configured';
   }
   
-  return {
-    name: browserName,
-    supported: isSupported,
-    recommended: isSupported ? null : 'Chrome or Edge'
-  };
-}
-
-/**
- * Show browser compatibility warning for unsupported browsers
- * Displays an info toast with browser requirements
- */
-function showBrowserCompatibilityWarning() {
-  const browserInfo = getBrowserInfo();
+  // Update Printer 2
+  const p2Dot = document.getElementById('printer2Dot');
+  const p2Name = document.getElementById('printer2Name');
+  const p2IP = document.getElementById('printer2IP');
   
-  if (!browserInfo.supported) {
-    showToast({
-      type: 'warning',
-      title: 'Thermal Printing Not Available',
-      message: `Your browser (${browserInfo.name}) doesn't support thermal printing. Please use ${browserInfo.recommended} for thermal printer support. Browser printing is still available.`,
-      duration: 0, // Don't auto-dismiss
-      actions: [
-        {
-          label: 'Understood',
-          onClick: () => {},
-          primary: true
-        },
-        {
-          label: 'Learn More',
-          onClick: () => window.open('https://caniuse.com/web-serial', '_blank'),
-          primary: false
-        }
-      ]
-    });
-    
-    // Store that we've shown the warning to avoid showing it repeatedly
-    safeSetStorage('bfsBrowserWarningShown', 'true');
+  if (p2Dot) {
+    p2Dot.className = 'printer-status-dot';
+    if (status.printer2.connected) {
+      p2Dot.classList.add('connected');
+    }
+  }
+  if (p2Name) p2Name.textContent = status.printer2.name;
+  if (p2IP) {
+    p2IP.textContent = status.printer2.ip || 'Not configured';
   }
 }
 
 /**
- * Check if browser warning should be shown
- * Shows warning once per session for unsupported browsers
+ * Show printer configuration modal
  */
-function checkBrowserCompatibility() {
-  if (!isWebSerialSupported()) {
-    const warningShown = safeGetStorage('bfsBrowserWarningShown');
-    
-    // Show warning on first load or when accessing thermal printing
-    if (!warningShown) {
-      // Delay showing warning slightly to not overwhelm user on page load
-      setTimeout(() => {
-        showBrowserCompatibilityWarning();
-      }, 1500);
-    }
-  }
+function showPrinterConfig() {
+  const status = getPrintersStatus();
+  
+  // Load current config into form
+  document.getElementById('configPrinter1Name').value = status.printer1.name;
+  document.getElementById('configPrinter1IP').value = status.printer1.ip || '';
+  document.getElementById('configPrinter1Port').value = status.printer1.port;
+  
+  document.getElementById('configPrinter2Name').value = status.printer2.name;
+  document.getElementById('configPrinter2IP').value = status.printer2.ip || '';
+  document.getElementById('configPrinter2Port').value = status.printer2.port;
+  
+  document.getElementById('printerConfigOverlay').classList.add('show');
 }
 
-/* ===== PRINT METHOD MANAGEMENT ===== */
 /**
- * Get the selected print method from localStorage or default to 'browser'
- * If Web Serial API is not supported, always return 'browser'
- * @returns {string} 'browser' or 'thermal'
+ * Close printer configuration modal
  */
-function getPrintMethod() {
-  // Force browser print if Web Serial API not supported
-  if (!isWebSerialSupported()) {
-    return 'browser';
+function closePrinterConfig() {
+  document.getElementById('printerConfigOverlay').classList.remove('show');
+}
+
+/**
+ * Test printer connection
+ */
+async function testPrinter(printerId) {
+  const nameField = document.getElementById(`configPrinter${printerId === 'printer1' ? '1' : '2'}Name`);
+  const ipField = document.getElementById(`configPrinter${printerId === 'printer1' ? '1' : '2'}IP`);
+  const portField = document.getElementById(`configPrinter${printerId === 'printer1' ? '1' : '2'}Port`);
+  
+  const ip = ipField.value.trim();
+  const port = parseInt(portField.value) || 9100;
+  
+  if (!ip) {
+    showErrorToast('Invalid IP', 'Please enter a valid IP address');
+    return;
   }
   
-  const saved = safeGetStorage('bfsPrintMethod');
-  return saved === 'thermal' ? 'thermal' : 'browser';
-}
-
-/**
- * Save the selected print method to localStorage
- * Prevents selecting thermal print in unsupported browsers
- */
-function savePrintMethod() {
-  const selected = document.querySelector('input[name="printMethod"]:checked');
-  if (selected) {
-    const method = selected.value;
+  try {
+    setPrintLoading(true, `Testing ${nameField.value}...`);
     
-    // Prevent thermal selection in unsupported browsers
-    if (method === 'thermal' && !isWebSerialSupported()) {
-      // Show warning and revert to browser print
-      showBrowserCompatibilityWarning();
-      
-      const browserRadio = document.querySelector('input[name="printMethod"][value="browser"]');
-      if (browserRadio) {
-        browserRadio.checked = true;
-      }
-      return;
-    }
+    await connectWiFiPrinter(printerId, ip, port);
     
-    safeSetStorage('bfsPrintMethod', method);
+    setPrintLoading(false);
+    showSuccessToast('Connection Successful', `${nameField.value} is reachable and ready`);
     
-    // Show/hide printer connection indicator based on selection
-    const connectionEl = document.getElementById('printerConnection');
-    if (connectionEl) {
-      connectionEl.style.display = method === 'thermal' ? '' : 'none';
-    }
-    
-    console.log('Print method set to:', method);
+    updatePrinterStatusUI();
+  } catch (error) {
+    setPrintLoading(false);
+    showErrorToast('Connection Failed', error.message);
   }
 }
 
 /**
- * Load saved print method preference on page load
- * Automatically disables thermal print option in unsupported browsers
+ * Save printer configuration
  */
-function loadPrintMethodPreference() {
-  const webSerialSupported = isWebSerialSupported();
-  const method = getPrintMethod(); // This will return 'browser' if Web Serial not supported
-  const radioBtn = document.querySelector(`input[name="printMethod"][value="${method}"]`);
+function savePrinterConfiguration() {
+  // Printer 1
+  const p1Name = document.getElementById('configPrinter1Name').value.trim();
+  const p1IP = document.getElementById('configPrinter1IP').value.trim();
+  const p1Port = parseInt(document.getElementById('configPrinter1Port').value) || 9100;
   
-  if (radioBtn) {
-    radioBtn.checked = true;
+  // Printer 2
+  const p2Name = document.getElementById('configPrinter2Name').value.trim();
+  const p2IP = document.getElementById('configPrinter2IP').value.trim();
+  const p2Port = parseInt(document.getElementById('configPrinter2Port').value) || 9100;
+  
+  // Update printer connections
+  if (p1IP) {
+    printerConnections.printer1.name = p1Name || 'Printer 1';
+    printerConnections.printer1.ip = p1IP;
+    printerConnections.printer1.port = p1Port;
   }
   
-  // Handle unsupported browsers
-  if (!webSerialSupported) {
-    // Disable thermal print option
-    const thermalRadio = document.querySelector('input[name="printMethod"][value="thermal"]');
-    const thermalLabel = thermalRadio ? thermalRadio.closest('.print-method-option') : null;
-    
-    if (thermalRadio) {
-      thermalRadio.disabled = true;
-    }
-    
-    if (thermalLabel) {
-      thermalLabel.style.opacity = '0.5';
-      thermalLabel.style.cursor = 'not-allowed';
-      thermalLabel.title = 'Thermal printing requires Chrome or Edge browser';
-      
-      // Add tooltip icon to thermal print option
-      const labelText = thermalLabel.querySelector('span');
-      if (labelText && !labelText.querySelector('.browser-warning-icon')) {
-        labelText.innerHTML = labelText.innerHTML + ' <span class="browser-warning-icon" title="Not supported in this browser">⚠️</span>';
-      }
-    }
-    
-    // Force browser print radio to be checked
-    const browserRadio = document.querySelector('input[name="printMethod"][value="browser"]');
-    if (browserRadio) {
-      browserRadio.checked = true;
-    }
-    
-    // Hide printer connection controls since they won't be needed
-    const connectionEl = document.getElementById('printerConnection');
-    if (connectionEl) {
-      connectionEl.style.display = 'none';
-    }
-  } else {
-    // Show/hide printer connection indicator based on selection for supported browsers
-    const connectionEl = document.getElementById('printerConnection');
-    if (connectionEl) {
-      connectionEl.style.display = method === 'thermal' ? '' : 'none';
-    }
+  if (p2IP) {
+    printerConnections.printer2.name = p2Name || 'Printer 2';
+    printerConnections.printer2.ip = p2IP;
+    printerConnections.printer2.port = p2Port;
   }
+  
+  savePrinterConfig();
+  updatePrinterStatusUI();
+  closePrinterConfig();
+  
+  showSuccessToast('Configuration Saved', 'Printer settings have been updated');
 }
+
+/* ===== PRINT METHOD MANAGEMENT (Removed - WiFi Only) ===== */
+/* ===== PRINT METHOD MANAGEMENT (Removed - WiFi Only) ===== */
 
 /* ===== TOAST NOTIFICATION SYSTEM ===== */
 /**
@@ -1839,11 +1824,9 @@ function init() {
   if (billNoEl) billNoEl.value = pad;
   updateHeaderBill(pad);
   
-  // Check browser compatibility for thermal printing
-  checkBrowserCompatibility();
-  
-  // Load print method preference (will automatically handle unsupported browsers)
-  loadPrintMethodPreference();
+  // Load WiFi printer configuration
+  loadPrinterConfig();
+  updatePrinterStatusUI();
   
   // Load printer character set preference
   loadPrinterCharacterSetPreference();
@@ -2270,239 +2253,61 @@ function downloadHistory() {
 
 
 /**
- * Main print bill function - routes to appropriate print method
- * Ensures browser print always works as backup if thermal print fails
+ * Main print bill function - prints to WiFi thermal printers
  */
-function printBill() {
+async function printBill() {
   if (billItems.length === 0) { 
-    alert('Add at least one item before printing!'); 
+    showWarningToast('Empty Bill', 'Add at least one item before printing');
     return; 
   }
 
-  const printMethod = getPrintMethod();
+  const status = getPrintersStatus();
   
-  if (printMethod === 'thermal') {
-    // Attempt thermal print with automatic fallback
-    try {
-      printThermalReceipt();
-    } catch (error) {
-      // If thermal print completely fails, fall back to browser print
-      console.error('Thermal print method failed, falling back to browser print:', error);
-      
-      showWarningToast(
-        'Falling Back to Browser Print',
-        'Thermal printing failed. Using browser print as backup...'
-      );
-      
-      setTimeout(() => {
-        try {
-          printBrowserReceipt();
-        } catch (browserError) {
-          console.error('Browser print also failed:', browserError);
-          alert('Print failed. Please check your printer settings and try again.');
-        }
-      }, 500);
-    }
-  } else {
-    // Use browser print directly
-    try {
-      printBrowserReceipt();
-    } catch (error) {
-      console.error('Browser print failed:', error);
-      alert('Print failed. Please check your printer settings and try again.');
-    }
-  }
-}
-
-/**
- * Print receipt using browser print dialog (original implementation)
- */
-function printBrowserReceipt() {
-  const billNo   = document.getElementById('billNoInput').value;
-  const customer = document.getElementById('customerName').value.trim();
-  const now      = new Date();
-
-  const grandTotalAmount = billItems.reduce((s, i) => s + i.total, 0);
-  const itemsSnapshot = billItems.map(function(it) {
-    var parts = [];
-    if (it.ice) parts.push(it.ice);
-    if (it.sugar && it.sugar !== 'Normal Sugar') parts.push(it.sugar);
-    if (it.size  && it.size  !== 'Regular')      parts.push(it.size);
-    if (it.note) parts.push(it.note);
-    return { name: it.name, emoji: it.emoji, qty: it.qty, price: it.price, total: it.total, spec: parts.join(', ') || 'Standard' };
-  });
-
-  const dateStr  = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-  const timeStr  = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-
-  const rows = billItems.map(item => {
-    const hasIceSpec   = item.ice !== null && item.ice !== undefined;
-    const hasSugarSpec = item.sugar !== null && item.sugar !== undefined;
-
-    const isWithIce    = item.ice === 'With Ice';
-    const isWithoutIce = item.ice === 'Without Ice';
-    const isWithSugar  = item.sugar === 'Normal Sugar' || item.sugar === 'Less Sugar' || item.sugar === 'With Sugar';
-    const isNoSugar    = item.sugar === 'No Sugar';
-
-    let prefBox = '';
-
-    if (hasIceSpec || hasSugarSpec) {
-      if (isWithIce && (isWithSugar || !hasSugarSpec)) {
-        // 1. With Ice & With Sugar -> FULL BLACK BOX
-        prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="#000" stroke="#000" stroke-width="1"/></svg>`;
-      } else if (isWithIce && isNoSugar) {
-        // 3. With Ice & No Sugar -> HALF WHITE AND HALF BLACK BOX
-        prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/><rect x="1" y="1" width="6" height="12" fill="#000"/></svg>`;
-      } else if (isWithoutIce && isWithSugar) {
-        // 4. No Ice & With Sugar -> CHECKERED BOX (Horizontal & Vertical lines)
-        prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/><line x1="0.5" y1="7" x2="13.5" y2="7" stroke="#000" stroke-width="1.5"/><line x1="7" y1="0.5" x2="7" y2="13.5" stroke="#000" stroke-width="1.5"/></svg>`;
-      } else if ((isWithoutIce || !hasIceSpec) && (isNoSugar || !hasSugarSpec)) {
-        // 2. No Ice & No Sugar -> FULL WHITE (EMPTY OUTLINE) BOX
-        prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/></svg>`;
-      }
-    }
-
-    return `
-      <tr>
-        <td style="padding:4px 2px;vertical-align:top;font-size:11px;">
-          <strong>${item.name}</strong>
-        </td>
-        <td style="text-align:center;padding:4px;white-space:nowrap;vertical-align:top;font-size:11px;">${item.qty}</td>
-        <td style="text-align:center;padding:4px;white-space:nowrap;vertical-align:top;font-size:11px;">${prefBox}</td>
-      </tr>`;
-  }).join('');
-
-  const receiptHTML = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8"/>
-  <title>Bill #${billNo} - Best Fruits Stall</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #111; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    @page { margin: 6mm; size: 80mm auto; }
-    @media print { body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-  <div style="width:76mm;margin:0 auto;">
-    <div style="text-align:center;margin-bottom:8px;">
-      <div style="font-size:17px;font-weight:900;letter-spacing:1px;">Best Fruits Stall</div>
-      <div style="font-size:9px;color:#555;margin-top:2px;">Fresh Juices | Shakes | Snacks</div>
-      <div style="border-top:2px dashed #000;margin:6px 0;"></div>
-      <table style="width:100%;font-size:10px;">
-        <tr>
-          <td style="text-align:left;"><strong>Bill No.: #${billNo}</strong></td>
-          <td style="text-align:right;">${dateStr}</td>
-        </tr>
-        ${customer ? '<tr><td colspan="2" style="text-align:left;">Customer: <strong>' + customer + '</strong></td></tr>' : ''}
-        <tr><td colspan="2" style="text-align:right;color:#666;">${timeStr}</td></tr>
-      </table>
-      <div style="border-top:2px dashed #000;margin:6px 0;"></div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;">
-      <thead>
-        <tr style="border-bottom:1px solid #333;">
-          <th style="text-align:left;padding:3px 2px;font-size:10px;">ITEM</th>
-          <th style="text-align:center;padding:3px 2px;font-size:10px;">QTY</th>
-          <th style="text-align:center;padding:3px 2px;font-size:10px;">PREF</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div style="border-top:2px dashed #000;margin:6px 0;"></div>
-    <div style="text-align:center;font-size:9.5px;color:#555;margin-top:6px;line-height:1.7;">
-      Thank you for visiting Best Fruits Stall!<br/>
-      Stay Fresh | Stay Healthy
-    </div>
-  </div>
-  <script>
-    window.onload = function() { window.print(); window.onafterprint = function(){ window.close(); }; };
-  ${'</' + 'script>'}
-</body>
-</html>`;
-
-  const printWin = window.open('', '_blank', 'width=400,height=600');
-  if (!printWin) {
-    alert('Please allow pop-ups for this page to print bills. (Look for a pop-up blocked icon in your browser address bar)');
-    return;
-  }
-  printWin.document.write(receiptHTML);
-  printWin.document.close();
-
-  // Only save to history after successful print
-  saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer, 'browser');
-  
-  // Auto-advance to next bill after printing
-  clearCurrentBill();
-}
-
-/**
- * Print receipt using thermal printer with ESC/POS commands
- */
-async function printThermalReceipt() {
-  // Check if modules are loaded
-  if (typeof generateESCPOSReceipt === 'undefined' || typeof sendToPrinter === 'undefined') {
+  // Check if at least one printer is configured
+  if (!status.printer1.configured && !status.printer2.configured) {
     showErrorToast(
-      'Module Not Loaded',
-      'Thermal printer modules not loaded. Please refresh the page.',
+      'No Printers Configured',
+      'Please configure at least one WiFi printer before printing.',
       [
         {
-          label: 'Refresh',
-          onClick: () => location.reload(),
+          label: 'Configure Printers',
+          onClick: () => showPrinterConfig(),
           primary: true
         }
       ]
     );
     return;
   }
-
-  // Check if printer is connected
-  if (typeof isConnected === 'undefined' || !isConnected()) {
-    showErrorToast(
-      'No Printer Connected',
-      'Please connect a thermal printer before printing.',
-      [
-        {
-          label: 'Connect Printer',
-          onClick: () => handleConnectPrinter(),
-          primary: true
-        }
-      ]
-    );
-    return;
-  }
-
-  const billNo   = document.getElementById('billNoInput').value;
-  const customer = document.getElementById('customerName').value.trim();
-  const now      = new Date();
-
-  const grandTotalAmount = billItems.reduce((s, i) => s + i.total, 0);
-  const itemsSnapshot = billItems.map(function(it) {
-    var parts = [];
-    if (it.ice) parts.push(it.ice);
-    if (it.sugar && it.sugar !== 'Normal Sugar') parts.push(it.sugar);
-    if (it.size  && it.size  !== 'Regular')      parts.push(it.size);
-    if (it.note) parts.push(it.note);
-    return { 
-      name: it.name, 
-      emoji: it.emoji, 
-      qty: it.qty, 
-      price: it.price, 
-      total: it.total, 
-      ice: it.ice,
-      sugar: it.sugar,
-      size: it.size,
-      note: it.note,
-      spec: parts.join(', ') || 'Standard' 
-    };
-  });
 
   try {
-    // Show loading indicator
     setPrintLoading(true, 'Generating receipt...');
     
-    // Prepare bill data for ESC/POS generation
+    const billNo = document.getElementById('billNoInput').value;
+    const customer = document.getElementById('customerName').value.trim();
+    const now = new Date();
+    const grandTotalAmount = billItems.reduce((s, i) => s + i.total, 0);
+    
+    const itemsSnapshot = billItems.map(function(it) {
+      var parts = [];
+      if (it.ice) parts.push(it.ice);
+      if (it.sugar && it.sugar !== 'Normal Sugar') parts.push(it.sugar);
+      if (it.size  && it.size  !== 'Regular')      parts.push(it.size);
+      if (it.note) parts.push(it.note);
+      return { 
+        name: it.name, 
+        emoji: it.emoji, 
+        qty: it.qty, 
+        price: it.price, 
+        total: it.total, 
+        ice: it.ice,
+        sugar: it.sugar,
+        size: it.size,
+        note: it.note,
+        spec: parts.join(', ') || 'Standard' 
+      };
+    });
+
+    // Prepare bill data
     const billData = {
       billNo: billNo,
       customerName: customer,
@@ -2513,186 +2318,82 @@ async function printThermalReceipt() {
     };
 
     // Generate ESC/POS receipt
+    setPrintLoading(true, 'Printing to WiFi printers...');
     const escposData = generateESCPOSReceipt(billData);
     
-    // Check printer status before sending
-    if (typeof getPrinterStatus !== 'undefined') {
-      setPrintLoading(true, 'Checking printer status...');
-      const status = await getPrinterStatus();
-      
-      if (status.status === 'offline') {
-        setPrintLoading(false);
-        showErrorToast(
-          'Printer Offline',
-          'The printer is offline. Please check the power and connection.',
-          [
-            {
-              label: 'Check Status',
-              onClick: async () => {
-                const newStatus = await getPrinterStatus();
-                if (newStatus.ready) {
-                  showSuccessToast('Printer Ready', 'Printer is now online');
-                } else {
-                  showErrorToast('Still Offline', newStatus.message);
-                }
-              },
-              primary: false
-            },
-            {
-              label: 'Retry',
-              onClick: () => printThermalReceipt(),
-              primary: true
-            }
-          ]
-        );
-        return;
-      } else if (status.status === 'paper_out') {
-        setPrintLoading(false);
-        showErrorToast(
-          'Paper Out',
-          'The printer is out of paper. Please load paper and try again.',
-          [
-            {
-              label: 'Retry',
-              onClick: () => printThermalReceipt(),
-              primary: true
-            }
-          ]
-        );
-        return;
-      }
-    }
-    
-    // Send to printer
-    setPrintLoading(true, 'Printing...');
-    await sendToPrinter(escposData);
+    // Print to both printers
+    const results = await printToBothPrinters(escposData);
     
     setPrintLoading(false);
-    showSuccessToast('Print Successful', `Bill #${billNo} printed successfully`);
-    console.log('Thermal receipt printed successfully');
+    
+    // Check results and show appropriate feedback
+    const p1Success = results.printer1.success;
+    const p2Success = results.printer2.success;
+    
+    if (p1Success && p2Success) {
+      showSuccessToast('Print Successful', 'Receipt printed to both printers');
+    } else if (p1Success || p2Success) {
+      const successPrinter = p1Success ? status.printer1.name : status.printer2.name;
+      const failedPrinter = p1Success ? status.printer2.name : status.printer1.name;
+      showWarningToast(
+        'Partial Success',
+        `Printed to ${successPrinter}, but ${failedPrinter} failed`
+      );
+    } else {
+      // Both failed
+      const errors = [];
+      if (results.printer1.error) errors.push(`${status.printer1.name}: ${results.printer1.error}`);
+      if (results.printer2.error) errors.push(`${status.printer2.name}: ${results.printer2.error}`);
+      
+      showErrorToast(
+        'Print Failed',
+        errors.join('\n'),
+        [
+          {
+            label: 'Retry',
+            onClick: () => printBill(),
+            primary: true
+          },
+          {
+            label: 'Check Printers',
+            onClick: () => showPrinterConfig(),
+            primary: false
+          }
+        ]
+      );
+      return; // Don't save to history if print failed
+    }
     
     // Save to history after successful print
-    saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer, 'thermal');
+    saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer);
     
     // Auto-advance to next bill after printing
     clearCurrentBill();
     
   } catch (error) {
-    console.error('Thermal print error:', error);
+    console.error('Print error:', error);
     setPrintLoading(false);
     
-    // Log compatibility information for debugging
-    console.log('Browser compatibility:', {
-      webSerial: 'serial' in navigator,
-      userAgent: navigator.userAgent,
-      error: error.message
-    });
-    
-    // Handle specific printing errors with fallback options
-    if (error.message.includes('No printer connected')) {
-      showErrorToast(
-        'Printer Disconnected',
-        'The printer was disconnected. Would you like to use browser print instead?',
-        [
-          {
-            label: 'Use Browser Print',
-            onClick: () => {
-              showInfoToast('Switching to Browser Print', 'Using browser print dialog...');
-              setTimeout(() => printBrowserReceipt(), 500);
-            },
-            primary: true
-          },
-          {
-            label: 'Reconnect Printer',
-            onClick: () => handleConnectPrinter(),
-            primary: false
-          }
-        ]
-      );
-    } else if (error.message.includes('Transmission timeout') || error.message.includes('not responding')) {
-      showErrorToast(
-        'Printer Not Responding',
-        'The printer is not responding. You can try again or use browser print.',
-        [
-          {
-            label: 'Use Browser Print',
-            onClick: () => {
-              showInfoToast('Switching to Browser Print', 'Using browser print dialog...');
-              setTimeout(() => printBrowserReceipt(), 500);
-            },
-            primary: true
-          },
-          {
-            label: 'Retry Thermal Print',
-            onClick: () => printThermalReceipt(),
-            primary: false
-          },
-          {
-            label: 'Reconnect',
-            onClick: () => {
-              handleDisconnectPrinter();
-              setTimeout(() => handleConnectPrinter(), 500);
-            },
-            primary: false
-          }
-        ]
-      );
-    } else if (error.message.includes('disconnected during transmission')) {
-      showErrorToast(
-        'Connection Lost',
-        'Printer was disconnected during printing. Use browser print as backup?',
-        [
-          {
-            label: 'Use Browser Print',
-            onClick: () => {
-              showInfoToast('Switching to Browser Print', 'Using browser print dialog...');
-              setTimeout(() => printBrowserReceipt(), 500);
-            },
-            primary: true
-          },
-          {
-            label: 'Reconnect Printer',
-            onClick: () => handleConnectPrinter(),
-            primary: false
-          }
-        ]
-      );
-    } else if (error.message.includes('Web Serial API not supported')) {
-      // Web Serial API error - fallback to browser print automatically
-      showWarningToast(
-        'Thermal Print Unavailable',
-        'Your browser doesn\'t support thermal printing. Switching to browser print...'
-      );
-      
-      // Log for debugging
-      console.warn('Web Serial API not supported, falling back to browser print');
-      
-      // Automatically fallback to browser print after a short delay
-      setTimeout(() => printBrowserReceipt(), 1000);
-    } else {
-      // Generic print error with fallback option
-      showErrorToast(
-        'Thermal Print Failed',
-        error.message || 'Failed to print receipt. Would you like to use browser print instead?',
-        [
-          {
-            label: 'Use Browser Print',
-            onClick: () => {
-              showInfoToast('Switching to Browser Print', 'Using browser print dialog...');
-              setTimeout(() => printBrowserReceipt(), 500);
-            },
-            primary: true
-          },
-          {
-            label: 'Retry Thermal Print',
-            onClick: () => printThermalReceipt(),
-            primary: false
-          }
-        ]
-      );
-    }
+    showErrorToast(
+      'Print Failed',
+      error.message || 'Failed to print receipt',
+      [
+        {
+          label: 'Retry',
+          onClick: () => printBill(),
+          primary: true
+        },
+        {
+          label: 'Configure Printers',
+          onClick: () => showPrinterConfig(),
+          primary: false
+        }
+      ]
+    );
   }
 }
+
+/* ===== REMOVED: Browser Print and Old Serial Thermal Print (WiFi Only) ===== */
 
 /**
  * Save bill to history (extracted common logic)
@@ -2700,9 +2401,8 @@ async function printThermalReceipt() {
  * @param {number} amount - Total amount
  * @param {Array} items - Bill items snapshot
  * @param {string} customer - Customer name
- * @param {string} printMethod - Print method used ('browser' or 'thermal')
  */
-function saveBillToHistory(billNo, amount, items, customer, printMethod) {
+function saveBillToHistory(billNo, amount, items, customer) {
   if (activeQrOrderId) {
     var printedQrOrderId = activeQrOrderId;
     var printedQrOrder = orderQueue.find(function(o) { return o.serverId === printedQrOrderId; });
@@ -2718,7 +2418,7 @@ function saveBillToHistory(billNo, amount, items, customer, printMethod) {
     }
 
     if (window.BillHistory) {
-      window.BillHistory.saveBillRecord(billNo, amount, items, printMethod)
+      window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal')
         .catch(function(err) { console.error('Bill save failed:', err); });
     }
 
@@ -2727,7 +2427,7 @@ function saveBillToHistory(billNo, amount, items, customer, printMethod) {
     renderQueue();
   } else {
     if (window.BillHistory) {
-      window.BillHistory.saveBillRecord(billNo, amount, items, printMethod)
+      window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal')
         .catch(function(err) { console.error('Bill save failed:', err); });
     }
     // Add manually printed bills to the local orders queue.
