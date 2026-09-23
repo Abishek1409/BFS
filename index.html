@@ -916,11 +916,29 @@
 
 <!-- Printer Configuration Modal -->
 <div class="overlay" id="printerConfigOverlay">
-  <div class="modal" style="width: 500px; max-width: 95vw;">
+  <div class="modal" style="width: 550px; max-width: 95vw;">
     <h3>🖨️ Configure WiFi Printers</h3>
-    <p style="font-size: .85rem; color: var(--muted); margin-bottom: 18px;">
-      Enter the IP addresses of your WiFi thermal printers
+    <p style="font-size: .85rem; color: var(--muted); margin-bottom: 12px;">
+      Connect to thermal printers on your WiFi network
     </p>
+    
+    <!-- Auto-Discovery Section -->
+    <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 12px; margin-bottom: 18px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 1.2rem;">🔍</span>
+        <strong style="color: var(--accent);">Easy Setup</strong>
+      </div>
+      <p style="font-size: .78rem; color: var(--muted); margin-bottom: 10px;">
+        Let the system find printers on your network automatically
+      </p>
+      <button class="btn btn-primary" onclick="discoverAndShowPrinters()" style="width: 100%;">
+        🔍 Auto-Discover Printers
+      </button>
+    </div>
+    
+    <div style="text-align: center; color: var(--muted); font-size: .75rem; margin: 15px 0;">
+      — OR configure manually —
+    </div>
     
     <!-- Printer 1 Config -->
     <div class="form-row">
@@ -928,11 +946,21 @@
       <input type="text" id="configPrinter1Name" placeholder="e.g., Counter Printer" value="Printer 1" />
     </div>
     <div class="form-row">
-      <label>Printer 1 IP Address</label>
+      <label>
+        Printer 1 Network Address (IP)
+        <span style="font-size: .7rem; color: var(--muted); display: block; margin-top: 2px;">
+          Find this in your printer's network settings
+        </span>
+      </label>
       <input type="text" id="configPrinter1IP" placeholder="e.g., 192.168.1.100" pattern="^(\d{1,3}\.){3}\d{1,3}$" />
     </div>
     <div class="form-row">
-      <label>Printer 1 Port</label>
+      <label>
+        Port (Advanced)
+        <span style="font-size: .7rem; color: var(--muted); display: block; margin-top: 2px;">
+          Leave as 9100 unless your printer manual specifies otherwise
+        </span>
+      </label>
       <input type="number" id="configPrinter1Port" value="9100" min="1" max="65535" />
     </div>
     <button class="btn btn-secondary" onclick="testPrinter('printer1')" style="width: 100%; margin-bottom: 10px;">
@@ -947,11 +975,21 @@
       <input type="text" id="configPrinter2Name" placeholder="e.g., Kitchen Printer" value="Printer 2" />
     </div>
     <div class="form-row">
-      <label>Printer 2 IP Address</label>
+      <label>
+        Printer 2 Network Address (IP)
+        <span style="font-size: .7rem; color: var(--muted); display: block; margin-top: 2px;">
+          Find this in your printer's network settings
+        </span>
+      </label>
       <input type="text" id="configPrinter2IP" placeholder="e.g., 192.168.1.101" pattern="^(\d{1,3}\.){3}\d{1,3}$" />
     </div>
     <div class="form-row">
-      <label>Printer 2 Port</label>
+      <label>
+        Port (Advanced)
+        <span style="font-size: .7rem; color: var(--muted); display: block; margin-top: 2px;">
+          Leave as 9100 unless your printer manual specifies otherwise
+        </span>
+      </label>
       <input type="number" id="configPrinter2Port" value="9100" min="1" max="65535" />
     </div>
     <button class="btn btn-secondary" onclick="testPrinter('printer2')" style="width: 100%; margin-bottom: 10px;">
@@ -1107,6 +1145,43 @@ function updatePrinterStatusUI() {
   if (p2Name) p2Name.textContent = status.printer2.name;
   if (p2IP) {
     p2IP.textContent = status.printer2.ip || 'Not configured';
+  }
+}
+
+/**
+ * Discover printers and show selection UI
+ */
+async function discoverAndShowPrinters() {
+  try {
+    const printers = await discoverPrinters();
+    
+    if (printers.length === 0) {
+      showWarningToast(
+        'No Printers Found',
+        'No thermal printers were detected. Please check that your printers are connected to WiFi and on the same network as this device.'
+      );
+      return;
+    }
+    
+    // Auto-assign discovered printers
+    if (printers.length >= 1) {
+      document.getElementById('configPrinter1IP').value = printers[0].ip;
+      document.getElementById('configPrinter1Port').value = printers[0].port;
+      document.getElementById('configPrinter1Name').value = `Printer at ${printers[0].ip}`;
+    }
+    
+    if (printers.length >= 2) {
+      document.getElementById('configPrinter2IP').value = printers[1].ip;
+      document.getElementById('configPrinter2Port').value = printers[1].port;
+      document.getElementById('configPrinter2Name').value = `Printer at ${printers[1].ip}`;
+    }
+    
+    showSuccessToast(
+      'Printers Auto-Configured',
+      `Found ${printers.length} printer(s). Review and save the configuration.`
+    );
+  } catch (error) {
+    showErrorToast('Discovery Failed', error.message);
   }
 }
 

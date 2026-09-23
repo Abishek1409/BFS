@@ -1,7 +1,7 @@
 /**
  * WiFi Thermal Printer Communication Module
  * Handles network communication with ESC/POS thermal printers via TCP/IP
- * Supports multiple printers simultaneously
+ * Supports multiple printers simultaneously with auto-discovery
  */
 
 // Printer connection state
@@ -21,6 +21,113 @@ const printerConnections = {
     socket: null
   }
 };
+
+// Discovered printers cache
+let discoveredPrinters = [];
+
+/**
+ * Auto-discover thermal printers on the local network
+ * Scans common IP ranges and ESC/POS ports
+ * @returns {Promise<Array>} Array of discovered printers
+ */
+async function discoverPrinters() {
+  console.log('Starting printer discovery...');
+  
+  const discovered = [];
+  const commonPorts = [9100, 9101, 9102, 8008];
+  
+  // Get the local network IP range
+  // For tablets, we'll scan the most common range: 192.168.1.x
+  const baseIP = '192.168.1.'; // Most common home/office network
+  const startIP = 100; // Start scanning from .100
+  const endIP = 120;   // End at .120 (scan 20 IPs)
+  
+  showToast({
+    type: 'info',
+    title: 'Discovering Printers...',
+    message: `Scanning network for thermal printers. This may take 10-20 seconds.`,
+    duration: 0
+  });
+  
+  // Scan IP range
+  const scanPromises = [];
+  for (let i = startIP; i <= endIP; i++) {
+    const ip = baseIP + i;
+    
+    // Try each common port
+    for (const port of commonPorts) {
+      scanPromises.push(
+        testPrinterAtAddress(ip, port)
+          .then(result => {
+            if (result.success) {
+              discovered.push({
+                ip: ip,
+                port: port,
+                name: `Printer at ${ip}:${port}`
+              });
+              console.log(`Found printer at ${ip}:${port}`);
+            }
+          })
+          .catch(() => {
+            // Silently ignore failed connections
+          })
+      );
+    }
+  }
+  
+  // Wait for all scans to complete (with timeout)
+  await Promise.race([
+    Promise.all(scanPromises),
+    new Promise(resolve => setTimeout(resolve, 20000)) // 20 second timeout
+  ]);
+  
+  discoveredPrinters = discovered;
+  
+  // Dismiss discovery toast
+  const toasts = document.querySelectorAll('.toast');
+  toasts.forEach(toast => {
+    if (toast.textContent.includes('Discovering Printers')) {
+      dismissToast(toast);
+    }
+  });
+  
+  if (discovered.length > 0) {
+    showSuccessToast('Printers Found', `Discovered ${discovered.length} printer(s)`);
+  } else {
+    showWarningToast('No Printers Found', 'No thermal printers detected on network. You can still configure manually.');
+  }
+  
+  console.log('Discovery complete:', discovered);
+  return discovered;
+}
+
+/**
+ * Test if a printer exists at specific IP and port
+ * @param {string} ip - IP address to test
+ * @param {number} port - Port number to test
+ * @returns {Promise<Object>} Test result
+ */
+async function testPrinterAtAddress(ip, port) {
+  try {
+    // Try to connect with a very short timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 500); // 500ms timeout
+    
+    const response = await fetch(`http://${ip}:${port}/`, {
+      method: 'GET',
+      signal: controller.signal,
+      mode: 'no-cors' // Allow cross-origin for local network
+    });
+    
+    clearTimeout(timeoutId);
+    
+    // If we get any response, consider it a success
+    return { success: true };
+  } catch (error) {
+    // Connection failed or timed out
+    return { success: false, error: error.message };
+  }
+}
 
 /**
  * Load printer configurations from localStorage
