@@ -1,23 +1,25 @@
 {
-  "name": "bfs",
+  "name": "possiflow-print-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Local print server for Possiflow thermal printer - bypasses CORS restrictions",
+  "main": "print-server.js",
   "scripts": {
-    "build:waves": "esbuild gradient-waves-init.js --bundle --format=iife --outfile=gradient-waves.bundle.js --platform=browser",
-    "build:darkveil": "esbuild dark-veil-init.js --bundle --format=iife --outfile=dark-veil.bundle.js --platform=browser",
-    "build:floatinglines": "esbuild floating-lines-init.js --bundle --format=iife --outfile=floating-lines.bundle.js --platform=browser",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node print-server.js",
+    "dev": "nodemon print-server.js"
   },
-  "keywords": [],
+  "keywords": [
+    "possiflow",
+    "thermal-printer",
+    "print-server",
+    "escpos"
+  ],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "description": "",
+  "license": "MIT",
   "dependencies": {
-    "ogl": "^1.0.11",
-    "three": "^0.179.1"
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
-    "esbuild": "^0.28.2"
+    "nodemon": "^3.0.1"
   }
 }
