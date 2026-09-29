@@ -35,7 +35,7 @@ function setASCIIFallback(useFallback) {
 }
 
 /**
- * Maps preference combination to ESC/POS character
+ * Maps preference combination to shape symbol
  * @param {Object} item - Bill item with ice and sugar preferences
  * @returns {string} Character for preference symbol
  */
@@ -51,31 +51,31 @@ function getPreferenceSymbol(item) {
   if (useASCIIFallback) {
     // ASCII fallback characters
     if (hasIce && hasSugar) {
-      return '[X]'; // With Ice + Sugar
-    } else if (!hasIce && !hasSugar) {
-      return '[ ]'; // Without Ice + No Sugar
+      return '(O)'; // Circle - With Ice + Sugar
     } else if (hasIce && !hasSugar) {
-      return '[/]'; // With Ice + No Sugar
+      return '[]'; // Square - With Ice + No Sugar
+    } else if (!hasIce && hasSugar) {
+      return '/\\'; // Triangle - Without Ice + Sugar
     } else {
-      return '[#]'; // Without Ice + Sugar
+      return '[#]'; // Grid - Without Ice + No Sugar
     }
   } else {
-    // Unicode box-drawing characters
+    // Unicode shape symbols for thermal printers
     if (hasIce && hasSugar) {
-      return '■'; // U+25A0 - Fully shaded block
-    } else if (!hasIce && !hasSugar) {
-      return '□'; // U+25A1 - Outline block
+      return '●'; // Circle - With Ice + Sugar
     } else if (hasIce && !hasSugar) {
-      return '◧'; // U+25E7 - Half-filled block
+      return '■'; // Square - With Ice + No Sugar
+    } else if (!hasIce && hasSugar) {
+      return '▲'; // Triangle - Without Ice + Sugar
     } else {
-      return '▦'; // U+25A6 - Checkered block
+      return '▦'; // Grid - Without Ice + No Sugar
     }
   }
 }
 
 /**
  * Encodes text to appropriate character set for thermal printer
- * Converts Unicode box symbols to printer's internal character codes
+ * Converts Unicode shape symbols to printer's internal character codes
  * @param {string} text - Text to encode
  * @returns {Uint8Array} Encoded bytes
  */
@@ -86,19 +86,19 @@ function encodeText(text) {
     const char = text[i];
     const code = char.charCodeAt(0);
     
-    // Map Unicode box symbols to printer character codes
-    if (char === '■') {
-      // U+25A0 BLACK SQUARE - Full filled block
-      bytes.push(0xDB); // CP437: █ (full block)
-    } else if (char === '□') {
-      // U+25A1 WHITE SQUARE - Empty outline box
-      bytes.push(0xB0); // CP437: ░ (light shade - looks like outline)
-    } else if (char === '◧') {
-      // U+25E7 - Half filled (left black, right white)
-      bytes.push(0xDD); // CP437: ▌ (left half block)
+    // Map Unicode shape symbols to printer character codes
+    if (char === '●') {
+      // CIRCLE - With Ice + With Sugar
+      bytes.push(0x09); // CP437: ○ Circle (or use 0x07 for •)
+    } else if (char === '■') {
+      // SQUARE - With Ice + Without Sugar
+      bytes.push(0xFE); // CP437: ■ Small solid square
+    } else if (char === '▲') {
+      // TRIANGLE - Without Ice + With Sugar
+      bytes.push(0x1E); // CP437: ▲ Triangle
     } else if (char === '▦') {
-      // U+25A6 - Grid/matrix pattern
-      bytes.push(0xB2); // CP437: ▓ (dark shade - grid pattern)
+      // GRID - Without Ice + Without Sugar
+      bytes.push(0xB2); // CP437: ▓ Dark shade (grid pattern)
     } else if (char === '₹') {
       // Rupee symbol - most printers don't support, use Rs.
       bytes.push(82, 115, 46); // "Rs."
@@ -181,6 +181,7 @@ function formatCurrency(amount) {
  * @returns {Uint8Array} ESC/POS command sequence
  */
 function generateESCPOSReceipt(billData) {
+  console.log('Generating ESC/POS receipt with data:', billData);
   const buffer = [];
   
   // Helper to add bytes to buffer
@@ -298,7 +299,9 @@ function generateESCPOSReceipt(billData) {
   // Cut paper
   addBytes(CMD.CUT_PAPER);
   
-  return new Uint8Array(buffer);
+  const result = new Uint8Array(buffer);
+  console.log('Generated ESC/POS data, size:', result.length, 'bytes');
+  return result;
 }
 
 /**
