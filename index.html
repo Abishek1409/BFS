@@ -221,8 +221,19 @@
 
 
     .overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
-      z-index: 999; align-items: center; justify-content: center; animation: fadeIn .15s ease;
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      animation: fadeIn .15s ease;
     }
     .overlay.show { display: flex; }
     @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
@@ -234,6 +245,7 @@
       border-radius: 18px; padding: 28px;
       width: 380px; max-width: 95vw;
       box-shadow: 0 16px 48px rgba(0, 28, 20, .58); animation: slideUp .2s ease;
+      position: relative;
     }
     @keyframes slideUp { from { transform: translateY(30px); opacity:0 } to { transform: translateY(0); opacity:1 } }
     .modal h3 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 4px; }
@@ -320,8 +332,19 @@
       display: flex; align-items: center; gap: 6px; color: var(--muted);
     }
     .printer-status-dot {
-      width: 8px; height: 8px; border-radius: 50%; background: #666;
-      animation: pulse 2s ease-in-out infinite;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6b7280; /* Gray = Not configured */
+      transition: all 0.3s;
+    }
+    .printer-status-dot.configured {
+      background: #f59e0b; /* Orange = Configured but not connected */
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    }
+    .printer-status-dot.connected {
+      background: #10b981; /* Green = Connected and ready */
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
     }
     .printer-status.connected .printer-status-dot {
       background: var(--accent); animation: none;
@@ -915,9 +938,14 @@
 </div>
 
 <!-- Printer Configuration Modal -->
-<div class="overlay" id="printerConfigOverlay">
-  <div class="modal" style="width: 600px; max-width: 95vw;">
-    <h3>🖨️ Configure Thermal Printers</h3>
+<div class="overlay" id="printerConfigOverlay" onclick="closePrinterConfigIfClickedOutside(event)">
+  <div class="modal" style="width: 600px; max-width: 95vw; max-height: 90vh; overflow-y: auto; position: relative;">
+    <!-- Close Button -->
+    <button onclick="closePrinterConfig()" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; color: var(--muted); cursor: pointer; z-index: 10;" title="Close">
+      ✕
+    </button>
+    
+    <h3 style="margin-right: 30px;">🖨️ Configure Thermal Printers</h3>
     <p style="font-size: .85rem; color: var(--muted); margin-bottom: 12px;">
       Connect via USB cable or WiFi network - mix and match both types!
     </p>
@@ -1168,16 +1196,19 @@ function updatePrinterStatusUI() {
   
   if (p1Dot) {
     p1Dot.className = 'printer-status-dot';
-    if (status.printer1.connected) {
+    if (status.printer1.configured && status.printer1.connected) {
       p1Dot.classList.add('connected');
+    } else if (status.printer1.configured) {
+      p1Dot.classList.add('configured'); // Add new class for configured but not connected
     }
   }
   if (p1Name) p1Name.textContent = status.printer1.name;
   if (p1Status) {
     if (status.printer1.type === 'usb') {
-      p1Status.textContent = '🔌 USB';
+      p1Status.textContent = status.printer1.connected ? '🔌 USB Connected' : '🔌 USB (Ready)';
     } else if (status.printer1.type === 'wifi') {
-      p1Status.textContent = `📡 ${status.printer1.ip || 'WiFi'}`;
+      const statusText = status.printer1.connected ? 'Connected' : 'Ready';
+      p1Status.textContent = `📡 ${status.printer1.ip} (${statusText})`;
     } else {
       p1Status.textContent = 'Not configured';
     }
@@ -1190,19 +1221,29 @@ function updatePrinterStatusUI() {
   
   if (p2Dot) {
     p2Dot.className = 'printer-status-dot';
-    if (status.printer2.connected) {
+    if (status.printer2.configured && status.printer2.connected) {
       p2Dot.classList.add('connected');
+    } else if (status.printer2.configured) {
+      p2Dot.classList.add('configured');
     }
   }
   if (p2Name) p2Name.textContent = status.printer2.name;
   if (p2Status) {
     if (status.printer2.type === 'usb') {
-      p2Status.textContent = '🔌 USB';
+      p2Status.textContent = status.printer2.connected ? '🔌 USB Connected' : '🔌 USB (Ready)';
     } else if (status.printer2.type === 'wifi') {
-      p2Status.textContent = `📡 ${status.printer2.ip || 'WiFi'}`;
+      const statusText = status.printer2.connected ? 'Connected' : 'Ready';
+      p2Status.textContent = `📡 ${status.printer2.ip} (${statusText})`;
     } else {
       p2Status.textContent = 'Not configured';
     }
+  }
+  
+  // Update configure button text based on configuration state
+  const configBtn = document.querySelector('.btn-configure-printers');
+  if (configBtn) {
+    const hasAnyConfigured = status.printer1.configured || status.printer2.configured;
+    configBtn.textContent = hasAnyConfigured ? '⚙️ Manage Printers' : '⚙️ Configure Printers';
   }
 }
 
@@ -1330,9 +1371,21 @@ async function discoverAndFillPrinter(printerId) {
 }
 
 /**
+ * Handle keyboard shortcuts for modal
+ */
+function handleModalKeyboard(event) {
+  if (event.key === 'Escape') {
+    closePrinterConfig();
+  }
+}
+
+/**
  * Show printer configuration modal
  */
 function showPrinterConfig() {
+  // Add keyboard event listener
+  document.addEventListener('keydown', handleModalKeyboard);
+  
   const status = getPrintersStatus();
   
   // Load Printer 1 config
@@ -1363,6 +1416,17 @@ function showPrinterConfig() {
  */
 function closePrinterConfig() {
   document.getElementById('printerConfigOverlay').classList.remove('show');
+  // Remove keyboard event listener
+  document.removeEventListener('keydown', handleModalKeyboard);
+}
+
+/**
+ * Close printer config if clicked outside modal
+ */
+function closePrinterConfigIfClickedOutside(event) {
+  if (event.target.id === 'printerConfigOverlay') {
+    closePrinterConfig();
+  }
 }
 
 /**
