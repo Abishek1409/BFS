@@ -40,13 +40,18 @@ function setASCIIFallback(useFallback) {
  * @returns {string} Character for preference symbol
  */
 function getPreferenceSymbol(item) {
+  console.log('getPreferenceSymbol called with item:', item);
+  
   // Only show symbol if BOTH ice AND sugar preferences are present
   if (!item.ice || !item.sugar) {
+    console.log('Missing ice or sugar:', { ice: item.ice, sugar: item.sugar });
     return '';
   }
 
   const hasIce = item.ice === 'With Ice';
   const hasSugar = item.sugar === 'Normal Sugar';
+  
+  console.log('Preferences:', { hasIce, hasSugar });
   
   // Simple text-based symbols (always work on any printer)
   if (hasIce && hasSugar) {
