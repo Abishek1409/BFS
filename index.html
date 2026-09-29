@@ -877,21 +877,21 @@
       <div class="total-row grand"><span>TOTAL</span><span id="grandTotal">&#x20B9;0.00</span></div>
     </div>
     <div class="bill-actions">
-      <!-- WiFi Printer Status -->
+      <!-- Printer Status -->
       <div class="wifi-printer-status">
         <div class="printer-status-item">
           <div class="printer-info">
             <span class="printer-status-dot" id="printer1Dot"></span>
             <span id="printer1Name">Printer 1</span>
           </div>
-          <span class="printer-ip" id="printer1IP">Not configured</span>
+          <span class="printer-ip" id="printer1Status">Not configured</span>
         </div>
         <div class="printer-status-item">
           <div class="printer-info">
             <span class="printer-status-dot" id="printer2Dot"></span>
             <span id="printer2Name">Printer 2</span>
           </div>
-          <span class="printer-ip" id="printer2IP">Not configured</span>
+          <span class="printer-ip" id="printer2Status">Not configured</span>
         </div>
         <button class="btn-configure-printers" onclick="showPrinterConfig()">⚙️ Configure Printers</button>
       </div>
@@ -916,85 +916,131 @@
 
 <!-- Printer Configuration Modal -->
 <div class="overlay" id="printerConfigOverlay">
-  <div class="modal" style="width: 550px; max-width: 95vw;">
-    <h3>🖨️ Configure WiFi Printers</h3>
+  <div class="modal" style="width: 600px; max-width: 95vw;">
+    <h3>🖨️ Configure Thermal Printers</h3>
     <p style="font-size: .85rem; color: var(--muted); margin-bottom: 12px;">
-      Connect to thermal printers on your WiFi network
+      Connect via USB cable or WiFi network - mix and match both types!
     </p>
     
-    <!-- Auto-Discovery Section -->
-    <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 12px; margin-bottom: 18px;">
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <span style="font-size: 1.2rem;">🔍</span>
-        <strong style="color: var(--accent);">Easy Setup</strong>
-      </div>
-      <p style="font-size: .78rem; color: var(--muted); margin-bottom: 10px;">
-        Let the system find printers on your network automatically
-      </p>
-      <button class="btn btn-primary" onclick="discoverAndShowPrinters()" style="width: 100%;">
-        🔍 Auto-Discover Printers
-      </button>
-    </div>
-    
-    <div style="text-align: center; color: var(--muted); font-size: .75rem; margin: 15px 0;">
-      — OR configure manually —
-    </div>
-    
     <!-- Printer 1 Config -->
-    <div class="form-row">
-      <label>Printer 1 Name</label>
-      <input type="text" id="configPrinter1Name" placeholder="e.g., Counter Printer" value="Printer 1" />
+    <div style="background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+      <h4 style="color: var(--accent); margin-bottom: 12px;">🖨️ Printer 1</h4>
+      
+      <div class="form-row">
+        <label>Printer Name</label>
+        <input type="text" id="configPrinter1Name" placeholder="e.g., Counter Printer" value="Printer 1" />
+      </div>
+      
+      <div class="form-row">
+        <label>Connection Type</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" data-val="usb" onclick="selectPrinterType('printer1', 'usb')">
+            🔌 USB Cable
+          </button>
+          <button class="toggle-btn" data-val="wifi" onclick="selectPrinterType('printer1', 'wifi')">
+            📡 WiFi Network
+          </button>
+        </div>
+      </div>
+      
+      <!-- USB Section -->
+      <div id="printer1UsbSection" style="display: none;">
+        <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 10px; margin: 10px 0;">
+          <p style="font-size: .78rem; color: var(--muted);">
+            ✅ Connect printer with USB cable<br/>
+            ✅ Click the button below to select your USB printer
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="connectUSBPrinterUI('printer1')" style="width: 100%;">
+          🔌 Connect USB Printer
+        </button>
+      </div>
+      
+      <!-- WiFi Section -->
+      <div id="printer1WifiSection" style="display: none;">
+        <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 10px; margin: 10px 0;">
+          <button class="btn btn-secondary" onclick="discoverAndFillPrinter('printer1')" style="width: 100%; margin-bottom: 8px;">
+            🔍 Auto-Discover WiFi Printer
+          </button>
+          <p style="font-size: .7rem; color: var(--muted); text-align: center;">— OR enter manually —</p>
+        </div>
+        
+        <div class="form-row">
+          <label>
+            Network Address (IP)
+            <span style="font-size: .7rem; color: var(--muted); display: block;">e.g., 192.168.1.100</span>
+          </label>
+          <input type="text" id="configPrinter1IP" placeholder="192.168.1.100" />
+        </div>
+        <div class="form-row">
+          <label>Port <span style="font-size: .7rem; color: var(--muted);">(usually 9100)</span></label>
+          <input type="number" id="configPrinter1Port" value="9100" min="1" max="65535" />
+        </div>
+        <button class="btn btn-secondary" onclick="testWiFiPrinterUI('printer1')" style="width: 100%;">
+          Test WiFi Connection
+        </button>
+      </div>
     </div>
-    <div class="form-row">
-      <label>
-        Printer 1 Network Address (IP)
-        <span style="font-size: .7rem; color: var(--muted); display: block; margin-top: 2px;">
-          Find this in your printer's network settings
-        </span>
-      </label>
-      <input type="text" id="configPrinter1IP" placeholder="e.g., 192.168.1.100" pattern="^(\d{1,3}\.){3}\d{1,3}$" />
-    </div>
-    <div class="form-row">
-      <label>
-        Port (Advanced)
-        <span style="font-size: .7rem; color: var(--muted); display: block; margin-top: 2px;">
-          Leave as 9100 unless your printer manual specifies otherwise
-        </span>
-      </label>
-      <input type="number" id="configPrinter1Port" value="9100" min="1" max="65535" />
-    </div>
-    <button class="btn btn-secondary" onclick="testPrinter('printer1')" style="width: 100%; margin-bottom: 10px;">
-      Test Printer 1 Connection
-    </button>
-    
-    <div style="border-top: 1px solid var(--border); margin: 18px 0;"></div>
     
     <!-- Printer 2 Config -->
-    <div class="form-row">
-      <label>Printer 2 Name</label>
-      <input type="text" id="configPrinter2Name" placeholder="e.g., Kitchen Printer" value="Printer 2" />
+    <div style="background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+      <h4 style="color: var(--accent); margin-bottom: 12px;">🖨️ Printer 2</h4>
+      
+      <div class="form-row">
+        <label>Printer Name</label>
+        <input type="text" id="configPrinter2Name" placeholder="e.g., Kitchen Printer" value="Printer 2" />
+      </div>
+      
+      <div class="form-row">
+        <label>Connection Type</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" data-val="usb" onclick="selectPrinterType('printer2', 'usb')">
+            🔌 USB Cable
+          </button>
+          <button class="toggle-btn" data-val="wifi" onclick="selectPrinterType('printer2', 'wifi')">
+            📡 WiFi Network
+          </button>
+        </div>
+      </div>
+      
+      <!-- USB Section -->
+      <div id="printer2UsbSection" style="display: none;">
+        <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 10px; margin: 10px 0;">
+          <p style="font-size: .78rem; color: var(--muted);">
+            ✅ Connect printer with USB cable<br/>
+            ✅ Click the button below to select your USB printer
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="connectUSBPrinterUI('printer2')" style="width: 100%;">
+          🔌 Connect USB Printer
+        </button>
+      </div>
+      
+      <!-- WiFi Section -->
+      <div id="printer2WifiSection" style="display: none;">
+        <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 10px; margin: 10px 0;">
+          <button class="btn btn-secondary" onclick="discoverAndFillPrinter('printer2')" style="width: 100%; margin-bottom: 8px;">
+            🔍 Auto-Discover WiFi Printer
+          </button>
+          <p style="font-size: .7rem; color: var(--muted); text-align: center;">— OR enter manually —</p>
+        </div>
+        
+        <div class="form-row">
+          <label>
+            Network Address (IP)
+            <span style="font-size: .7rem; color: var(--muted); display: block;">e.g., 192.168.1.101</span>
+          </label>
+          <input type="text" id="configPrinter2IP" placeholder="192.168.1.101" />
+        </div>
+        <div class="form-row">
+          <label>Port <span style="font-size: .7rem; color: var(--muted);">(usually 9100)</span></label>
+          <input type="number" id="configPrinter2Port" value="9100" min="1" max="65535" />
+        </div>
+        <button class="btn btn-secondary" onclick="testWiFiPrinterUI('printer2')" style="width: 100%;">
+          Test WiFi Connection
+        </button>
+      </div>
     </div>
-    <div class="form-row">
-      <label>
-        Printer 2 Network Address (IP)
-        <span style="font-size: .7rem; color: var(--muted); display: block; margin-top: 2px;">
-          Find this in your printer's network settings
-        </span>
-      </label>
-      <input type="text" id="configPrinter2IP" placeholder="e.g., 192.168.1.101" pattern="^(\d{1,3}\.){3}\d{1,3}$" />
-    </div>
-    <div class="form-row">
-      <label>
-        Port (Advanced)
-        <span style="font-size: .7rem; color: var(--muted); display: block; margin-top: 2px;">
-          Leave as 9100 unless your printer manual specifies otherwise
-        </span>
-      </label>
-      <input type="number" id="configPrinter2Port" value="9100" min="1" max="65535" />
-    </div>
-    <button class="btn btn-secondary" onclick="testPrinter('printer2')" style="width: 100%; margin-bottom: 10px;">
-      Test Printer 2 Connection
-    </button>
     
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closePrinterConfig()">Cancel</button>
@@ -1037,7 +1083,7 @@
 <script src="firebase-config.js"></script>
 <script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
-<script src="wifi-printer-comm.js"></script>
+<script src="unified-printer-comm.js"></script>
 <script src="escpos-receipt.js"></script>
 <script>
 if (!window.firebaseConfig) {
@@ -1107,7 +1153,7 @@ function getLocalTodayDate() {
   return `${year}-${month}-${day}`;
 }
 
-/* ===== WIFI PRINTER MANAGEMENT ===== */
+/* ===== UNIFIED PRINTER MANAGEMENT (USB + WiFi) ===== */
 
 /**
  * Update printer status UI
@@ -1118,7 +1164,7 @@ function updatePrinterStatusUI() {
   // Update Printer 1
   const p1Dot = document.getElementById('printer1Dot');
   const p1Name = document.getElementById('printer1Name');
-  const p1IP = document.getElementById('printer1IP');
+  const p1Status = document.getElementById('printer1Status');
   
   if (p1Dot) {
     p1Dot.className = 'printer-status-dot';
@@ -1127,14 +1173,20 @@ function updatePrinterStatusUI() {
     }
   }
   if (p1Name) p1Name.textContent = status.printer1.name;
-  if (p1IP) {
-    p1IP.textContent = status.printer1.ip || 'Not configured';
+  if (p1Status) {
+    if (status.printer1.type === 'usb') {
+      p1Status.textContent = '🔌 USB';
+    } else if (status.printer1.type === 'wifi') {
+      p1Status.textContent = `📡 ${status.printer1.ip || 'WiFi'}`;
+    } else {
+      p1Status.textContent = 'Not configured';
+    }
   }
   
   // Update Printer 2
   const p2Dot = document.getElementById('printer2Dot');
   const p2Name = document.getElementById('printer2Name');
-  const p2IP = document.getElementById('printer2IP');
+  const p2Status = document.getElementById('printer2Status');
   
   if (p2Dot) {
     p2Dot.className = 'printer-status-dot';
@@ -1143,43 +1195,135 @@ function updatePrinterStatusUI() {
     }
   }
   if (p2Name) p2Name.textContent = status.printer2.name;
-  if (p2IP) {
-    p2IP.textContent = status.printer2.ip || 'Not configured';
+  if (p2Status) {
+    if (status.printer2.type === 'usb') {
+      p2Status.textContent = '🔌 USB';
+    } else if (status.printer2.type === 'wifi') {
+      p2Status.textContent = `📡 ${status.printer2.ip || 'WiFi'}`;
+    } else {
+      p2Status.textContent = 'Not configured';
+    }
   }
 }
 
 /**
- * Discover printers and show selection UI
+ * Select printer connection type and show appropriate UI
  */
-async function discoverAndShowPrinters() {
+function selectPrinterType(printerId, type) {
+  const num = printerId === 'printer1' ? '1' : '2';
+  
+  // Update toggle buttons
+  const parent = document.querySelector(`#configPrinter${num}Name`).closest('div').parentElement;
+  const toggleBtns = parent.querySelectorAll('.toggle-btn');
+  toggleBtns.forEach(btn => {
+    btn.classList.remove('selected');
+    if (btn.getAttribute('data-val') === type) {
+      btn.classList.add('selected');
+    }
+  });
+  
+  // Show/hide appropriate sections
+  const usbSection = document.getElementById(`printer${num}UsbSection`);
+  const wifiSection = document.getElementById(`printer${num}WifiSection`);
+  
+  if (type === 'usb') {
+    if (usbSection) usbSection.style.display = 'block';
+    if (wifiSection) wifiSection.style.display = 'none';
+  } else if (type === 'wifi') {
+    if (usbSection) usbSection.style.display = 'none';
+    if (wifiSection) wifiSection.style.display = 'block';
+  }
+}
+
+/**
+ * Connect USB printer via UI
+ */
+async function connectUSBPrinterUI(printerId) {
   try {
-    const printers = await discoverPrinters();
+    setPrintLoading(true, 'Connecting to USB printer...');
     
-    if (printers.length === 0) {
-      showWarningToast(
-        'No Printers Found',
-        'No thermal printers were detected. Please check that your printers are connected to WiFi and on the same network as this device.'
-      );
+    await connectUSBPrinter(printerId);
+    
+    setPrintLoading(false);
+    showSuccessToast('USB Printer Connected', `${printerConnections[printerId].name} is ready`);
+    
+  } catch (error) {
+    setPrintLoading(false);
+    
+    if (error.message.includes('No USB printer selected')) {
+      // User cancelled - no error message needed
       return;
     }
     
-    // Auto-assign discovered printers
-    if (printers.length >= 1) {
-      document.getElementById('configPrinter1IP').value = printers[0].ip;
-      document.getElementById('configPrinter1Port').value = printers[0].port;
-      document.getElementById('configPrinter1Name').value = `Printer at ${printers[0].ip}`;
+    showErrorToast('USB Connection Failed', error.message);
+  }
+}
+
+/**
+ * Test WiFi printer connection via UI
+ */
+async function testWiFiPrinterUI(printerId) {
+  const num = printerId === 'printer1' ? '1' : '2';
+  const ip = document.getElementById(`configPrinter${num}IP`).value.trim();
+  const port = parseInt(document.getElementById(`configPrinter${num}Port`).value) || 9100;
+  
+  if (!ip) {
+    showErrorToast('Invalid IP', 'Please enter a valid IP address');
+    return;
+  }
+  
+  try {
+    setPrintLoading(true, 'Testing WiFi connection...');
+    
+    await connectWiFiPrinter(printerId, ip, port);
+    
+    setPrintLoading(false);
+    showSuccessToast('WiFi Connection Successful', `Printer at ${ip}:${port} is ready`);
+    
+  } catch (error) {
+    setPrintLoading(false);
+    showErrorToast('WiFi Connection Failed', error.message);
+  }
+}
+
+/**
+ * Discover WiFi printers and fill form for specific printer
+ */
+async function discoverAndFillPrinter(printerId) {
+  try {
+    showToast({
+      type: 'info',
+      title: 'Discovering WiFi Printers...',
+      message: 'Scanning network. This may take 10-20 seconds.',
+      duration: 0
+    });
+    
+    const printers = await discoverWiFiPrinters();
+    
+    // Dismiss discovery toast
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach(toast => {
+      if (toast.textContent.includes('Discovering')) {
+        dismissToast(toast);
+      }
+    });
+    
+    if (printers.length === 0) {
+      showWarningToast('No WiFi Printers Found', 'Please check printers are connected to WiFi');
+      return;
     }
     
-    if (printers.length >= 2) {
-      document.getElementById('configPrinter2IP').value = printers[1].ip;
-      document.getElementById('configPrinter2Port').value = printers[1].port;
-      document.getElementById('configPrinter2Name').value = `Printer at ${printers[1].ip}`;
+    // Fill the form for the requested printer
+    const num = printerId === 'printer1' ? '1' : '2';
+    const printerIndex = printerId === 'printer1' ? 0 : Math.min(1, printers.length - 1);
+    
+    if (printers[printerIndex]) {
+      document.getElementById(`configPrinter${num}IP`).value = printers[printerIndex].ip;
+      document.getElementById(`configPrinter${num}Port`).value = printers[printerIndex].port;
+      
+      showSuccessToast('WiFi Printer Found', `Auto-filled ${printers[printerIndex].ip}`);
     }
     
-    showSuccessToast(
-      'Printers Auto-Configured',
-      `Found ${printers.length} printer(s). Review and save the configuration.`
-    );
   } catch (error) {
     showErrorToast('Discovery Failed', error.message);
   }
@@ -1191,14 +1335,25 @@ async function discoverAndShowPrinters() {
 function showPrinterConfig() {
   const status = getPrintersStatus();
   
-  // Load current config into form
+  // Load Printer 1 config
   document.getElementById('configPrinter1Name').value = status.printer1.name;
-  document.getElementById('configPrinter1IP').value = status.printer1.ip || '';
-  document.getElementById('configPrinter1Port').value = status.printer1.port;
+  if (status.printer1.type) {
+    selectPrinterType('printer1', status.printer1.type);
+    if (status.printer1.type === 'wifi') {
+      document.getElementById('configPrinter1IP').value = status.printer1.ip || '';
+      document.getElementById('configPrinter1Port').value = status.printer1.port;
+    }
+  }
   
+  // Load Printer 2 config
   document.getElementById('configPrinter2Name').value = status.printer2.name;
-  document.getElementById('configPrinter2IP').value = status.printer2.ip || '';
-  document.getElementById('configPrinter2Port').value = status.printer2.port;
+  if (status.printer2.type) {
+    selectPrinterType('printer2', status.printer2.type);
+    if (status.printer2.type === 'wifi') {
+      document.getElementById('configPrinter2IP').value = status.printer2.ip || '';
+      document.getElementById('configPrinter2Port').value = status.printer2.port;
+    }
+  }
   
   document.getElementById('printerConfigOverlay').classList.add('show');
 }
@@ -1211,61 +1366,39 @@ function closePrinterConfig() {
 }
 
 /**
- * Test printer connection
- */
-async function testPrinter(printerId) {
-  const nameField = document.getElementById(`configPrinter${printerId === 'printer1' ? '1' : '2'}Name`);
-  const ipField = document.getElementById(`configPrinter${printerId === 'printer1' ? '1' : '2'}IP`);
-  const portField = document.getElementById(`configPrinter${printerId === 'printer1' ? '1' : '2'}Port`);
-  
-  const ip = ipField.value.trim();
-  const port = parseInt(portField.value) || 9100;
-  
-  if (!ip) {
-    showErrorToast('Invalid IP', 'Please enter a valid IP address');
-    return;
-  }
-  
-  try {
-    setPrintLoading(true, `Testing ${nameField.value}...`);
-    
-    await connectWiFiPrinter(printerId, ip, port);
-    
-    setPrintLoading(false);
-    showSuccessToast('Connection Successful', `${nameField.value} is reachable and ready`);
-    
-    updatePrinterStatusUI();
-  } catch (error) {
-    setPrintLoading(false);
-    showErrorToast('Connection Failed', error.message);
-  }
-}
-
-/**
  * Save printer configuration
  */
 function savePrinterConfiguration() {
   // Printer 1
   const p1Name = document.getElementById('configPrinter1Name').value.trim();
-  const p1IP = document.getElementById('configPrinter1IP').value.trim();
-  const p1Port = parseInt(document.getElementById('configPrinter1Port').value) || 9100;
+  const p1Type = document.querySelector('#configPrinter1Name').closest('div').parentElement.querySelector('.toggle-btn.selected')?.getAttribute('data-val');
+  
+  if (p1Type) {
+    printerConnections.printer1.name = p1Name || 'Printer 1';
+    printerConnections.printer1.type = p1Type;
+    
+    if (p1Type === 'wifi') {
+      const p1IP = document.getElementById('configPrinter1IP').value.trim();
+      const p1Port = parseInt(document.getElementById('configPrinter1Port').value) || 9100;
+      printerConnections.printer1.ip = p1IP;
+      printerConnections.printer1.port = p1Port;
+    }
+  }
   
   // Printer 2
   const p2Name = document.getElementById('configPrinter2Name').value.trim();
-  const p2IP = document.getElementById('configPrinter2IP').value.trim();
-  const p2Port = parseInt(document.getElementById('configPrinter2Port').value) || 9100;
+  const p2Type = document.querySelector('#configPrinter2Name').closest('div').parentElement.querySelector('.toggle-btn.selected')?.getAttribute('data-val');
   
-  // Update printer connections
-  if (p1IP) {
-    printerConnections.printer1.name = p1Name || 'Printer 1';
-    printerConnections.printer1.ip = p1IP;
-    printerConnections.printer1.port = p1Port;
-  }
-  
-  if (p2IP) {
+  if (p2Type) {
     printerConnections.printer2.name = p2Name || 'Printer 2';
-    printerConnections.printer2.ip = p2IP;
-    printerConnections.printer2.port = p2Port;
+    printerConnections.printer2.type = p2Type;
+    
+    if (p2Type === 'wifi') {
+      const p2IP = document.getElementById('configPrinter2IP').value.trim();
+      const p2Port = parseInt(document.getElementById('configPrinter2Port').value) || 9100;
+      printerConnections.printer2.ip = p2IP;
+      printerConnections.printer2.port = p2Port;
+    }
   }
   
   savePrinterConfig();
@@ -1275,7 +1408,7 @@ function savePrinterConfiguration() {
   showSuccessToast('Configuration Saved', 'Printer settings have been updated');
 }
 
-/* ===== PRINT METHOD MANAGEMENT (Removed - WiFi Only) ===== */
+/* ===== PRINT METHOD MANAGEMENT (Removed - Unified Only) ===== */
 /* ===== PRINT METHOD MANAGEMENT (Removed - WiFi Only) ===== */
 
 /* ===== TOAST NOTIFICATION SYSTEM ===== */
@@ -2328,7 +2461,7 @@ function downloadHistory() {
 
 
 /**
- * Main print bill function - prints to WiFi thermal printers
+ * Main print bill function - prints to unified thermal printers (USB or WiFi)
  */
 async function printBill() {
   if (billItems.length === 0) { 
@@ -2342,7 +2475,7 @@ async function printBill() {
   if (!status.printer1.configured && !status.printer2.configured) {
     showErrorToast(
       'No Printers Configured',
-      'Please configure at least one WiFi printer before printing.',
+      'Please configure at least one printer (USB or WiFi) before printing.',
       [
         {
           label: 'Configure Printers',
@@ -2393,10 +2526,10 @@ async function printBill() {
     };
 
     // Generate ESC/POS receipt
-    setPrintLoading(true, 'Printing to WiFi printers...');
+    setPrintLoading(true, 'Printing to printers...');
     const escposData = generateESCPOSReceipt(billData);
     
-    // Print to both printers
+    // Print to both printers (USB and/or WiFi)
     const results = await printToBothPrinters(escposData);
     
     setPrintLoading(false);
@@ -2406,7 +2539,9 @@ async function printBill() {
     const p2Success = results.printer2.success;
     
     if (p1Success && p2Success) {
-      showSuccessToast('Print Successful', 'Receipt printed to both printers');
+      const p1Type = results.printer1.type === 'usb' ? '🔌 USB' : '📡 WiFi';
+      const p2Type = results.printer2.type === 'usb' ? '🔌 USB' : '📡 WiFi';
+      showSuccessToast('Print Successful', `Printed to both printers (${p1Type} + ${p2Type})`);
     } else if (p1Success || p2Success) {
       const successPrinter = p1Success ? status.printer1.name : status.printer2.name;
       const failedPrinter = p1Success ? status.printer2.name : status.printer1.name;
