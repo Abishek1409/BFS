@@ -17,8 +17,7 @@ const CMD = {
   FONT_LARGE: [GS, 0x21, 0x11],         // Double width and height
   FONT_NORMAL: [GS, 0x21, 0x00],        // Normal font
   LINE_FEED: [0x0A],                    // Line feed
-  CUT_PAPER: [GS, 0x56, 0x00],          // Cut paper
-  CHAR_SET_UTF8: [ESC, 0x74, 0x10]      // UTF-8 character set
+  CUT_PAPER: [GS, 0x56, 0x00]           // Cut paper
 };
 
 // Thermal paper specifications
@@ -76,14 +75,43 @@ function getPreferenceSymbol(item) {
 
 /**
  * Encodes text to appropriate character set for thermal printer
- * Uses UTF-8 encoding to preserve exact Unicode box symbols
+ * Converts Unicode box symbols to printer's internal character codes
  * @param {string} text - Text to encode
  * @returns {Uint8Array} Encoded bytes
  */
 function encodeText(text) {
-  // Use UTF-8 encoding to preserve exact Unicode characters
-  const encoder = new TextEncoder();
-  return encoder.encode(text);
+  const bytes = [];
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const code = char.charCodeAt(0);
+    
+    // Map Unicode box symbols to printer character codes
+    if (char === '■') {
+      // U+25A0 BLACK SQUARE - Full filled block
+      bytes.push(0xDB); // CP437: █ (full block)
+    } else if (char === '□') {
+      // U+25A1 WHITE SQUARE - Empty outline box
+      bytes.push(0xB0); // CP437: ░ (light shade - looks like outline)
+    } else if (char === '◧') {
+      // U+25E7 - Half filled (left black, right white)
+      bytes.push(0xDD); // CP437: ▌ (left half block)
+    } else if (char === '▦') {
+      // U+25A6 - Grid/matrix pattern
+      bytes.push(0xB2); // CP437: ▓ (dark shade - grid pattern)
+    } else if (char === '₹') {
+      // Rupee symbol - most printers don't support, use Rs.
+      bytes.push(82, 115, 46); // "Rs."
+    } else if (code >= 0 && code <= 127) {
+      // Standard ASCII
+      bytes.push(code);
+    } else {
+      // Unknown character - skip or use space
+      bytes.push(32); // space
+    }
+  }
+  
+  return new Uint8Array(bytes);
 }
 
 /**
@@ -138,7 +166,7 @@ function createLine(char = '-', width = PAPER_WIDTH_80MM) {
  * @returns {string} Formatted currency string
  */
 function formatCurrency(amount) {
-  return '₹' + amount.toFixed(2);
+  return 'Rs.' + amount.toFixed(2);
 }
 
 /**
@@ -182,7 +210,6 @@ function generateESCPOSReceipt(billData) {
   
   // Initialize printer
   addBytes(CMD.INIT);
-  addBytes(CMD.CHAR_SET_UTF8);
   
   // === HEADER ===
   addBytes(CMD.ALIGN_CENTER);
@@ -233,10 +260,17 @@ function generateESCPOSReceipt(billData) {
     const qty = item.qty.toString();
     const prefSymbol = getPreferenceSymbol(item);
     
-    const itemLine = padText(itemName, 28) + 
-                     padText(qty, 8, 'right') + 
-                     padText(prefSymbol, 12, 'center');
+    // Print item name and qty (normal size)
+    const itemLine = padText(itemName, 28) + padText(qty, 8, 'right');
     addText(itemLine);
+    
+    // Print preference symbol in larger size
+    if (prefSymbol) {
+      addBytes(CMD.FONT_LARGE); // Make symbol bigger
+      addText('  ' + prefSymbol);
+      addBytes(CMD.FONT_NORMAL); // Back to normal
+    }
+    
     addLF();
     
     // Add item details if they exist (size, notes)
@@ -250,24 +284,6 @@ function generateESCPOSReceipt(billData) {
       addLF();
     }
   });
-  
-  addText(createLine('='));
-  addLF();
-  
-  // === TOTALS SECTION ===
-  if (billData.subtotal && billData.subtotal !== billData.grandTotal) {
-    const subtotalLine = padText('Subtotal:', 36, 'right') + 
-                         padText(formatCurrency(billData.subtotal), 12, 'right');
-    addText(subtotalLine);
-    addLF();
-  }
-  
-  addBytes(CMD.BOLD_ON);
-  const totalLine = padText('TOTAL:', 36, 'right') + 
-                    padText(formatCurrency(billData.grandTotal), 12, 'right');
-  addText(totalLine);
-  addLF();
-  addBytes(CMD.BOLD_OFF);
   
   addText(createLine('='));
   addLF();
