@@ -35,7 +35,7 @@ function setASCIIFallback(useFallback) {
 }
 
 /**
- * Maps preference combination to shape symbol
+ * Maps preference combination to simple text symbol
  * @param {Object} item - Bill item with ice and sugar preferences
  * @returns {string} Character for preference symbol
  */
@@ -48,28 +48,15 @@ function getPreferenceSymbol(item) {
   const hasIce = item.ice === 'With Ice';
   const hasSugar = item.sugar === 'Normal Sugar';
   
-  if (useASCIIFallback) {
-    // ASCII fallback characters
-    if (hasIce && hasSugar) {
-      return '(O)'; // Circle - With Ice + Sugar
-    } else if (hasIce && !hasSugar) {
-      return '[]'; // Square - With Ice + No Sugar
-    } else if (!hasIce && hasSugar) {
-      return '/\\'; // Triangle - Without Ice + Sugar
-    } else {
-      return '[#]'; // Grid - Without Ice + No Sugar
-    }
+  // Simple text-based symbols (always work on any printer)
+  if (hasIce && hasSugar) {
+    return 'I'; // With Ice + Sugar
+  } else if (hasIce && !hasSugar) {
+    return 'II'; // With Ice + No Sugar
+  } else if (!hasIce && hasSugar) {
+    return 'III'; // Without Ice + Sugar
   } else {
-    // Unicode shape symbols for thermal printers
-    if (hasIce && hasSugar) {
-      return '●'; // Circle - With Ice + Sugar
-    } else if (hasIce && !hasSugar) {
-      return '■'; // Square - With Ice + No Sugar
-    } else if (!hasIce && hasSugar) {
-      return '▲'; // Triangle - Without Ice + Sugar
-    } else {
-      return '▦'; // Grid - Without Ice + No Sugar
-    }
+    return 'IIII'; // Without Ice + No Sugar
   }
 }
 
