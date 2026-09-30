@@ -19,7 +19,7 @@ const PORT = 3000;
 // Your thermal printers configuration
 const PRINTERS = {
   printer1: {
-    ip: '192.168.1.19',
+    ip: '192.168.0.1',
     port: 9100,
     name: 'Printer 1'
   },
