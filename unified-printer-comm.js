@@ -608,7 +608,44 @@ async function printToBothPrinters(escposData) {
     printer2: { success: false, error: null }
   };
 
+  const promises = [];async function printToBothPrinters(escposData) {
+  const results = {
+    printer1: { success: false, error: null },
+    printer2: { success: false, error: null }
+  };
+
+  // Special case: when both printers route through the SAME local print
+  // server (localhost:3000), that server already fans the job out to BOTH
+  // physical printers on a single /print call. Sending one request per
+  // printer would make each printer print twice. So send just ONE request.
+  const p1 = printerConnections.printer1;
+  const p2 = printerConnections.printer2;
+  const usesLocalServer = (p) =>
+    p.type === 'wifi' &&
+    (p.ip === 'localhost' || p.ip === '127.0.0.1' || p.port === 3000);
+
+  if (
+    usesLocalServer(p1) &&
+    usesLocalServer(p2) &&
+    p1.ip === p2.ip &&
+    p1.port === p2.port
+  ) {
+    try {
+      // A single call to printer1 hits the local server, which prints to both.
+      await printToUnifiedPrinter('printer1', escposData);
+      results.printer1 = { success: true, printer: p1.name, type: 'wifi' };
+      results.printer2 = { success: true, printer: p2.name, type: 'wifi' };
+    } catch (error) {
+      results.printer1 = { success: false, error: error.message };
+      results.printer2 = { success: false, error: error.message };
+    }
+    return results;
+  }
+
   const promises = [];
+
+  if (printerConnections.printer1.type) {
+
   
   if (printerConnections.printer1.type) {
     promises.push(
