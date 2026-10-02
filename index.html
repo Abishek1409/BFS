@@ -3111,6 +3111,7 @@ function addQrOrder(order, orderId) {
   orderQueue.push({
     id: Date.now() + Math.random(),
     serverId: orderId,
+    orderNo: order.orderNo || '',
     source: 'qr',
     table: order.table,
     status: order.status || 'pending',
@@ -3228,7 +3229,7 @@ function renderQueue() {
       '<div class="oq-row-info">' +
         '<div class="oq-row-main">' +
           qrTable +
-          (o.source === 'qr' ? '<span class="oq-row-time">QR order</span>' : '') +
+          (o.source === 'qr' ? '<span class="oq-row-time">QR order' + (o.orderNo ? ' · ' + escapeQueueText(o.orderNo) : '') + '</span>' : '') +
           '<span class="oq-row-time">' + o.time + '</span>' +
         '</div>' +
         '<span class="oq-row-items">' + itemsSummary + '</span>' +
