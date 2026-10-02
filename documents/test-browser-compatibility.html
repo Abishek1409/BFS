@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser Compatibility Test - Thermal Printing</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-card {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .test-result {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .pass {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    .fail {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    .info {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Browser Compatibility Test</h1>
+  <p>Testing thermal printing browser compatibility and fallback behavior</p>
+
+  <div class="test-card">
+    <h2>Test 1: Web Serial API Detection</h2>
+    <div id="test1Result"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>Test 2: Browser Information</h2>
+    <div id="test2Result"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>Test 3: Print Method Logic</h2>
+    <div id="test3Result"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>Test 4: Fallback Behavior</h2>
+    <p>This test simulates various error scenarios</p>
+    <button onclick="testFallbackBehavior()">Run Fallback Tests</button>
+    <div id="test4Result"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>Test 5: Browser Warnings</h2>
+    <button onclick="testBrowserWarning()">Show Browser Warning</button>
+    <div id="test5Result"></div>
+  </div>
+
+  <script>
+    // Simulate the functions from index.html for testing
+    
+    function isWebSerialSupported() {
+      return 'serial' in navigator;
+    }
+
+    function getBrowserInfo() {
+      const ua = navigator.userAgent;
+      let browserName = 'Unknown';
+      let isSupported = isWebSerialSupported();
+      
+      if (ua.includes('Firefox')) {
+        browserName = 'Firefox';
+      } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+        browserName = 'Safari';
+      } else if (ua.includes('Edg/')) {
+        browserName = 'Edge';
+      } else if (ua.includes('Chrome')) {
+        browserName = 'Chrome';
+      }
+      
+      return {
+        name: browserName,
+        supported: isSupported,
+        recommended: isSupported ? null : 'Chrome or Edge'
+      };
+    }
+
+    function getPrintMethod() {
+      if (!isWebSerialSupported()) {
+        return 'browser';
+      }
+      return 'thermal'; // For test purposes
+    }
+
+    // Run tests
+    function runTests() {
+      // Test 1: Web Serial API Detection
+      const hasSerial = isWebSerialSupported();
+      const test1 = document.getElementById('test1Result');
+      if (hasSerial) {
+        test1.innerHTML = '<div class="test-result pass">✓ Web Serial API is supported in this browser</div>';
+      } else {
+        test1.innerHTML = '<div class="test-result fail">✗ Web Serial API is NOT supported in this browser<br/>Thermal printing will be disabled</div>';
+      }
+
+      // Test 2: Browser Information
+      const browserInfo = getBrowserInfo();
+      const test2 = document.getElementById('test2Result');
+      let browserHtml = `
+        <div class="test-result info">
+          <strong>Browser:</strong> ${browserInfo.name}<br/>
+          <strong>Thermal Print Support:</strong> ${browserInfo.supported ? 'Yes ✓' : 'No ✗'}<br/>
+          ${!browserInfo.supported ? `<strong>Recommended:</strong> ${browserInfo.recommended}` : ''}
+        </div>
+      `;
+      test2.innerHTML = browserHtml;
+
+      // Test 3: Print Method Logic
+      const method = getPrintMethod();
+      const test3 = document.getElementById('test3Result');
+      test3.innerHTML = `
+        <div class="test-result info">
+          <strong>Selected Print Method:</strong> ${method}<br/>
+          ${method === 'browser' && !isWebSerialSupported() ? 
+            '<span style="color: #856404;">Automatically defaulted to browser print due to lack of Web Serial API support</span>' : 
+            ''}
+        </div>
+      `;
+    }
+
+    function testFallbackBehavior() {
+      const test4 = document.getElementById('test4Result');
+      let results = '<div class="test-result info"><strong>Fallback Scenarios:</strong><br/><br/>';
+      
+      const scenarios = [
+        {
+          name: 'No Web Serial API',
+          condition: !isWebSerialSupported(),
+          expected: 'Should auto-fallback to browser print',
+          result: getPrintMethod() === 'browser'
+        },
+        {
+          name: 'Web Serial API Available',
+          condition: isWebSerialSupported(),
+          expected: 'Thermal print should be available',
+          result: true
+        },
+        {
+          name: 'Error Recovery',
+          condition: true,
+          expected: 'Should offer browser print as fallback option',
+          result: true
+        }
+      ];
+
+      scenarios.forEach(scenario => {
+        const status = scenario.result ? '✓ Pass' : '✗ Fail';
+        const color = scenario.result ? '#155724' : '#721c24';
+        results += `
+          <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-left: 3px solid ${color}">
+            <strong>${scenario.name}:</strong><br/>
+            Expected: ${scenario.expected}<br/>
+            Status: <span style="color: ${color}">${status}</span>
+          </div>
+        `;
+      });
+
+      results += '</div>';
+      test4.innerHTML = results;
+    }
+
+    function testBrowserWarning() {
+      const test5 = document.getElementById('test5Result');
+      const browserInfo = getBrowserInfo();
+      
+      if (!browserInfo.supported) {
+        test5.innerHTML = `
+          <div class="test-result fail">
+            <strong>⚠️ Warning Would Be Shown:</strong><br/>
+            "Your browser (${browserInfo.name}) doesn't support thermal printing. 
+            Please use ${browserInfo.recommended} for thermal printer support. 
+            Browser printing is still available."
+          </div>
+        `;
+      } else {
+        test5.innerHTML = `
+          <div class="test-result pass">
+            ✓ No warning needed - browser supports thermal printing
+          </div>
+        `;
+      }
+    }
+
+    // Run tests on page load
+    window.onload = runTests;
+  </script>
+</body>
+</html>

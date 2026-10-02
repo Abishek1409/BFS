@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receipt Formatting Consistency Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { 
+      color: #d9a83e; 
+      margin-bottom: 20px; 
+      text-align: center;
+      font-size: 2rem;
+    }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+    .receipt-panel {
+      background: #2a2a2a;
+      border: 2px solid #444;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .receipt-panel h2 {
+      color: #d9a83e;
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+      text-align: center;
+    }
+    .receipt-content {
+      background: #fff;
+      color: #000;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      min-height: 400px;
+    }
+    .test-results {
+      background: #2a2a2a;
+      border: 2px solid #444;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .test-results h2 {
+      color: #d9a83e;
+      margin-bottom: 15px;
+    }
+    .test-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      background: #333;
+      border-left: 4px solid #666;
+    }
+    .test-item.pass {
+      border-left-color: #4caf50;
+      background: rgba(76, 175, 80, 0.1);
+    }
+    .test-item.fail {
+      border-left-color: #f44336;
+      background: rgba(244, 67, 54, 0.1);
+    }
+    .test-item h3 {
+      font-size: 1rem;
+      margin-bottom: 5px;
+      color: #fff;
+    }
+    .test-item p {
+      font-size: 0.9rem;
+      color: #bbb;
+    }
+    .test-item .details {
+      margin-top: 8px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      background: #1a1a1a;
+      padding: 8px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .btn-test {
+      background: #d9a83e;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    .btn-test:hover {
+      background: #e8bd58;
+    }
+    pre { white-space: pre-wrap; }
+    .thermal-output { 
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre;
+      line-height: 1.4;
+    }
+    .browser-output table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .browser-output th, .browser-output td {
+      padding: 4px 2px;
+      text-align: left;
+    }
+    .browser-output th {
+      border-bottom: 1px solid #333;
+      font-weight: bold;
+    }
+    .summary {
+      background: #333;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+    }
+    .summary .pass-count { color: #4caf50; font-weight: 700; }
+    .summary .fail-count { color: #f44336; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧾 Receipt Formatting Consistency Test</h1>
+    
+    <div style="text-align: center; margin-bottom: 20px;">
+      <button class="btn-test" onclick="runAllTests()">Run All Tests</button>
+      <button class="btn-test" onclick="location.reload()">Reset</button>
+    </div>
+    
+    <div class="comparison-grid">
+      <div class="receipt-panel">
+        <h2>🖨️ Browser Print Output</h2>
+        <div class="receipt-content browser-output" id="browserReceipt"></div>
+      </div>
+      
+      <div class="receipt-panel">
+        <h2>📄 Thermal Print Output</h2>
+        <div class="receipt-content thermal-output" id="thermalReceipt"></div>
+      </div>
+    </div>
+    
+    <div class="test-results">
+      <h2>📊 Test Results</h2>
+      <div class="summary" id="summary" style="display: none;">
+        Tests: <span class="pass-count" id="passCount">0</span> passed, 
+        <span class="fail-count" id="failCount">0</span> failed
+      </div>
+      <div id="testOutput"></div>
+    </div>
+  </div>
+
+  <!-- Load required modules -->
+  <script src="escpos-receipt.js"></script>
+  
+  <script>
+    // Test data - matches typical bill structure
+    const testBillData = {
+      billNo: '042',
+      customerName: 'John Doe',
+      items: [
+        {
+          name: 'Mango Juice',
+          emoji: '🥭',
+          qty: 2,
+          price: 50,
+          total: 100,
+          ice: 'With Ice',
+          sugar: 'Normal Sugar',
+          size: 'Regular',
+          note: ''
+        },
+        {
+          name: 'Orange Shake',
+          emoji: '🍊',
+          qty: 1,
+          price: 60,
+          total: 60,
+          ice: 'Without Ice',
+          sugar: 'No Sugar',
+          size: 'Large',
+          note: ''
+        },
+        {
+          name: 'Watermelon Juice',
+          emoji: '🍉',
+          qty: 1,
+          price: 45,
+          total: 45,
+          ice: 'With Ice',
+          sugar: 'No Sugar',
+          size: null,
+          note: 'Extra cold'
+        },
+        {
+          name: 'Banana Smoothie',
+          emoji: '🍌',
+          qty: 3,
+          price: 55,
+          total: 165,
+          ice: 'Without Ice',
+          sugar: 'Normal Sugar',
+          size: null,
+          note: ''
+        }
+      ],
+      subtotal: 370,
+      grandTotal: 370,
+      date: new Date('2026-09-23T14:30:00')
+    };
+
+    let testResults = [];
+
+    // Generate browser receipt HTML
+    function generateBrowserReceipt(billData) {
+      const dateStr = '23-Sep-2026';
+      const timeStr = '14:30';
+      
+      const rows = billData.items.map(item => {
+        const hasIceSpec   = item.ice !== null && item.ice !== undefined;
+        const hasSugarSpec = item.sugar !== null && item.sugar !== undefined;
+
+        const isWithIce    = item.ice === 'With Ice';
+        const isWithoutIce = item.ice === 'Without Ice';
+        const isWithSugar  = item.sugar === 'Normal Sugar' || item.sugar === 'Less Sugar' || item.sugar === 'With Sugar';
+        const isNoSugar    = item.sugar === 'No Sugar';
+
+        let prefBox = '';
+
+        if (hasIceSpec || hasSugarSpec) {
+          if (isWithIce && (isWithSugar || !hasSugarSpec)) {
+            // 1. With Ice & With Sugar -> FULL BLACK BOX
+            prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="#000" stroke="#000" stroke-width="1"/></svg>`;
+          } else if (isWithIce && isNoSugar) {
+            // 3. With Ice & No Sugar -> HALF WHITE AND HALF BLACK BOX
+            prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/><rect x="1" y="1" width="6" height="12" fill="#000"/></svg>`;
+          } else if (isWithoutIce && isWithSugar) {
+            // 4. No Ice & With Sugar -> CHECKERED BOX (Horizontal & Vertical lines)
+            prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/><line x1="0.5" y1="7" x2="13.5" y2="7" stroke="#000" stroke-width="1.5"/><line x1="7" y1="0.5" x2="7" y2="13.5" stroke="#000" stroke-width="1.5"/></svg>`;
+          } else if ((isWithoutIce || !hasIceSpec) && (isNoSugar || !hasSugarSpec)) {
+            // 2. No Ice & No Sugar -> FULL WHITE (EMPTY OUTLINE) BOX
+            prefBox = `<svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="#000" stroke-width="1.5"/></svg>`;
+          }
+        }
+
+        return `
+          <tr>
+            <td style="padding:4px 2px;vertical-align:top;font-size:11px;">
+              <strong>${item.name}</strong>
+            </td>
+            <td style="text-align:center;padding:4px;white-space:nowrap;vertical-align:top;font-size:11px;">${item.qty}</td>
+            <td style="text-align:center;padding:4px;white-space:nowrap;vertical-align:top;font-size:11px;">${prefBox}</td>
+          </tr>`;
+      }).join('');
+
+      return `
+        <div style="text-align:center;margin-bottom:8px;">
+          <div style="font-size:17px;font-weight:900;letter-spacing:1px;">Best Fruits Stall</div>
+          <div style="font-size:9px;color:#555;margin-top:2px;">Fresh Juices | Shakes | Snacks</div>
+          <div style="border-top:2px dashed #000;margin:6px 0;"></div>
+          <table style="width:100%;font-size:10px;">
+            <tr>
+              <td style="text-align:left;"><strong>Bill No.: #${billData.billNo}</strong></td>
+              <td style="text-align:right;">${dateStr}</td>
+            </tr>
+            ${billData.customerName ? '<tr><td colspan="2" style="text-align:left;">Customer: <strong>' + billData.customerName + '</strong></td></tr>' : ''}
+            <tr><td colspan="2" style="text-align:right;color:#666;">${timeStr}</td></tr>
+          </table>
+          <div style="border-top:2px dashed #000;margin:6px 0;"></div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid #333;">
+              <th style="text-align:left;padding:3px 2px;font-size:10px;">ITEM</th>
+              <th style="text-align:center;padding:3px 2px;font-size:10px;">QTY</th>
+              <th style="text-align:center;padding:3px 2px;font-size:10px;">PREF</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="border-top:2px dashed #000;margin:6px 0;"></div>
+        <div style="text-align:center;font-size:9.5px;color:#555;margin-top:6px;line-height:1.7;">
+          Thank you for visiting Best Fruits Stall!<br/>
+          Stay Fresh | Stay Healthy
+        </div>
+      `;
+    }
+
+    // Generate thermal receipt text representation
+    function generateThermalReceiptText(escposData) {
+      // Convert ESC/POS bytes to readable text representation
+      const decoder = new TextDecoder('utf-8');
+      let text = decoder.decode(escposData);
+      
+      // Clean up ESC/POS control codes for display
+      // Remove ESC/POS commands but keep text content
+      text = text.replace(/\x1B[@AtE\x21]/g, '') // Remove common ESC commands
+                 .replace(/\x1D[\x21V]/g, '')     // Remove GS commands
+                 .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1A\x1C-\x1F]/g, ''); // Remove other control chars
+      
+      return text;
+    }
+
+    // Test functions
+    function testHeaderMatches() {
+      const browserHTML = document.getElementById('browserReceipt').innerHTML;
+      const thermalText = document.getElementById('thermalReceipt').textContent;
+      
+      const browserHasTitle = browserHTML.includes('Best Fruits Stall');
+      const thermalHasTitle = thermalText.includes('Best Fruits Stall');
+      
+      const browserHasSubtitle = browserHTML.includes('Fresh Juices | Shakes | Snacks');
+      const thermalHasSubtitle = thermalText.includes('Fresh Juices | Shakes | Snacks');
+      
+      const pass = browserHasTitle && thermalHasTitle && browserHasSubtitle && thermalHasSubtitle;
+      
+      return {
+        name: 'Receipt Header Match',
+        pass: pass,
+        details: `Browser has title: ${browserHasTitle}, Thermal has title: ${thermalHasTitle}\nBrowser has subtitle: ${browserHasSubtitle}, Thermal has subtitle: ${thermalHasSubtitle}`
+      };
+    }
+
+    function testBillMetadataPositioning() {
+      const browserHTML = document.getElementById('browserReceipt').innerHTML;
+      const thermalText = document.getElementById('thermalReceipt').textContent;
+      
+      const browserHasBillNo = browserHTML.includes('Bill No.: #042') || browserHTML.includes('Bill: #042');
+      const thermalHasBillNo = thermalText.includes('Bill: #042');
+      
+      const browserHasDate = browserHTML.includes('23-Sep-2026');
+      const thermalHasDate = thermalText.includes('23-Sep-2026');
+      
+      const browserHasTime = browserHTML.includes('14:30');
+      const thermalHasTime = thermalText.includes('14:30');
+      
+      const browserHasCustomer = browserHTML.includes('John Doe');
+      const thermalHasCustomer = thermalText.includes('John Doe');
+      
+      const pass = browserHasBillNo && thermalHasBillNo && 
+                   browserHasDate && thermalHasDate && 
+                   browserHasTime && thermalHasTime &&
+                   browserHasCustomer && thermalHasCustomer;
+      
+      return {
+        name: 'Bill Metadata Positioning',
+        pass: pass,
+        details: `Bill No: B=${browserHasBillNo} T=${thermalHasBillNo}\nDate: B=${browserHasDate} T=${thermalHasDate}\nTime: B=${browserHasTime} T=${thermalHasTime}\nCustomer: B=${browserHasCustomer} T=${thermalHasCustomer}`
+      };
+    }
+
+    function testItemTableAlignment() {
+      const browserHTML = document.getElementById('browserReceipt').innerHTML;
+      const thermalText = document.getElementById('thermalReceipt').textContent;
+      
+      // Check for table headers
+      const browserHasHeaders = browserHTML.includes('ITEM') && browserHTML.includes('QTY') && browserHTML.includes('PREF');
+      const thermalHasHeaders = thermalText.includes('ITEM') && thermalText.includes('QTY') && thermalText.includes('PREF');
+      
+      // Check for item names
+      const items = ['Mango Juice', 'Orange Shake', 'Watermelon Juice', 'Banana Smoothie'];
+      let browserHasAllItems = true;
+      let thermalHasAllItems = true;
+      
+      items.forEach(item => {
+        if (!browserHTML.includes(item)) browserHasAllItems = false;
+        if (!thermalText.includes(item)) thermalHasAllItems = false;
+      });
+      
+      const pass = browserHasHeaders && thermalHasHeaders && browserHasAllItems && thermalHasAllItems;
+      
+      return {
+        name: 'Item Table Column Alignment',
+        pass: pass,
+        details: `Headers: B=${browserHasHeaders} T=${thermalHasHeaders}\nAll items present: B=${browserHasAllItems} T=${thermalHasAllItems}`
+      };
+    }
+
+    function testPreferenceSymbolsPresent() {
+      const thermalText = document.getElementById('thermalReceipt').textContent;
+      
+      // Check for Unicode symbols in thermal output
+      const hasFullBlock = thermalText.includes('■');        // With Ice + Sugar
+      const hasOutlineBlock = thermalText.includes('□');     // Without Ice + No Sugar
+      const hasHalfBlock = thermalText.includes('◧');        // With Ice + No Sugar
+      const hasCheckeredBlock = thermalText.includes('▦');   // Without Ice + Sugar
+      
+      // We expect symbols based on test data:
+      // Item 1: With Ice + Normal Sugar = ■
+      // Item 2: Without Ice + No Sugar = □
+      // Item 3: With Ice + No Sugar = ◧
+      // Item 4: Without Ice + Normal Sugar = ▦
+      
+      const pass = hasFullBlock && hasOutlineBlock && hasHalfBlock && hasCheckeredBlock;
+      
+      return {
+        name: 'Preference Symbols Present in Thermal',
+        pass: pass,
+        details: `■ (With Ice+Sugar): ${hasFullBlock}\n□ (No Ice+No Sugar): ${hasOutlineBlock}\n◧ (With Ice+No Sugar): ${hasHalfBlock}\n▦ (No Ice+With Sugar): ${hasCheckeredBlock}`
+      };
+    }
+
+    function testTotalsFormatting() {
+      const browserHTML = document.getElementById('browserReceipt').innerHTML;
+      const thermalText = document.getElementById('thermalReceipt').textContent;
+      
+      // Check for total amount (₹370.00)
+      const browserHasTotal = browserHTML.includes('370') || browserHTML.includes('₹370');
+      const thermalHasTotal = thermalText.includes('₹370.00') || thermalText.includes('TOTAL');
+      
+      const pass = browserHasTotal && thermalHasTotal;
+      
+      return {
+        name: 'Totals Section Formatting',
+        pass: pass,
+        details: `Browser has total: ${browserHasTotal}\nThermal has total: ${thermalHasTotal}`
+      };
+    }
+
+    function testFooterContent() {
+      const browserHTML = document.getElementById('browserReceipt').innerHTML;
+      const thermalText = document.getElementById('thermalReceipt').textContent;
+      
+      const browserHasThankYou = browserHTML.includes('Thank you');
+      const thermalHasThankYou = thermalText.includes('Thank you');
+      
+      const browserHasTagline = browserHTML.includes('Stay Fresh') || browserHTML.includes('Stay Healthy');
+      const thermalHasTagline = thermalText.includes('Stay Fresh') && thermalText.includes('Stay Healthy');
+      
+      const pass = browserHasThankYou && thermalHasThankYou && browserHasTagline && thermalHasTagline;
+      
+      return {
+        name: 'Footer Content Match',
+        pass: pass,
+        details: `Thank you: B=${browserHasThankYou} T=${thermalHasThankYou}\nTagline: B=${browserHasTagline} T=${thermalHasTagline}`
+      };
+    }
+
+    // Run all tests
+    function runAllTests() {
+      // Generate receipts
+      const browserHTML = generateBrowserReceipt(testBillData);
+      document.getElementById('browserReceipt').innerHTML = browserHTML;
+      
+      const escposData = generateESCPOSReceipt(testBillData);
+      const thermalText = generateThermalReceiptText(escposData);
+      document.getElementById('thermalReceipt').textContent = thermalText;
+      
+      // Run tests
+      testResults = [
+        testHeaderMatches(),
+        testBillMetadataPositioning(),
+        testItemTableAlignment(),
+        testPreferenceSymbolsPresent(),
+        testTotalsFormatting(),
+        testFooterContent()
+      ];
+      
+      // Display results
+      displayTestResults();
+    }
+
+    function displayTestResults() {
+      const outputDiv = document.getElementById('testOutput');
+      const summaryDiv = document.getElementById('summary');
+      
+      let passCount = 0;
+      let failCount = 0;
+      
+      let html = '';
+      
+      testResults.forEach(result => {
+        if (result.pass) {
+          passCount++;
+        } else {
+          failCount++;
+        }
+        
+        html += `
+          <div class="test-item ${result.pass ? 'pass' : 'fail'}">
+            <h3>${result.pass ? '✅' : '❌'} ${result.name}</h3>
+            <p>${result.pass ? 'PASSED' : 'FAILED'}</p>
+            <div class="details">${result.details.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      });
+      
+      outputDiv.innerHTML = html;
+      summaryDiv.style.display = 'block';
+      document.getElementById('passCount').textContent = passCount;
+      document.getElementById('failCount').textContent = failCount;
+    }
+  </script>
+</body>
+</html>

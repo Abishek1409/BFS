@@ -1,0 +1,17 @@
+.darkveil-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: radial-gradient(circle at top, rgba(184, 133, 43, 0.15), rgba(0, 0, 0, 0.9) 44%, rgba(0, 0, 0, 1) 100%);
+  opacity: 0.5;
+  filter: saturate(1.08) contrast(1.04);
+}
+
+.gradient-waves-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: #000000;
+}

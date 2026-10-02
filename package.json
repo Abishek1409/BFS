@@ -1,0 +1,25 @@
+{
+  "name": "possiflow-print-server",
+  "version": "1.0.0",
+  "description": "Local print server for Possiflow thermal printer - bypasses CORS restrictions",
+  "main": "print-server.js",
+  "scripts": {
+    "start": "node print-server.js",
+    "dev": "nodemon print-server.js"
+  },
+  "keywords": [
+    "possiflow",
+    "thermal-printer",
+    "print-server",
+    "escpos"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

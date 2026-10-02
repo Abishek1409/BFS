@@ -1,0 +1,8 @@
+node_modules/
+
+# Credentials and local environment files
+.env
+.env.*
+!.env.example
+serviceAccountKey.json
+firebase-adminsdk-*.json
