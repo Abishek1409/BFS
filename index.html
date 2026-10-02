@@ -3010,39 +3010,7 @@ async function printDualFormats(customerReceipt, kitchenTicket) {
     printer2: { success: false, error: null }
   };
 
-  // Special case: when both printers route through the SAME local print
-  // server (localhost:3000), that server already fans the job out to BOTH
-  // physical printers on a single /print call. For dual-format printing,
-  // we need to send DIFFERENT data to each printer, so we must detect this
-  // scenario and handle it differently.
-  const p1 = printerConnections.printer1;
-  const p2 = printerConnections.printer2;
-  const usesLocalServer = (p) =>
-    p.type === 'wifi' &&
-    (p.ip === 'localhost' || p.ip === '127.0.0.1' || p.port === 3000);
-
-  // If both use the same local server, we can't differentiate formats easily
-  // In this case, we'll send the customer receipt (more detailed) to both
-  if (
-    usesLocalServer(p1) &&
-    usesLocalServer(p2) &&
-    p1.ip === p2.ip &&
-    p1.port === p2.port
-  ) {
-    try {
-      // Send customer receipt to the shared print server
-      // Note: This is a limitation when both printers share one server
-      await printToUnifiedPrinter('printer1', customerReceipt);
-      results.printer1 = { success: true, printer: p1.name, type: 'wifi' };
-      results.printer2 = { success: true, printer: p2.name, type: 'wifi' };
-    } catch (error) {
-      results.printer1 = { success: false, error: error.message };
-      results.printer2 = { success: false, error: error.message };
-    }
-    return results;
-  }
-
-  // Normal case: printers are independent, send different formats to each
+  // Both printers can share one server; its printer-specific routes keep formats distinct.
   const promises = [];
   
   // Send customer receipt to Printer 1

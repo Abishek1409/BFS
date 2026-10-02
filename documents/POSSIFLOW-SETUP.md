@@ -44,11 +44,16 @@ This installs the required packages (express, cors).
 
 ### Step 3: Configure Your Printer IP
 
-Edit `print-server.js` and change this line to match your Possiflow IP:
+The current multi-printer server reads printer addresses from environment variables. In PowerShell, set the relevant address before starting it:
 
-```javascript
-const POSSIFLOW_IP = '192.168.1.19';  // ← Change this to your printer's IP
+```powershell
+$env:PRINTER1_IP = '192.168.1.19'
+$env:PRINTER2_IP = '192.168.1.20' # Set this only when using a second printer
 ```
+
+For Command Prompt, use `set PRINTER1_IP=192.168.1.19` then run `npm start`. Use the printer's real IP addresses. Restart the server whenever you change these values or update `print-server.js`.
+
+If the laptop has a separate copy of this project, replace its `print-server.js` with the updated file from this project and restart the server. The updated server supports separate customer and kitchen jobs; the older broadcast-only server sends the same format to both printers. `localhost` must be configured on the same laptop that runs the browser and print server. If the browser is on a different device, use the laptop's LAN IP instead of `localhost`.
 
 ### Step 4: Start the Print Server
 
@@ -76,14 +81,16 @@ You should see:
    - **Connection Type**: 📡 WiFi Network
    - **Network Address**: **localhost** ← Important!
    - **Port**: **3000** ← The print server port
-4. Click **Test WiFi Connection**
+4. Click **Test WiFi Connection** for each configured printer
 5. Click **Save Configuration**
 
 ### Step 6: Print!
 
-1. Add items to bill
-2. Click **Print Receipt**
-3. Your Possiflow printer will print! 🎉
+1. Add items to the bill
+2. Click **Print Receipt once**
+3. The app sends the customer receipt to Printer 1 and the kitchen ticket to Printer 2 concurrently
+4. For one configured printer, only that printer's assigned format prints
+5. If one printer fails, choose its Retry action. Clicking Print Receipt again can duplicate the copy that already succeeded.
 
 ---
 
@@ -240,9 +247,9 @@ npm start
 
 ### In Your Billing System (Vercel):
 ```
-Printer Configuration:
-- Network Address: localhost
-- Port: 3000
+Printer Configuration (on the same laptop that runs the server):
+- Printer 1 Network Address: localhost, Port: 3000
+- Printer 2 Network Address: localhost, Port: 3000 (if configured)
 ```
 
 ### Result:

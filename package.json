@@ -5,7 +5,8 @@
   "main": "print-server.js",
   "scripts": {
     "start": "node print-server.js",
-    "dev": "nodemon print-server.js"
+    "dev": "nodemon print-server.js",
+    "test": "node --test test/dual-printer.test.js"
   },
   "keywords": [
     "possiflow",

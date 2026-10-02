@@ -204,6 +204,12 @@ When you click "Print Receipt":
 - Works perfectly! USB and WiFi printers work together
 - Example: USB for customer, WiFi for kitchen
 
+### Both printers through the laptop print server
+
+If both app printer slots use the same laptop address (`localhost`, port `3000`), run the updated `print-server.js` on that laptop. It routes `/print/printer1` to Printer 1 and `/print/printer2` to Printer 2, so the customer receipt and kitchen ticket stay different. Set the laptop's printer IP addresses with `PRINTER1_IP` and `PRINTER2_IP` before starting the server. The older `simple-print-server.js` is for one physical printer only.
+
+Click **Print Receipt** once per bill. The app sends both printer jobs automatically when both are configured. If just one fails, use that printer's **Retry** action; do not click Print Receipt again unless you intend to print the successful copy again.
+
 ---
 
 ## Troubleshooting

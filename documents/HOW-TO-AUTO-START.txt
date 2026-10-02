@@ -5,6 +5,14 @@ HOW TO AUTO-START PRINT SERVER ON WINDOWS STARTUP
 METHOD 1: Using Windows Startup Folder (Recommended)
 -----------------------------------------------------
 
+Before setting up auto-start, save your actual printer IPs (replace these examples):
+
+   setx PRINTER1_IP "192.168.1.19"
+   setx PRINTER2_IP "192.168.1.20"
+
+Omit the second command for a single printer. Sign out and back in so Windows loads
+the saved values into programs launched at sign-in.
+
 1. Press Win + R to open Run dialog
 
 2. Type: shell:startup
@@ -21,7 +29,8 @@ METHOD 1: Using Windows Startup Folder (Recommended)
 
 7. Click Finish
 
-8. Done! The print server will start automatically when you login to Windows
+8. The print server starts automatically after you sign in to Windows. A Startup-folder
+   shortcut does not run before the login screen.
 
 
 METHOD 2: Using Task Scheduler (Runs before login)
@@ -59,8 +68,9 @@ TO TEST:
 1. Double-click start-print-server.bat
 2. You should see the print server starting
 3. Leave it running
-4. Open your website and print a bill
-5. Both printers should print!
+4. Check each printer at http://localhost:3000/test/printer1 and /test/printer2
+5. Open the Vercel site in a browser on this same laptop and print a bill
+6. Each configured printer should print its assigned format
 
 
 TROUBLESHOOTING:
@@ -71,7 +81,8 @@ If the server doesn't start:
    Check by running: node --version
 
 2. Install dependencies by running:
-   npm install express cors
+   npm install
 
-3. Check if printers are reachable:
-   Open browser: http://localhost:3000/test
+3. Check a printer at http://localhost:3000/test/printer1 or /test/printer2
+
+The dual-printer server is print-server.js. simple-print-server.js is only for a single printer.

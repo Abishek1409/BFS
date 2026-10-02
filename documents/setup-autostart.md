@@ -7,6 +7,15 @@ Make the print server start automatically when your computer boots - no manual c
 
 ## Windows Setup (PM2 Method - EASIEST)
 
+This Windows setup uses the dual-printer `print-server.js`. Do not use `simple-print-server.js` for separate customer and kitchen printers.
+
+Save the actual printer addresses first (replace the examples):
+```cmd
+setx PRINTER1_IP "192.168.1.19"
+setx PRINTER2_IP "192.168.1.20"
+```
+Use only the first command for one printer. Open a new Command Prompt after `setx` so PM2 inherits the values.
+
 ### Step 1: Install PM2
 ```cmd
 npm install -g pm2
@@ -20,7 +29,7 @@ pm2-startup install
 
 ### Step 3: Start Print Server
 ```cmd
-pm2 start simple-print-server.js --name "possiflow-printer"
+pm2 start print-server.js --name "possiflow-printer"
 pm2 save
 ```
 
@@ -43,7 +52,7 @@ npm install -g pm2
 
 ### Step 2: Start Print Server
 ```bash
-pm2 start simple-print-server.js --name "possiflow-printer"
+pm2 start print-server.js --name "possiflow-printer"
 pm2 save
 ```
 
@@ -70,15 +79,6 @@ pm2 status
 
 ## Windows Setup (Alternative: Task Scheduler)
 
-### Step 1: Create Batch File
-
-Create `start-print-server.bat`:
-```batch
-@echo off
-cd /d "%~dp0"
-node simple-print-server.js
-```
-
 ### Step 2: Setup Task Scheduler
 
 1. Press `Win + R`, type `taskschd.msc`, press Enter
@@ -96,24 +96,16 @@ Restart computer. Check Task Manager for `node.exe` process.
 
 ## Windows Setup (Alternative: Startup Folder)
 
-### Step 1: Create VBS Script
-
-Create `start-print-server-hidden.vbs`:
-```vbscript
-Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run "cmd /c cd /d C:\path\to\your\project && node simple-print-server.js", 0, False
-Set WshShell = Nothing
-```
-
-### Step 2: Add to Startup
+### Add the project batch file to Startup
 
 1. Press `Win + R`
 2. Type: `shell:startup`
 3. Press Enter
-4. Copy the VBS file into this folder
+4. Create a shortcut in this folder to the project's `start-print-server.bat`
+5. The Startup folder runs after sign-in and opens a console window. Use Task Scheduler for a before-login task.
 
 ### Step 3: Test
-Restart computer. Print server runs in background (no window).
+Restart computer and sign in. The batch file opens a console window while the server runs.
 
 ---
 
@@ -153,13 +145,14 @@ After setup, verify it's working:
 
 1. **Restart your computer**
 
-2. **Open browser:** `http://localhost:3000/test`
-   - Should show: `{"success":true}`
+2. **Open browser:** `http://localhost:3000/test/printer1`
+   - It should report Printer 1 as reachable.
+3. Test Printer 2 at `http://localhost:3000/test/printer2` when configured.
 
-3. **Check PM2 status:** `pm2 status`
+4. **Check PM2 status (PM2 setup only):** `pm2 status`
    - Should show: `online`
 
-4. **Print a test receipt**
+5. **Print a test bill**
    - Should work automatically!
 
 ---
@@ -210,11 +203,10 @@ lsof -i :3000
 
 If your Possiflow IP changes:
 
-1. Edit `simple-print-server.js`
-2. Change `PRINTER_IP`
-3. Restart:
+1. Update `PRINTER1_IP` or `PRINTER2_IP` with `setx`.
+2. Restart the server (or sign out and back in so PM2 reloads saved variables):
 ```bash
-pm2 restart possiflow-printer
+pm2 restart possiflow-printer --update-env
 ```
 
 Done! No need to reconfigure anything else.
