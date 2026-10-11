@@ -4,6 +4,7 @@
   "description": "Local print server for Possiflow thermal printer - bypasses CORS restrictions",
   "main": "print-server.js",
   "scripts": {
+    "build": "esbuild map3d/index.js --bundle --format=esm --platform=browser --target=es2020 --loader:.js=jsx --jsx=automatic --outfile=dist/map3d.js",
     "start": "node print-server.js",
     "dev": "nodemon print-server.js",
     "test": "node --test test/dual-printer.test.js",
@@ -28,6 +29,7 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "esbuild": "0.25.11",
     "nodemon": "^3.0.1"
   }
 }

@@ -3,6 +3,11 @@
  * Complete solution for Live 3D Café Map
  */
 
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { MapWithControls as LiveMap } from './ui/MapWithControls.js';
+import { MAP_MODES as MAP_MODE_VALUES } from './lib/config.js';
+
 // Core UI exports
 export { MapCanvas } from './ui/MapCanvas.js';
 export { MapControls } from './ui/MapControls.js';
@@ -83,7 +88,7 @@ export {
 // Complete Firebase-powered 3D Map initialization
 export function initializeLiveMap3D(containerId, options = {}) {
   const {
-    mode = MAP_MODES.DIMMED,
+    mode = MAP_MODE_VALUES.DIMMED,
     showCounters = true,
     showEvents = true,
     showControls = true,
@@ -92,39 +97,31 @@ export function initializeLiveMap3D(containerId, options = {}) {
     ...otherOptions
   } = options;
 
-  // Comprehensive initialization for Firebase-integrated 3D map
-  console.log('Live 3D Café Map with Firebase integration ready');
-  console.log('Container ID:', containerId);
-  console.log('Firebase integration: ✓ Real-time data sync');
-  console.log('Live counters: ✓ Order metrics and sales');
-  console.log('Events feed: ✓ Recent activity stream');
-  console.log('Table status: ✓ Firebase order mapping');
-  
+  const container = document.getElementById(containerId);
+  if (!container) {
+    throw new Error(`3D map container '${containerId}' was not found`);
+  }
+
+  const root = createRoot(container);
+  root.render(
+    <LiveMap
+      initialMode={mode}
+      showCounters={showCounters}
+      showEvents={showEvents}
+      showControls={showControls}
+      onTableClick={onTableClick}
+      onModeChange={onModeChange}
+      style={{ width: '100%', height: '100%' }}
+      {...otherOptions}
+    />
+  );
+
   return {
-    // Core components
-    MapWithControls,
-    LiveCounters,
-    EventsFeed,
-    
-    // Firebase integration
-    useFirebaseSync,
-    useTableStatus,
-    
-    // Configuration
-    mode,
-    showCounters,
-    showEvents,
-    showControls,
-    onTableClick,
-    onModeChange,
-    
-    // Capabilities
+    cleanup: () => root.unmount(),
     hasFirebaseIntegration: true,
     hasRealTimeUpdates: true,
     hasOrderTracking: true,
-    hasStatusMapping: true,
-    
-    ...otherOptions
+    hasStatusMapping: true
   };
 }
 

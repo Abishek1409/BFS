@@ -3797,6 +3797,7 @@ function closeRptDrawer() {
 /* ===== 3D LIVE MAP INTEGRATION ===== */
 let isMapBackgroundEnabled = false;
 let mapInstance = null;
+let fullMapInstance = null;
 let mapCountersInterval = null;
 
 // Show the map toggle button once the page is loaded
@@ -3897,11 +3898,11 @@ async function initializeBackgroundMap() {
   const container = document.getElementById('liveMapContainer');
   
   try {
-    // Dynamic import of the 3D map system
-    const { initializeLiveMap3D, checkWebGLSupport } = await import('./map3d/index.js');
+    // Load the browser-compiled 3D map bundle
+    const { initializeLiveMap3D, checkWebGLSupport } = await import('./dist/map3d.js');
     
     // Verify WebGL support
-    if (!checkWebGLSupport().isSupported) {
+    if (!checkWebGLSupport()) {
       throw new Error('WebGL not supported on this device');
     }
     
@@ -4012,6 +4013,10 @@ function closeLiveMapDrawer() {
     document.getElementById('mapBackdrop').style.display = 'none';
     
     // Clean up full map instance
+    if (fullMapInstance?.cleanup) {
+      fullMapInstance.cleanup();
+      fullMapInstance = null;
+    }
     const fullMapContainer = document.getElementById('fullMapContainer');
     fullMapContainer.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);">
@@ -4028,16 +4033,19 @@ async function initializeFullMap() {
   const container = document.getElementById('fullMapContainer');
   
   try {
-    // Dynamic import of the 3D map system
-    const { initializeLiveMap3D, checkWebGLSupport } = await import('./map3d/index.js');
+    // Load the browser-compiled 3D map bundle
+    const { initializeLiveMap3D, checkWebGLSupport } = await import('./dist/map3d.js');
     
     // Verify WebGL support
-    if (!checkWebGLSupport().isSupported) {
+    if (!checkWebGLSupport()) {
       throw new Error('WebGL not supported on this device');
     }
     
     // Initialize the full interactive 3D map
-    const fullMapInstance = initializeLiveMap3D('fullMapContainer', {
+    if (fullMapInstance?.cleanup) {
+      fullMapInstance.cleanup();
+    }
+    fullMapInstance = initializeLiveMap3D('fullMapContainer', {
       mode: 'interactive', // Start in interactive mode
       showCounters: true,
       showEvents: true,

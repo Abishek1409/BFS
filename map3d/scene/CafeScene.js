@@ -272,12 +272,8 @@ export function CafeScene({
     }
   }, [onTableClick]);
   
-  // Performance optimization: Update pixel ratio based on performance
-  useFrame(() => {
-    if (rendererRef.current) {
-      pixelRatioManager.update(rendererRef.current);
-    }
-  });
+  // Performance optimization is handled by the Canvas DPR setting and
+  // adaptive quality updates inside SceneContent, where the R3F context exists.
   
   const canvasStyle = {
     position: 'fixed',
@@ -348,12 +344,9 @@ export function CafeScene({
             // Camera movement limits to keep view within café bounds
             maxTargetRadius={8} // Limit panning to within café area
             minTargetRadius={0}
-            // Limit horizontal and vertical panning
+            // Limit horizontal panning while using configured vertical bounds
             minAzimuthAngle={-Math.PI} // Full horizontal rotation
             maxAzimuthAngle={Math.PI}
-            // Prevent camera from going below ground
-            minPolarAngle={Math.PI / 6} // 30 degrees minimum
-            maxPolarAngle={Math.PI / 2.2} // Slightly above horizontal
           />
         )}
         

@@ -4,11 +4,10 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { checkWebGLSupport, getWebGLFallbackMessage } from '../lib/webgl-detection.js';
-import { DynamicLoader } from '../lib/dynamic-import.js';
+import { checkWebGLSupport } from '../lib/webgl-detection.js';
 import { Scene3DErrorBoundary } from '../lib/error-boundaries.js';
-import { BundleOptimizer, setupProgressiveLoading } from '../lib/bundle-optimization.js';
 import { EnhancedListView } from './EnhancedListView.js';
+import { CafeScene as CafeSceneComponent } from '../scene/CafeScene.js';
 import { MAP_MODES } from '../lib/config.js';
 
 // Loading Skeleton Component
@@ -61,37 +60,21 @@ export function MapCanvas({
   className = '',
   style = {}
 }) {
-  const [webglSupported, setWebglSupported] = useState(null);
+  const [webglSupported] = useState(() => checkWebGLSupport());
   const [CafeScene, setCafeScene] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentMode, setCurrentMode] = useState(mode);
   
-  // Check WebGL support on mount and setup progressive loading
+  // Load the 3D scene from the compiled bundle.
   useEffect(() => {
-    const supported = checkWebGLSupport();
-    setWebglSupported(supported);
-    
-    if (supported) {
-      // Setup progressive loading with preloading on intent
-      const mapToggleElements = document.querySelectorAll('[data-3d-trigger]');
-      setupProgressiveLoading(Array.from(mapToggleElements));
-      
-      // Dynamically load the 3D scene component with error handling
-      DynamicLoader.loadComponent('./scene/CafeScene.js', 'CafeScene')
-        .then(SceneComponent => {
-          setCafeScene(() => SceneComponent);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error('Failed to load 3D scene:', err);
-          setError(err);
-          setLoading(false);
-        });
-    } else {
+    if (webglSupported) {
+      setCafeScene(() => CafeSceneComponent);
+      setLoading(false);
+    } else if (webglSupported === false) {
       setLoading(false);
     }
-  }, []);
+  }, [webglSupported]);
 
   // Handle mode changes
   const handleModeChange = (newMode) => {
