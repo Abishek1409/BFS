@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node print-server.js",
     "dev": "nodemon print-server.js",
-    "test": "node --test test/dual-printer.test.js"
+    "test": "node --test test/dual-printer.test.js",
+    "test-deployment": "node --test test/deployment-verification.test.js",
+    "test-all": "node --test test/*.test.js test/deployment-verification.test.js"
   },
   "keywords": [
     "possiflow",
@@ -17,8 +19,13 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
     "cors": "^2.8.6",
-    "express": "^4.22.3"
+    "express": "^4.22.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

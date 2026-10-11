@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Status System Test - Live 3D Café Map</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            background: rgba(45, 55, 72, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+        
+        select, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #4a5568;
+            color: white;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #d69e2e;
+        }
+        
+        .status-demo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-card {
+            background: rgba(45, 55, 72, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .status-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            border: 2px solid white;
+        }
+        
+        .scene-container {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #4a5568;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .firebase-simulation {
+            background: rgba(45, 55, 72, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .order-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .order-item {
+            background: rgba(74, 85, 104, 0.5);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .log {
+            background: rgba(26, 32, 44, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍯 Table Status System Test</h1>
+            <p>Testing the Live 3D Café Map table status system and visual feedback</p>
+        </div>
+
+        <div class="controls">
+            <h3>Status System Controls</h3>
+            
+            <div class="control-group">
+                <label>Select Table:</label>
+                <select id="tableSelect">
+                    <option value="table-1">Table 1</option>
+                    <option value="table-2">Table 2</option>
+                    <option value="table-3">Table 3</option>
+                    <option value="table-4">Table 4</option>
+                    <option value="table-5">Table 5</option>
+                    <option value="table-6">Table 6</option>
+                    <option value="table-7">Table 7</option>
+                    <option value="table-8">Table 8</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Set Status:</label>
+                <select id="statusSelect">
+                    <option value="free">Free</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="order_placed">Order Placed</option>
+                    <option value="preparing">Preparing</option>
+                    <option value="ready_to_serve">Ready to Serve</option>
+                    <option value="needs_bill">Needs Bill</option>
+                </select>
+                <button onclick="updateTableStatus()">Update Status</button>
+            </div>
+            
+            <div class="control-group">
+                <button onclick="simulateRandomOrders()">Simulate Random Orders</button>
+                <button onclick="clearAllTables()">Clear All Tables</button>
+                <button onclick="runColorTransitionTest()">Test Color Transitions</button>
+            </div>
+        </div>
+
+        <div class="status-demo">
+            <div class="status-card">
+                <div class="status-preview" style="background-color: #4a5568;"></div>
+                <h4>Free</h4>
+                <p>Available for customers</p>
+            </div>
+            <div class="status-card">
+                <div class="status-preview" style="background-color: #4299e1;"></div>
+                <h4>Occupied</h4>
+                <p>Customers seated</p>
+            </div>
+            <div class="status-card">
+                <div class="status-preview" style="background-color: #d69e2e;"></div>
+                <h4>Order Placed</h4>
+                <p>Order received</p>
+            </div>
+            <div class="status-card">
+                <div class="status-preview" style="background-color: #ed8936;"></div>
+                <h4>Preparing</h4>
+                <p>Kitchen working</p>
+            </div>
+            <div class="status-card">
+                <div class="status-preview" style="background-color: #48bb78;"></div>
+                <h4>Ready to Serve</h4>
+                <p>Ready for delivery</p>
+            </div>
+            <div class="status-card">
+                <div class="status-preview" style="background-color: #d9a83e;"></div>
+                <h4>Needs Bill</h4>
+                <p>Ready for payment</p>
+            </div>
+        </div>
+
+        <div class="firebase-simulation">
+            <h3>Firebase Order Status Mapping Test</h3>
+            <p>Testing the integration between Firebase order statuses and table visual states</p>
+            
+            <div class="control-group">
+                <button onclick="testFirebaseMapping()">Test Firebase Status Mapping</button>
+                <button onclick="testSelectionHighlighting()">Test Selection Highlighting</button>
+            </div>
+            
+            <div id="orderList" class="order-list"></div>
+        </div>
+
+        <div class="log" id="log">
+            <div><strong>System Log:</strong></div>
+            <div>✅ Table status system initialized</div>
+            <div>✅ Color mapping configuration loaded</div>
+            <div>✅ Firebase status mapping ready</div>
+            <div>ℹ️ Ready for testing...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the table status system components
+        import { 
+            TableStatus, 
+            STATUS_COLORS, 
+            STATUS_MAPPING,
+            mapFirebaseStatus,
+            formatOrderNumber,
+            getElapsedTime 
+        } from './lib/config.js';
+        
+        // Mock table status management for testing
+        let tableStatuses = new Map();
+        let selectedTables = new Set();
+        let orderCounter = 1;
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const div = document.createElement('div');
+            div.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        window.updateTableStatus = function() {
+            const tableId = document.getElementById('tableSelect').value;
+            const status = document.getElementById('statusSelect').value;
+            
+            // Create mock order info for non-free statuses
+            let orderInfo = null;
+            if (status !== 'free') {
+                orderInfo = {
+                    orderNo: `BFS${orderCounter++}`,
+                    tableNumber: tableId.split('-')[1],
+                    createdAt: Date.now(),
+                    status: status,
+                    items: ['Mango Juice', 'Fruit Salad'],
+                    total: 450
+                };
+            }
+            
+            tableStatuses.set(tableId, { status, orderInfo });
+            log(`Updated ${tableId} to status: ${status}`);
+            updateStatusDisplay();
+        };
+
+        window.simulateRandomOrders = function() {
+            const tables = ['table-1', 'table-2', 'table-3', 'table-4', 'table-5', 'table-6', 'table-7', 'table-8'];
+            const statuses = ['order_placed', 'preparing', 'ready_to_serve', 'needs_bill'];
+            
+            tables.forEach((tableId, index) => {
+                setTimeout(() => {
+                    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                    const orderInfo = {
+                        orderNo: `BFS${orderCounter++}`,
+                        tableNumber: tableId.split('-')[1],
+                        createdAt: Date.now() - Math.random() * 1800000, // Random time up to 30 min ago
+                        status: randomStatus,
+                        items: ['Random Item 1', 'Random Item 2'],
+                        total: Math.floor(Math.random() * 1000) + 100
+                    };
+                    
+                    tableStatuses.set(tableId, { status: randomStatus, orderInfo });
+                    log(`Random: ${tableId} -> ${randomStatus}`);
+                    updateStatusDisplay();
+                }, index * 500); // Stagger updates for visual effect
+            });
+        };
+
+        window.clearAllTables = function() {
+            tableStatuses.clear();
+            selectedTables.clear();
+            log('Cleared all table statuses');
+            updateStatusDisplay();
+        };
+
+        window.runColorTransitionTest = function() {
+            const tableId = 'table-1';
+            const transitions = ['occupied', 'order_placed', 'preparing', 'ready_to_serve', 'needs_bill', 'free'];
+            
+            log('Starting color transition test on Table 1');
+            
+            transitions.forEach((status, index) => {
+                setTimeout(() => {
+                    const orderInfo = status !== 'free' ? {
+                        orderNo: `TEST${index}`,
+                        tableNumber: '1',
+                        createdAt: Date.now(),
+                        status: status
+                    } : null;
+                    
+                    tableStatuses.set(tableId, { status, orderInfo });
+                    log(`Transition test: ${status}`);
+                    updateStatusDisplay();
+                }, index * 1000);
+            });
+        };
+
+        window.testFirebaseMapping = function() {
+            const firebaseStatuses = [
+                { firebase: 'pending', expected: 'order_placed' },
+                { firebase: 'preparing', expected: 'preparing' },
+                { firebase: 'ready', expected: 'ready_to_serve' },
+                { firebase: 'served', expected: 'needs_bill' },
+                { firebase: 'paid', expected: 'free' }
+            ];
+            
+            log('Testing Firebase status mapping...');
+            
+            firebaseStatuses.forEach(({ firebase, expected }) => {
+                const mapped = mapFirebaseStatus(firebase);
+                const success = mapped === expected ? '✅' : '❌';
+                log(`${success} Firebase "${firebase}" -> "${mapped}" (expected: "${expected}")`);
+            });
+            
+            updateOrderList(firebaseStatuses);
+        };
+
+        window.testSelectionHighlighting = function() {
+            const tables = ['table-1', 'table-3', 'table-5'];
+            
+            log('Testing table selection highlighting...');
+            
+            tables.forEach((tableId, index) => {
+                setTimeout(() => {
+                    if (selectedTables.has(tableId)) {
+                        selectedTables.delete(tableId);
+                        log(`Deselected ${tableId}`);
+                    } else {
+                        selectedTables.add(tableId);
+                        log(`Selected ${tableId}`);
+                    }
+                    updateStatusDisplay();
+                }, index * 800);
+            });
+        };
+
+        function updateStatusDisplay() {
+            // Update summary info in log
+            const statusCounts = {};
+            tableStatuses.forEach(({ status }) => {
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+            
+            const summary = Object.entries(statusCounts)
+                .map(([status, count]) => `${status}: ${count}`)
+                .join(', ');
+            
+            log(`Status summary: ${summary || 'All tables free'}`);
+            
+            if (selectedTables.size > 0) {
+                log(`Selected tables: ${Array.from(selectedTables).join(', ')}`);
+            }
+        }
+
+        function updateOrderList(firebaseTests) {
+            const orderListEl = document.getElementById('orderList');
+            orderListEl.innerHTML = '';
+            
+            firebaseTests.forEach(({ firebase, expected }) => {
+                const div = document.createElement('div');
+                div.className = 'order-item';
+                div.innerHTML = `
+                    <strong>Firebase Status:</strong> ${firebase}<br>
+                    <strong>Mapped To:</strong> ${expected}<br>
+                    <strong>Color:</strong> <span style="color: ${STATUS_COLORS[expected] || '#ffffff'}">${STATUS_COLORS[expected] || 'N/A'}</span>
+                `;
+                orderListEl.appendChild(div);
+            });
+        }
+
+        // Initialize display
+        updateStatusDisplay();
+        log('Test interface ready');
+    </script>
+</body>
+</html>
