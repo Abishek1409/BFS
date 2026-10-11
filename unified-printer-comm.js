@@ -401,6 +401,7 @@ async function sendToWiFiPrinter(printerId, data) {
     // Method 1: Try direct HTTP POST (works for HTTP sites and some CORS-enabled printers)
     try {
       const localServer = isLocalServer(printer.ip, printer.port);
+      warnDirectPrinter(printer);
       const endpoint = localServer ? `/print/${printerId}` : '/print';
       const response = await fetch(`http://${printer.ip}:${printer.port}${endpoint}`, {
         method: 'POST',
@@ -520,6 +521,7 @@ async function sendToPosiflow(printerId, data) {
       }
     } else {
       // Method 2: Direct connection (will fail on HTTPS sites due to CORS)
+      warnDirectPrinter(printer);
       console.log(`Attempting direct connection to ${printer.ip}:${printer.port}`);
       
       const response = await fetch(`http://${printer.ip}:${printer.port}`, {
@@ -551,6 +553,31 @@ async function sendToPosiflow(printerId, data) {
 // Add isLocalServer check helper
 function isLocalServer(ip, port) {
   return ip === 'localhost' || ip === '127.0.0.1' || port === 3000;
+}
+
+// Printers already warned about in this page load
+const directWarnedPrinters = new Set();
+
+/**
+ * Warn once per printer per page load when it is configured for direct mode.
+ * Direct requests to port 9100 can make the printer print HTTP headers.
+ * The printer IP is intentionally left out of the message.
+ * @param {Object} printer - Entry from printerConnections
+ */
+function warnDirectPrinter(printer) {
+  if (isLocalServer(printer.ip, printer.port) || directWarnedPrinters.has(printer.name)) {
+    return;
+  }
+  directWarnedPrinters.add(printer.name);
+
+  const title = 'Direct printer connection';
+  const message = `Printing directly to ${printer.name} may print network details on the receipt. Use the local print server instead.`;
+
+  if (typeof showWarningToast === 'function') {
+    showWarningToast(title, message);
+  } else {
+    console.warn(`${title}: ${message}`);
+  }
 }
 
 /* ===== UNIFIED PRINTING FUNCTIONS ===== */

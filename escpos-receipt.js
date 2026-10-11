@@ -14,7 +14,10 @@ const CMD = {
   ALIGN_RIGHT: [ESC, 0x61, 0x02],       // Right alignment
   BOLD_ON: [ESC, 0x45, 0x01],           // Bold text on
   BOLD_OFF: [ESC, 0x45, 0x00],          // Bold text off
+  DOUBLE_STRIKE_ON: [ESC, 0x47, 0x01],  // Double-strike on (darker print)
+  DOUBLE_STRIKE_OFF: [ESC, 0x47, 0x00], // Double-strike off
   FONT_LARGE: [GS, 0x21, 0x11],         // Double width and height
+  FONT_XLARGE: [GS, 0x21, 0x22],        // Triple width and height
   FONT_NORMAL: [GS, 0x21, 0x00],        // Normal font
   LINE_FEED: [0x0A],                    // Line feed
   CUT_PAPER: [GS, 0x56, 0x00]           // Cut paper
@@ -167,19 +170,19 @@ function formatCurrency(amount) {
  * Column widths for 80mm thermal paper customer receipt
  */
 const CUSTOMER_RECEIPT_COLS = {
-  ITEM: 24,      // Item name column
-  QTY: 6,        // Quantity column
-  PRICE: 9,      // Unit price column
-  TOTAL: 9       // Line total column
+  ITEM: 19,      // Item name column
+  QTY: 5,        // Quantity column
+  PRICE: 11,     // Unit price column
+  TOTAL: 13      // Line total column
 };
 
 /**
  * Formats currency value for customer receipts
  * @param {number} amount - Amount in currency
- * @returns {string} Formatted currency string with rupee symbol
+ * @returns {string} Formatted currency string with "Rs." prefix (printed length equals measured length)
  */
 function formatCurrencyValue(amount) {
-  return '₹' + amount.toFixed(2);
+  return 'Rs.' + amount.toFixed(2);
 }
 
 /**
@@ -230,6 +233,66 @@ function formatItemRow(item) {
   return lines;
 }
 
+// === SHARED HEADER BUILDERS (used by both documents) ===
+
+const SHOP_TITLE = 'Best Fruits Stall';
+const BILL_NUMBER_MAX_CHARS = 24; // Double-width line holds 24 characters
+
+/**
+ * Resets size, bold and double-strike to normal
+ * @returns {Array<number>} Command bytes
+ */
+function resetEmphasis() {
+  return [...CMD.FONT_NORMAL, ...CMD.BOLD_OFF, ...CMD.DOUBLE_STRIKE_OFF];
+}
+
+/**
+ * Builds the centred shop title: 3x initials, 2x remaining letters, bold + double-strike
+ * @returns {Array<number>} ESC/POS bytes, ending with a line feed
+ */
+function buildShopTitle() {
+  const bytes = [...CMD.ALIGN_CENTER, ...CMD.BOLD_ON, ...CMD.DOUBLE_STRIKE_ON];
+
+  SHOP_TITLE.split(' ').forEach((word, index) => {
+    if (index > 0) {
+      bytes.push(...CMD.FONT_LARGE, ...encodeText(' '));
+    }
+    bytes.push(...CMD.FONT_XLARGE, ...encodeText(word.charAt(0)));
+    bytes.push(...CMD.FONT_LARGE, ...encodeText(word.substring(1)));
+  });
+
+  bytes.push(...resetEmphasis(), ...CMD.LINE_FEED);
+  return bytes;
+}
+
+/**
+ * Builds the centred bill number line: 2x, bold + double-strike
+ * @param {string} billNo - Bill number
+ * @returns {Array<number>} ESC/POS bytes, ending with a line feed
+ */
+function buildBillNumber(billNo) {
+  const text = `Bill #${billNo === undefined || billNo === null ? '' : billNo}`
+    .substring(0, BILL_NUMBER_MAX_CHARS);
+
+  return [
+    ...CMD.ALIGN_CENTER, ...CMD.BOLD_ON, ...CMD.DOUBLE_STRIKE_ON, ...CMD.FONT_LARGE,
+    ...encodeText(text),
+    ...CMD.LINE_FEED,
+    ...resetEmphasis()
+  ];
+}
+
+/**
+ * Builds the normal-size date and time line (max 48 characters)
+ * @param {Date} [date] - Bill date, defaults to now
+ * @returns {Array<number>} ESC/POS bytes, ending with a line feed
+ */
+function buildDateTimeLine(date) {
+  const when = date || new Date();
+  const line = `Date: ${formatDate(when)}   Time: ${formatTime(when)}`.substring(0, PAPER_WIDTH_80MM);
+  return [...encodeText(line), ...CMD.LINE_FEED];
+}
+
 /**
  * Generates ESC/POS byte array for kitchen ticket (Printer 2)
  * Simplified format without pricing - shows preference symbols only
@@ -275,13 +338,8 @@ function generateKitchenTicket(billData) {
   addBytes(CMD.INIT);
   
   // === HEADER ===
+  addBytes(buildShopTitle());
   addBytes(CMD.ALIGN_CENTER);
-  addBytes(CMD.BOLD_ON);
-  addBytes(CMD.FONT_LARGE);
-  addText('Best Fruits Stall');
-  addLF();
-  addBytes(CMD.FONT_NORMAL);
-  addBytes(CMD.BOLD_OFF);
   addText('Fresh Juices | Shakes | Snacks');
   addLF();
   addBytes(CMD.ALIGN_LEFT);
@@ -289,22 +347,15 @@ function generateKitchenTicket(billData) {
   addLF();
   
   // === BILL METADATA ===
-  // Bill number and date on same line
-  const dateStr = billData.date ? formatDate(billData.date) : formatDate(new Date());
-  const billLine = `Bill: #${billData.billNo}`.padEnd(24) + `Date: ${dateStr}`;
-  addText(billLine);
-  addLF();
+  addBytes(buildBillNumber(billData.billNo));
+  addBytes(CMD.ALIGN_LEFT);
+  addBytes(buildDateTimeLine(billData.date));
   
   // Customer name if provided
   if (billData.customerName && billData.customerName.trim() !== '') {
-    addText(`Customer: ${billData.customerName}`);
+    addText(`Customer: ${billData.customerName}`.substring(0, PAPER_WIDTH_80MM));
     addLF();
   }
-  
-  // Time
-  const timeStr = billData.date ? formatTime(billData.date) : formatTime(new Date());
-  addText(`Time: ${timeStr}`);
-  addLF();
   
   addText(createLine('-'));
   addLF();
@@ -410,13 +461,8 @@ function generateCustomerReceipt(billData) {
   addBytes(CMD.INIT);
   
   // === HEADER ===
+  addBytes(buildShopTitle());
   addBytes(CMD.ALIGN_CENTER);
-  addBytes(CMD.BOLD_ON);
-  addBytes(CMD.FONT_LARGE);
-  addText('BEST FRUITS STALL');
-  addLF();
-  addBytes(CMD.FONT_NORMAL);
-  addBytes(CMD.BOLD_OFF);
   addText('Fresh Juices | Shakes | Snacks');
   addLF();
   addBytes(CMD.ALIGN_LEFT);
@@ -424,20 +470,12 @@ function generateCustomerReceipt(billData) {
   addLF();
   
   // === BILL METADATA ===
-  // Bill number and date on same line
-  const dateStr = billData.date ? formatDate(billData.date) : formatDate(new Date());
-  const billLine = `Bill: #${billData.billNo}`.padEnd(24) + `Date: ${dateStr}`;
-  addText(billLine);
-  addLF();
+  addBytes(buildBillNumber(billData.billNo));
+  addBytes(CMD.ALIGN_LEFT);
+  addBytes(buildDateTimeLine(billData.date));
   
-  // Customer name and time on same line
-  const timeStr = billData.date ? formatTime(billData.date) : formatTime(new Date());
   if (billData.customerName && billData.customerName.trim() !== '') {
-    const customerLine = `Customer: ${billData.customerName}`.substring(0, 24).padEnd(24) + `Time: ${timeStr}`;
-    addText(customerLine);
-    addLF();
-  } else {
-    addText(`Time: ${timeStr}`);
+    addText(`Customer: ${billData.customerName}`.substring(0, PAPER_WIDTH_80MM));
     addLF();
   }
   
@@ -473,9 +511,7 @@ function generateCustomerReceipt(billData) {
   // Subtotal
   const subtotalLabel = 'SUBTOTAL:';
   const subtotalValue = formatCurrencyValue(billData.subtotal || billData.grandTotal);
-  const subtotalLine = padText('', PAPER_WIDTH_80MM - subtotalLabel.length - subtotalValue.length) + 
-                       subtotalLabel + 
-                       padText(subtotalValue, subtotalValue.length, 'right');
+  const subtotalLine = padText(subtotalLabel + ' ' + subtotalValue, PAPER_WIDTH_80MM, 'right');
   addText(subtotalLine);
   addLF();
   

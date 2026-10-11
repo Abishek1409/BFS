@@ -144,3 +144,106 @@ test('browser WiFi sender targets the selected printer route', async () => {
   assert.equal(requests[0].url, 'http://localhost:3000/print/printer2');
   assert.equal(requests[0].options.headers['Content-Type'], 'application/octet-stream');
 });
+
+// Receipt alignment and emphasis
+
+const { CUSTOMER_RECEIPT_COLS, PAPER_WIDTH_80MM, CMD } = require('../escpos-receipt');
+
+// Splits ESC/POS bytes into text lines, flagging lines printed above normal size
+function decodeLines(bytes) {
+  const lines = [];
+  let text = '';
+  let enlarged = false;
+  let size = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    const b = bytes[i];
+    if (b === 0x1B) {
+      i += bytes[i + 1] === 0x40 ? 1 : 2; // ESC @ has no parameter
+    } else if (b === 0x1D) {
+      if (bytes[i + 1] === 0x21) size = bytes[i + 2];
+      i += 2;
+    } else if (b === 0x0A) {
+      lines.push({ text, enlarged });
+      text = '';
+      enlarged = false;
+    } else {
+      text += String.fromCharCode(b);
+      if (size !== 0) enlarged = true;
+    }
+  }
+  return lines;
+}
+
+const bytesOf = (...parts) => Buffer.from(parts.flat());
+
+test('customer receipt columns stay within 48 characters and line up', () => {
+  const bill = { ...completeBill, items: [{ name: 'Mango Shake', qty: 2, price: 1250, total: 2500 }], subtotal: 2500, grandTotal: 2500 };
+  const lines = decodeLines(generateCustomerReceipt(bill));
+  for (const line of lines.filter(l => !l.enlarged)) {
+    assert.ok(line.text.length <= PAPER_WIDTH_80MM, `line too long: "${line.text}"`);
+  }
+
+  const header = lines.find(l => l.text.startsWith('ITEM')).text;
+  const row = lines.find(l => l.text.startsWith('Mango Shake')).text;
+  assert.equal(header.length, PAPER_WIDTH_80MM);
+  assert.equal(row.length, PAPER_WIDTH_80MM);
+
+  const { ITEM, QTY, PRICE } = CUSTOMER_RECEIPT_COLS;
+  const qtyEnd = ITEM + QTY;
+  const priceEnd = qtyEnd + PRICE;
+  assert.ok(header.slice(0, qtyEnd).endsWith('QTY') && row.slice(0, qtyEnd).endsWith('2'));
+  assert.ok(header.slice(0, priceEnd).endsWith('PRICE') && row.slice(0, priceEnd).endsWith('Rs.1250.00'));
+  assert.ok(header.endsWith('TOTAL') && row.endsWith('Rs.2500.00'));
+
+  const subtotal = lines.find(l => l.text.includes('SUBTOTAL')).text;
+  assert.equal(subtotal.length, PAPER_WIDTH_80MM);
+  assert.ok(subtotal.endsWith('Rs.2500.00'));
+});
+
+test('both documents emphasise the title initials and the bill number', () => {
+  const boldStrike = [...CMD.BOLD_ON, ...CMD.DOUBLE_STRIKE_ON];
+  const initials = { B: 0x42, F: 0x46, S: 0x53 };
+
+  for (const generate of [generateCustomerReceipt, generateKitchenTicket]) {
+    const doc = Buffer.from(generate(completeBill));
+
+    for (const code of Object.values(initials)) {
+      assert.ok(doc.includes(bytesOf(CMD.FONT_XLARGE, [code])), 'missing enlarged title initial');
+    }
+    assert.ok(doc.includes(bytesOf(boldStrike, [0x1D, 0x21, 0x22, initials.B])), 'title not bold + double-strike');
+    assert.ok(doc.includes(bytesOf(boldStrike, CMD.FONT_LARGE, [...Buffer.from('Bill #B-1042')])), 'bill number not emphasised');
+
+    const lines = decodeLines(doc);
+    const dateLine = lines.find(l => l.text.startsWith('Date:'));
+    assert.ok(dateLine && dateLine.text.length <= PAPER_WIDTH_80MM);
+  }
+});
+
+// --- Direct-mode warning ---
+
+function createCommContext(warnings) {
+  const context = vm.createContext({
+    localStorage: { getItem: () => null, setItem: () => {} },
+    console: { log() {}, warn() {}, error() {} },
+    fetch: async () => ({ ok: true, json: async () => ({ success: true }) }),
+    showWarningToast: (...args) => warnings.push(args),
+    AbortSignal
+  });
+  vm.runInContext(fs.readFileSync(require.resolve('../unified-printer-comm.js'), 'utf8'), context);
+  return context;
+}
+
+test('direct printer address shows one warning without the IP, print server address shows none', async () => {
+  const warnings = [];
+  const context = createCommContext(warnings);
+
+  vm.runInContext("printerConnections.printer1.type = 'wifi'; printerConnections.printer1.ip = '192.0.2.11'; printerConnections.printer1.port = 9100;", context);
+  await vm.runInContext("sendToPosiflow('printer1', new Uint8Array([1]))", context);
+  await vm.runInContext("sendToPosiflow('printer1', new Uint8Array([1]))", context);
+  assert.equal(warnings.length, 1);
+  assert.ok(!warnings[0].join(' ').includes('192.0.2.11'));
+
+  vm.runInContext("printerConnections.printer2.type = 'wifi'; printerConnections.printer2.ip = 'localhost'; printerConnections.printer2.port = 3000;", context);
+  await vm.runInContext("sendToPosiflow('printer2', new Uint8Array([1]))", context);
+  assert.equal(warnings.length, 1);
+});
