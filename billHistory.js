@@ -132,7 +132,10 @@
         var store = tx.objectStore(STORE_NAME);
         var req = store.put(record);
 
-        tx.oncomplete = function () { resolve(); };
+        tx.oncomplete = function () {
+          resolve();
+          try { window.dispatchEvent(new CustomEvent('bfs:bill-saved', { detail: record })); } catch (e) { /* listeners must not affect billing */ }
+        };
         tx.onabort = function (event) {
           reject(new Error('Failed to save bill record: ' + (event.target.error || 'transaction aborted')));
         };

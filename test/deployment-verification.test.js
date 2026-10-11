@@ -30,12 +30,12 @@ describe('Deployment Verification - Task 10', () => {
 
   it('should have complete 3D map system files', () => {
     const map3dFiles = [
-      'map3d/index.js',
-      'map3d/lib/config.js',
-      'map3d/lib/webgl-detection.js',
-      'map3d/scene/CafeScene.js',
-      'map3d/ui/MapCanvas.js',
-      'map3d/hooks/useFirebaseSync.js'
+      'map3d/boot.ts',
+      'map3d/app.tsx',
+      'map3d/lib/store.ts',
+      'map3d/lib/webgl.ts',
+      'map3d/scene/ShopScene.tsx',
+      'map3d/ui/LiveMapApp.tsx'
     ];
     
     map3dFiles.forEach(file => {
@@ -59,8 +59,10 @@ describe('Deployment Verification - Task 10', () => {
     const vercelConfigPath = path.join(process.cwd(), 'vercel.json');
     const vercelConfig = JSON.parse(fs.readFileSync(vercelConfigPath, 'utf8'));
     
-    assert.ok(vercelConfig.routes, 'Should have routing configuration');
     assert.ok(vercelConfig.headers, 'Should have headers for 3D assets');
+    const sources = vercelConfig.headers.map(h => h.source);
+    assert.ok(sources.includes('/dist/live-map/chunks/(.*)'), 'Hashed chunks should be cached immutably');
+    assert.ok(!sources.includes('/map3d/(.*)'), 'Old map3d cache rule should be removed');
     assert.strictEqual(vercelConfig.version, 2, 'Should use Vercel v2');
   });
 
@@ -75,26 +77,13 @@ describe('Deployment Verification - Task 10', () => {
   });
 
   it('should verify system integration readiness', async () => {
-    // Test that core system files can be imported without errors
-    try {
-      // Test 3D map configuration
-      const config = await import('../map3d/lib/config.js');
-      assert.ok(config.CAFE_LAYOUT, '3D map configuration should be importable');
-      assert.ok(config.STATUS_COLORS, 'Status colors should be defined');
-      assert.ok(config.ANIMATION_CONFIG, 'Animation configuration should be defined');
-      
-      // Test WebGL detection
-      const webgl = await import('../map3d/lib/webgl-detection.js');
-      assert.ok(typeof webgl.checkWebGLSupport === 'function', 'WebGL detection should be available');
-      
-      console.log('✓ All core 3D map modules loaded successfully');
-      
-    } catch (error) {
-      console.log('Note: Some modules require browser environment, but files exist and are structured correctly');
-    }
-    
-    // Always pass - we're just verifying file structure
-    assert.ok(true, 'System integration files are ready for deployment');
+    // Core Live Map lib modules are pure TS and load under Node's type stripping
+    const layout = await import('../map3d/lib/layout.ts');
+    assert.ok(layout.SHOP_LAYOUT, 'Shop layout should be importable');
+    const status = await import('../map3d/lib/status.ts');
+    assert.ok(status.STATUS_META, 'Status palette should be defined');
+    const webgl = await import('../map3d/lib/webgl.ts');
+    assert.strictEqual(typeof webgl.hasWebGL, 'function', 'WebGL detection should be available');
   });
 
   it('should verify printer system compatibility', () => {

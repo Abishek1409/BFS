@@ -7,15 +7,20 @@
   "devCommand": null,
   "headers": [
     {
-      "source": "/map3d/(.*)",
+      "source": "/dist/live-map/chunks/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
-        },
+        }
+      ]
+    },
+    {
+      "source": "/dist/live-map/(boot\\.js|app\\.js|app\\.css)",
+      "headers": [
         {
-          "key": "Content-Type",
-          "value": "application/javascript"
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
         }
       ]
     },
