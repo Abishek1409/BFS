@@ -316,3 +316,25 @@ test('sendToPrinter resolves after flushing even if the printer keeps the socket
   sockets.forEach(s => s.destroy());
   await new Promise(r => fake.close(r));
 });
+
+test('falls back to POST /print?ip= when an older print server has no /print-to', async () => {
+  const urls = [];
+  const context = createCommContext([], async url => {
+    urls.push(url);
+    return url.includes('/print-to')
+      ? { ok: false, status: 404, json: async () => ({}) }
+      : { ok: true, status: 200, json: async () => ({ success: true }) };
+  });
+  vm.runInContext("printerConnections.printer1.type = 'wifi'; printerConnections.printer1.ip = '192.168.1.8'; printerConnections.printer1.port = 9100;", context);
+  const result = await vm.runInContext("sendToPosiflow('printer1', new Uint8Array([1]))", context);
+  assert.equal(result.success, true);
+  assert.equal(urls[1], 'http://localhost:3000/print?ip=192.168.1.8&port=9100');
+});
+
+test('server accepts POST /print?ip= for a single LAN printer', async () => {
+  const sent = [];
+  const baseUrl = await startTestServer({ send: async printer => { sent.push(`${printer.ip}:${printer.port}`); } });
+  const res = await fetch(`${baseUrl}/print?ip=192.168.1.9&port=9100`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: Buffer.from('bill') });
+  assert.equal(res.status, 200);
+  assert.deepEqual(sent, ['192.168.1.9:9100']);
+});

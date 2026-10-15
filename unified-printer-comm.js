@@ -363,8 +363,8 @@ async function connectWiFiPrinter(printerId, ip, port = 9100) {
       }
       throw new Error('Print server test failed');
     } else {
-      // Direct connection test (may fail due to CORS, but try anyway)
-      const testResult = await sendToPosiflow(printerId, new Uint8Array([0x10, 0x04, 0x01]));
+      // Send ESC @ (initialize, prints nothing) via the print server
+      const testResult = await sendToPosiflow(printerId, new Uint8Array([0x1B, 0x40]));
       
       if (testResult.success) {
         printer.connected = true;
@@ -577,15 +577,18 @@ function isTimeoutError(error) {
  * or reachedServer=false when the server is not running.
  */
 async function sendViaPrintServer(printer, data) {
-  const url = `${PRINT_SERVER_URL}/print-to?ip=${encodeURIComponent(printer.ip)}&port=${encodeURIComponent(printer.port)}`;
+  const query = `ip=${encodeURIComponent(printer.ip)}&port=${encodeURIComponent(printer.port)}`;
+  const post = path => fetch(`${PRINT_SERVER_URL}${path}?${query}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/octet-stream' },
+    body: data,
+    signal: AbortSignal.timeout(12000)
+  });
   let response;
   try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/octet-stream' },
-      body: data,
-      signal: AbortSignal.timeout(12000)
-    });
+    response = await post('/print-to');
+    // Older print servers only accept POST /print?ip=...&port=...
+    if (response.status === 404) response = await post('/print');
   } catch (error) {
     const err = new Error(isTimeoutError(error) ? 'Print server timed out' : 'Print server not running');
     // A timeout means the server took the job but did not finish in time

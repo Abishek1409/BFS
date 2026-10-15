@@ -41,7 +41,7 @@ function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrint
 
   // Relay raw ESC/POS bytes to a printer IP chosen in the website settings.
   // Limited to private LAN addresses so this cannot be used to reach the internet.
-  app.post('/print-to', async (req, res) => {
+  const printTo = async (req, res) => {
     const ip = String(req.query.ip || '');
     const port = Number(req.query.port || 9100);
     if (!isPrivateIPv4(ip) || !Number.isInteger(port) || port < 1 || port > 65535) {
@@ -58,13 +58,16 @@ function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrint
     } catch (error) {
       res.status(502).json({ success: false, error: error.message || String(error) });
     }
-  });
+  };
+  app.post('/print-to', printTo);
 
   app.get('/', (req, res) => {
     res.json({ status: 'running', message: 'Multi-Printer Server', printers });
   });
 
   app.post(['/print/:printerId', '/print'], async (req, res) => {
+    // POST /print?ip=...&port=... (older website versions) prints to that IP
+    if (!req.params.printerId && req.query.ip) return printTo(req, res);
     const requestedId = req.params.printerId;
     const targets = requestedId ? [[requestedId, printers[requestedId]]] : Object.entries(printers);
     if (targets.some(([, printer]) => !printer)) {
