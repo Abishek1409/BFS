@@ -1,0 +1,77 @@
+========================================
+HOW TO AUTO-START PRINT SERVER ON WINDOWS STARTUP
+========================================
+
+METHOD 1: Using Windows Startup Folder (Recommended)
+-----------------------------------------------------
+
+1. Press Win + R to open Run dialog
+
+2. Type: shell:startup
+   Then press Enter
+
+3. This opens the Startup folder
+
+4. Right-click in the folder → New → Shortcut
+
+5. For location, browse to: start-print-server.bat
+   (or copy the full path to the bat file)
+
+6. Click Next, give it a name like "Print Server"
+
+7. Click Finish
+
+8. Done! The print server will start automatically when you login to Windows
+
+
+METHOD 2: Using Task Scheduler (Runs before login)
+---------------------------------------------------
+
+1. Press Win + R, type: taskschd.msc
+   Press Enter to open Task Scheduler
+
+2. Click "Create Basic Task" on the right side
+
+3. Name: "Print Server Auto Start"
+   Click Next
+
+4. Trigger: "When the computer starts"
+   Click Next
+
+5. Action: "Start a program"
+   Click Next
+
+6. Program/script: Browse to start-print-server.bat
+
+7. Click Next, then Finish
+
+8. Right-click the task → Properties
+
+9. Under "General" tab:
+   - Check "Run whether user is logged on or not"
+   - Check "Run with highest privileges"
+
+10. Click OK
+
+
+TO TEST:
+--------
+1. Double-click start-print-server.bat
+2. You should see the print server starting
+3. Leave it running
+4. Open your website and print a bill
+5. Both printers should print!
+
+
+TROUBLESHOOTING:
+----------------
+If the server doesn't start:
+
+1. Make sure Node.js is installed
+   Check by running: node --version
+
+2. Install dependencies by running:
+   npm install express cors
+
+3. Check if printers are reachable:
+   Open browser: http://localhost:3000/test

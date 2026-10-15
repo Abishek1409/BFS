@@ -14,10 +14,7 @@ const CMD = {
   ALIGN_RIGHT: [ESC, 0x61, 0x02],       // Right alignment
   BOLD_ON: [ESC, 0x45, 0x01],           // Bold text on
   BOLD_OFF: [ESC, 0x45, 0x00],          // Bold text off
-  DOUBLE_STRIKE_ON: [ESC, 0x47, 0x01],  // Double-strike on (darker print)
-  DOUBLE_STRIKE_OFF: [ESC, 0x47, 0x00], // Double-strike off
   FONT_LARGE: [GS, 0x21, 0x11],         // Double width and height
-  FONT_XLARGE: [GS, 0x21, 0x22],        // Triple width and height
   FONT_NORMAL: [GS, 0x21, 0x00],        // Normal font
   LINE_FEED: [0x0A],                    // Line feed
   CUT_PAPER: [GS, 0x56, 0x00]           // Cut paper
@@ -164,138 +161,8 @@ function formatCurrency(amount) {
   return 'Rs.' + amount.toFixed(2);
 }
 
-// === CUSTOMER RECEIPT FORMATTING HELPERS ===
-
 /**
- * Column widths for 80mm thermal paper customer receipt
- */
-const CUSTOMER_RECEIPT_COLS = {
-  ITEM: 19,      // Item name column
-  QTY: 5,        // Quantity column
-  PRICE: 11,     // Unit price column
-  TOTAL: 13      // Line total column
-};
-
-/**
- * Formats currency value for customer receipts
- * @param {number} amount - Amount in currency
- * @returns {string} Formatted currency string with "Rs." prefix (printed length equals measured length)
- */
-function formatCurrencyValue(amount) {
-  return 'Rs.' + amount.toFixed(2);
-}
-
-/**
- * Formats a line with item, quantity, price, and total aligned properly
- * @param {string} itemName - Item name (will be truncated if too long)
- * @param {number} qty - Quantity
- * @param {number} price - Unit price
- * @param {number} total - Line total
- * @returns {string} Formatted line with aligned columns
- */
-function formatLineWithTotal(itemName, qty, price, total) {
-  const name = itemName.substring(0, CUSTOMER_RECEIPT_COLS.ITEM);
-  const qtyStr = qty.toString();
-  const priceStr = formatCurrencyValue(price);
-  const totalStr = formatCurrencyValue(total);
-  
-  return padText(name, CUSTOMER_RECEIPT_COLS.ITEM) + 
-         padText(qtyStr, CUSTOMER_RECEIPT_COLS.QTY, 'right') + 
-         padText(priceStr, CUSTOMER_RECEIPT_COLS.PRICE, 'right') + 
-         padText(totalStr, CUSTOMER_RECEIPT_COLS.TOTAL, 'right');
-}
-
-/**
- * Formats a complete item row with specifications
- * @param {Object} item - Bill item
- * @returns {Array<string>} Array of lines (main line + spec line if applicable)
- */
-function formatItemRow(item) {
-  const lines = [];
-  
-  // Main item line with pricing
-  const mainLine = formatLineWithTotal(item.name, item.qty, item.price, item.total);
-  lines.push(mainLine);
-  
-  // Build specification line
-  const specs = [];
-  if (item.ice) specs.push(item.ice);
-  if (item.sugar) specs.push(item.sugar);
-  if (item.size) specs.push(item.size);
-  if (item.note && item.note.trim() !== '') specs.push(item.note);
-  
-  // Add spec line if there are specifications
-  if (specs.length > 0) {
-    const specText = '  (' + specs.join(', ') + ')';
-    lines.push(specText.substring(0, PAPER_WIDTH_80MM));
-  }
-  
-  return lines;
-}
-
-// === SHARED HEADER BUILDERS (used by both documents) ===
-
-const SHOP_TITLE = 'Best Fruits Stall';
-const BILL_NUMBER_MAX_CHARS = 24; // Double-width line holds 24 characters
-
-/**
- * Resets size, bold and double-strike to normal
- * @returns {Array<number>} Command bytes
- */
-function resetEmphasis() {
-  return [...CMD.FONT_NORMAL, ...CMD.BOLD_OFF, ...CMD.DOUBLE_STRIKE_OFF];
-}
-
-/**
- * Builds the centred shop title: 3x initials, 2x remaining letters, bold + double-strike
- * @returns {Array<number>} ESC/POS bytes, ending with a line feed
- */
-function buildShopTitle() {
-  const bytes = [...CMD.ALIGN_CENTER, ...CMD.BOLD_ON, ...CMD.DOUBLE_STRIKE_ON];
-
-  SHOP_TITLE.split(' ').forEach((word, index) => {
-    if (index > 0) {
-      bytes.push(...CMD.FONT_LARGE, ...encodeText(' '));
-    }
-    bytes.push(...CMD.FONT_XLARGE, ...encodeText(word.charAt(0)));
-    bytes.push(...CMD.FONT_LARGE, ...encodeText(word.substring(1)));
-  });
-
-  bytes.push(...resetEmphasis(), ...CMD.LINE_FEED);
-  return bytes;
-}
-
-/**
- * Builds the centred bill number line: 2x, bold + double-strike
- * @param {string} billNo - Bill number
- * @returns {Array<number>} ESC/POS bytes, ending with a line feed
- */
-function buildBillNumber(billNo) {
-  const text = `Bill #${billNo === undefined || billNo === null ? '' : billNo}`
-    .substring(0, BILL_NUMBER_MAX_CHARS);
-
-  return [
-    ...CMD.ALIGN_CENTER, ...CMD.BOLD_ON, ...CMD.DOUBLE_STRIKE_ON, ...CMD.FONT_LARGE,
-    ...encodeText(text),
-    ...CMD.LINE_FEED,
-    ...resetEmphasis()
-  ];
-}
-
-/**
- * Builds the normal-size date and time line (max 48 characters)
- * @param {Date} [date] - Bill date, defaults to now
- * @returns {Array<number>} ESC/POS bytes, ending with a line feed
- */
-function buildDateTimeLine(date) {
-  const when = date || new Date();
-  const line = `Date: ${formatDate(when)}   Time: ${formatTime(when)}`.substring(0, PAPER_WIDTH_80MM);
-  return [...encodeText(line), ...CMD.LINE_FEED];
-}
-
-/**
- * Generates ESC/POS byte array for kitchen ticket (Printer 2)
- * Simplified format without pricing - shows preference symbols only
+ * Generates ESC/POS byte array for complete receipt
  * @param {Object} billData - Bill information
  * @param {string} billData.billNo - Bill number
  * @param {string} billData.customerName - Customer name (optional)
@@ -305,7 +172,7 @@ function buildDateTimeLine(date) {
  * @param {Date} billData.date - Bill date/time
  * @returns {Uint8Array} ESC/POS command sequence
  */
-function generateKitchenTicket(billData) {
+function generateESCPOSReceipt(billData) {
   console.log('Generating ESC/POS receipt with data:', billData);
   const buffer = [];
   
@@ -338,8 +205,13 @@ function generateKitchenTicket(billData) {
   addBytes(CMD.INIT);
   
   // === HEADER ===
-  addBytes(buildShopTitle());
   addBytes(CMD.ALIGN_CENTER);
+  addBytes(CMD.BOLD_ON);
+  addBytes(CMD.FONT_LARGE);
+  addText('Best Fruits Stall');
+  addLF();
+  addBytes(CMD.FONT_NORMAL);
+  addBytes(CMD.BOLD_OFF);
   addText('Fresh Juices | Shakes | Snacks');
   addLF();
   addBytes(CMD.ALIGN_LEFT);
@@ -347,15 +219,22 @@ function generateKitchenTicket(billData) {
   addLF();
   
   // === BILL METADATA ===
-  addBytes(buildBillNumber(billData.billNo));
-  addBytes(CMD.ALIGN_LEFT);
-  addBytes(buildDateTimeLine(billData.date));
+  // Bill number and date on same line
+  const dateStr = billData.date ? formatDate(billData.date) : formatDate(new Date());
+  const billLine = `Bill: #${billData.billNo}`.padEnd(24) + `Date: ${dateStr}`;
+  addText(billLine);
+  addLF();
   
   // Customer name if provided
   if (billData.customerName && billData.customerName.trim() !== '') {
-    addText(`Customer: ${billData.customerName}`.substring(0, PAPER_WIDTH_80MM));
+    addText(`Customer: ${billData.customerName}`);
     addLF();
   }
+  
+  // Time
+  const timeStr = billData.date ? formatTime(billData.date) : formatTime(new Date());
+  addText(`Time: ${timeStr}`);
+  addLF();
   
   addText(createLine('-'));
   addLF();
@@ -413,144 +292,7 @@ function generateKitchenTicket(billData) {
   addBytes(CMD.CUT_PAPER);
   
   const result = new Uint8Array(buffer);
-  console.log('Generated kitchen ticket ESC/POS data, size:', result.length, 'bytes');
-  return result;
-}
-
-/**
- * Generates ESC/POS byte array for customer receipt with itemized pricing (Printer 1)
- * @param {Object} billData - Bill information
- * @param {string} billData.billNo - Bill number
- * @param {string} billData.customerName - Customer name (optional)
- * @param {Array} billData.items - Array of bill items with pricing
- * @param {number} billData.subtotal - Subtotal amount
- * @param {number} billData.grandTotal - Grand total
- * @param {Date} billData.date - Bill date/time
- * @returns {Uint8Array} ESC/POS command sequence for customer receipt
- */
-function generateCustomerReceipt(billData) {
-  console.log('Generating customer receipt with data:', billData);
-  const buffer = [];
-  
-  // Helper to add bytes to buffer
-  const addBytes = (...bytes) => {
-    bytes.forEach(b => {
-      if (Array.isArray(b)) {
-        buffer.push(...b);
-      } else if (b instanceof Uint8Array) {
-        buffer.push(...b);
-      } else {
-        buffer.push(b);
-      }
-    });
-  };
-  
-  // Helper to add text
-  const addText = (text) => {
-    addBytes(encodeText(text));
-  };
-  
-  // Helper to add line feed
-  const addLF = (count = 1) => {
-    for (let i = 0; i < count; i++) {
-      addBytes(CMD.LINE_FEED);
-    }
-  };
-  
-  // Initialize printer
-  addBytes(CMD.INIT);
-  
-  // === HEADER ===
-  addBytes(buildShopTitle());
-  addBytes(CMD.ALIGN_CENTER);
-  addText('Fresh Juices | Shakes | Snacks');
-  addLF();
-  addBytes(CMD.ALIGN_LEFT);
-  addText(createLine('='));
-  addLF();
-  
-  // === BILL METADATA ===
-  addBytes(buildBillNumber(billData.billNo));
-  addBytes(CMD.ALIGN_LEFT);
-  addBytes(buildDateTimeLine(billData.date));
-  
-  if (billData.customerName && billData.customerName.trim() !== '') {
-    addText(`Customer: ${billData.customerName}`.substring(0, PAPER_WIDTH_80MM));
-    addLF();
-  }
-  
-  addText(createLine('='));
-  addLF();
-  addLF();
-  
-  // === ITEMS TABLE HEADER ===
-  addBytes(CMD.BOLD_ON);
-  const headerLine = padText('ITEM', CUSTOMER_RECEIPT_COLS.ITEM) + 
-                     padText('QTY', CUSTOMER_RECEIPT_COLS.QTY, 'right') + 
-                     padText('PRICE', CUSTOMER_RECEIPT_COLS.PRICE, 'right') + 
-                     padText('TOTAL', CUSTOMER_RECEIPT_COLS.TOTAL, 'right');
-  addText(headerLine);
-  addLF();
-  addBytes(CMD.BOLD_OFF);
-  addText(createLine('-'));
-  addLF();
-  
-  // === ITEMS ===
-  billData.items.forEach(item => {
-    const itemLines = formatItemRow(item);
-    itemLines.forEach(line => {
-      addText(line);
-      addLF();
-    });
-  });
-  
-  // === TOTALS ===
-  addText(createLine('-'));
-  addLF();
-  
-  // Subtotal
-  const subtotalLabel = 'SUBTOTAL:';
-  const subtotalValue = formatCurrencyValue(billData.subtotal || billData.grandTotal);
-  const subtotalLine = padText(subtotalLabel + ' ' + subtotalValue, PAPER_WIDTH_80MM, 'right');
-  addText(subtotalLine);
-  addLF();
-  
-  addText(createLine('='));
-  addLF();
-  
-  // Grand Total (emphasized)
-  addBytes(CMD.BOLD_ON);
-  addBytes(CMD.FONT_LARGE);
-  const grandTotalLabel = 'GRAND TOTAL:';
-  const grandTotalValue = formatCurrencyValue(billData.grandTotal);
-  addBytes(CMD.ALIGN_RIGHT);
-  addText(grandTotalLabel);
-  addLF();
-  addText(grandTotalValue);
-  addLF();
-  addBytes(CMD.FONT_NORMAL);
-  addBytes(CMD.BOLD_OFF);
-  addBytes(CMD.ALIGN_LEFT);
-  
-  addText(createLine('='));
-  addLF();
-  addLF();
-  
-  // === FOOTER ===
-  addBytes(CMD.ALIGN_CENTER);
-  addText('Thank you for your visit!');
-  addLF();
-  addText('Stay Fresh | Stay Healthy');
-  addLF();
-  addLF();
-  addText(createLine('='));
-  addLF(3);
-  
-  // Cut paper
-  addBytes(CMD.CUT_PAPER);
-  
-  const result = new Uint8Array(buffer);
-  console.log('Generated customer receipt ESC/POS data, size:', result.length, 'bytes');
+  console.log('Generated ESC/POS data, size:', result.length, 'bytes');
   return result;
 }
 
@@ -582,16 +324,11 @@ function formatTime(date) {
 // Export functions for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    generateKitchenTicket,
-    generateCustomerReceipt,
+    generateESCPOSReceipt,
     getPreferenceSymbol,
     encodeText,
     setASCIIFallback,
-    formatCurrencyValue,
-    formatLineWithTotal,
-    formatItemRow,
     CMD,
-    PAPER_WIDTH_80MM,
-    CUSTOMER_RECEIPT_COLS
+    PAPER_WIDTH_80MM
   };
 }

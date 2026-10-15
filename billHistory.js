@@ -98,10 +98,9 @@
    * @param {number} amount  - Finite numeric total in INR.
    * @param {Array}  items   - Optional array of item snapshots.
    * @param {string} printMethod - Optional print method ('browser' or 'thermal'), defaults to 'browser'.
-   * @param {string} formatType - Optional format type ('customer', 'kitchen', 'both'), defaults to 'both'.
    * @returns {Promise<void>}
    */
-  function saveBillRecord(billNo, amount, items, printMethod, formatType) {
+  function saveBillRecord(billNo, amount, items, printMethod) {
     if (typeof billNo !== 'string' || billNo.trim() === '') {
       return Promise.reject(new Error('billNo must be a non-empty string'));
     }
@@ -120,10 +119,7 @@
       items: Array.isArray(items) ? items : [],
       printMethod: (typeof printMethod === 'string' && (printMethod === 'browser' || printMethod === 'thermal')) 
         ? printMethod 
-        : 'browser',
-      formatType: (typeof formatType === 'string' && (formatType === 'customer' || formatType === 'kitchen' || formatType === 'both'))
-        ? formatType
-        : 'both'
+        : 'browser'
     };
 
     return _getDB().then(function (db) {
@@ -132,10 +128,7 @@
         var store = tx.objectStore(STORE_NAME);
         var req = store.put(record);
 
-        tx.oncomplete = function () {
-          resolve();
-          try { window.dispatchEvent(new CustomEvent('bfs:bill-saved', { detail: record })); } catch (e) { /* listeners must not affect billing */ }
-        };
+        tx.oncomplete = function () { resolve(); };
         tx.onabort = function (event) {
           reject(new Error('Failed to save bill record: ' + (event.target.error || 'transaction aborted')));
         };

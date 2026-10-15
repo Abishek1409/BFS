@@ -13,89 +13,88 @@ const express = require('express');
 const cors = require('cors');
 const net = require('net');
 
-const PORT = Number(process.env.PORT || 3000);
+const app = express();
+const PORT = 3000;
 
 // Your thermal printers configuration
 const PRINTERS = {
   printer1: {
-    ip: process.env.PRINTER1_IP || null,
+    ip: '192.168.0.202',
     port: 9100,
     name: 'Printer 1'
   },
   printer2: {
-    ip: process.env.PRINTER2_IP || null,
+    ip: '192.168.0.200',
     port: 9100,
     name: 'Printer 2'
   }
 };
 
-function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrinter } = {}) {
-  const app = express();
-  app.use(cors());
-  app.use(express.raw({ type: 'application/octet-stream', limit: '10mb' }));
+// Enable CORS for all origins (allows browser to connect)
+app.use(cors());
 
-  app.get('/', (req, res) => {
-    res.json({ status: 'running', message: 'Multi-Printer Server', printers });
+// Parse binary data
+app.use(express.raw({ type: 'application/octet-stream', limit: '10mb' }));
+
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'running',
+    message: 'Multi-Printer Server',
+    printers: PRINTERS
   });
+});
 
-  app.post(['/print/:printerId', '/print'], async (req, res) => {
-    const requestedId = req.params.printerId;
-    const targets = requestedId ? [[requestedId, printers[requestedId]]] : Object.entries(printers);
-    if (targets.some(([, printer]) => !printer)) {
-      res.status(404).json({ success: false, error: 'Unknown printer' });
-      return;
-    }
-    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
-      res.status(400).json({ success: false, error: 'Print job is empty' });
-      return;
-    }
-
-    const results = await Promise.all(targets.map(async ([printerId, printer]) => {
-      try {
-        if (!printer.ip) throw new Error(`${printer.name} IP is not configured`);
-        await send(printer, req.body);
-        return [printerId, { success: true }];
-      } catch (error) {
-        return [printerId, { success: false, error: error.message || String(error) }];
-      }
-    }));
-    const byPrinter = Object.fromEntries(results);
-    const success = results.every(([, result]) => result.success);
-    res.status(success ? 200 : 502).json({
-      success,
-      message: success ? 'Print job sent' : 'One or more printers failed',
-      results: byPrinter
-    });
-  });
-
-  app.get(['/test/:printerId', '/test'], async (req, res) => {
-    const requestedId = req.params.printerId;
-    const targets = requestedId ? [[requestedId, printers[requestedId]]] : Object.entries(printers);
-    if (targets.some(([, printer]) => !printer)) {
-      res.status(404).json({ success: false, error: 'Unknown printer' });
-      return;
-    }
-
-    const results = await Promise.all(targets.map(async ([printerId, printer]) => {
-      try {
-        if (!printer.ip) throw new Error(`${printer.name} IP is not configured`);
-        await test(printer);
-        return [printerId, { success: true, status: 'reachable' }];
-      } catch (error) {
-        return [printerId, { success: false, error: error.message || String(error) }];
-      }
-    }));
-    const byPrinter = Object.fromEntries(results);
-    const success = results.every(([, result]) => result.success);
-    res.status(success ? 200 : 502).json({
-      success,
-      message: success ? 'Printer connection successful' : 'One or more printers unreachable',
-      printers: byPrinter
-    });
-  });
-
-  return app;
+// Only allow forwarding to private LAN printers (prevents use as an open relay)
+function isPrivateIPv4(ip) {
+  return /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})$/.test(ip);
 }
+
+// POST /print                      -> print to BOTH configured printers
+// POST /print?ip=192.168.1.8&port=9100 -> print to that ONE printer
+// The data is written over a raw TCP socket, so no HTTP headers reach the printer.
+app.post('/print', async (req, res) => {
+  try {
+    const escposData = req.body;
+    if (!escposData || !escposData.length) {
+      return res.status(400).json({ success: false, error: 'Empty print job' });
+    }
+
+    let targets;
+    if (req.query.ip) {
+      const ip = String(req.query.ip);
+      const port = parseInt(req.query.port, 10) || 9100;
+      if (!isPrivateIPv4(ip) || port < 1 || port > 65535) {
+        return res.status(400).json({ success: false, error: 'Invalid printer address' });
+      }
+      targets = [{ ip, port, name: `Printer ${ip}` }];
+    } else {
+      targets = Object.values(PRINTERS);
+    }
+
+    console.log(`Received print job: ${escposData.length} bytes -> ${targets.map(t => t.ip).join(', ')}`);
+
+    const results = await Promise.allSettled(targets.map(t => sendToPrinter(t, escposData)));
+    const okCount = results.filter(r => r.status === 'fulfilled').length;
+    const details = results.map((r, i) => ({
+      ip: targets[i].ip,
+      status: r.status === 'fulfilled' ? 'success' : String(r.reason)
+    }));
+
+    if (okCount > 0) {
+      console.log(`✅ Printed on ${okCount}/${targets.length} printer(s)`);
+      res.json({ success: true, printed: okCount, total: targets.length, results: details });
+    } else {
+      console.log('❌ All printers failed:', details);
+      res.status(502).json({ success: false, error: 'Printer unreachable', results: details });
+    }
+  } catch (error) {
+    console.error('Print error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+});
 
 /**
  * Send data to a single printer
@@ -103,50 +102,73 @@ function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrint
 function sendToPrinter(printer, data) {
   return new Promise((resolve, reject) => {
     const client = new net.Socket();
-    let settled = false;
-    const closeTimer = setTimeout(() => {
-      client.destroy();
-      finish(new Error('Print transmission timed out'));
-    }, 10000);
-    const finish = error => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(closeTimer);
-      if (error) reject(error);
-      else resolve({ printer: printer.name, status: 'success' });
-    };
     
-    client.setTimeout(5000);
+    client.setTimeout(4000); // Fail fast if the printer is off/unreachable
     
     client.connect(printer.port, printer.ip, () => {
       console.log(`✓ Connected to ${printer.name} at ${printer.ip}:${printer.port}`);
-      client.write(data, error => {
-        if (error) {
+      
+      // Write only the actual ESC/POS data, nothing else
+      client.write(data, (err) => {
+        if (err) {
+          console.error(`✗ ${printer.name} write error:`, err.message);
           client.destroy();
-          finish(error);
+          reject(err.message);
         } else {
+          console.log(`✓ ${printer.name} data sent successfully`);
+          // Close connection immediately after successful write
           client.end();
         }
       });
     });
     
-    client.on('close', hadError => {
-      console.log(`✓ ${printer.name} job completed`);
-      if (!hadError) finish();
+    client.on('close', () => {
+      console.log(`✓ ${printer.name} connection closed`);
+      resolve({ printer: printer.name, status: 'success' });
     });
     
     client.on('error', (err) => {
       console.error(`✗ ${printer.name} error:`, err.message);
-      finish(err);
+      client.destroy();
+      reject(err.message);
     });
     
     client.on('timeout', () => {
       console.error(`✗ ${printer.name} timeout`);
       client.destroy();
-      finish(new Error('Connection timeout'));
+      reject('Connection timeout');
     });
   });
 }
+
+// Test endpoint - tests both printers
+app.get('/test', async (req, res) => {
+  try {
+    console.log('Testing both printers...');
+    
+    const testPromises = Object.entries(PRINTERS).map(([key, printer]) => {
+      return testPrinter(printer);
+    });
+    
+    const results = await Promise.allSettled(testPromises);
+    
+    const response = {
+      printer1: results[0].status === 'fulfilled' ? 'reachable' : results[0].reason,
+      printer2: results[1].status === 'fulfilled' ? 'reachable' : results[1].reason
+    };
+    
+    const allReachable = results.every(r => r.status === 'fulfilled');
+    
+    if (allReachable) {
+      res.json({ success: true, message: 'Both printers are reachable', printers: response });
+    } else {
+      res.status(500).json({ success: false, message: 'One or more printers unreachable', printers: response });
+    }
+    
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 /**
  * Test connection to a single printer
@@ -175,13 +197,7 @@ function testPrinter(printer) {
   });
 }
 
-if (require.main === module) {
-  if (!PRINTERS.printer1.ip && !PRINTERS.printer2.ip) {
-    console.error('Configure PRINTER1_IP and/or PRINTER2_IP before starting the print server.');
-    process.exitCode = 1;
-  } else {
-  const app = createApp();
-  app.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════╗
 ║   Multi-Printer Server Running!            ║
@@ -195,16 +211,10 @@ if (require.main === module) {
 ║   Endpoints:                               ║
 ║   GET  /       - Server status             ║
 ║   GET  /test   - Test both printers        ║
-║   GET  /test/printer1|printer2              ║
-║   POST /print/printer1|printer2             ║
 ║   POST /print  - Print to both printers    ║
 ║                                            ║
 ╚════════════════════════════════════════════╝
 
 Ready to print to BOTH printers simultaneously!
   `);
-  });
-  }
-}
-
-module.exports = { createApp, PRINTERS, sendToPrinter, testPrinter };
+});
