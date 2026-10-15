@@ -798,6 +798,13 @@
       <label>Quantity</label>
       <input type="number" id="modalQty" min="1" value="1" />
     </div>
+    <div class="form-row" id="orderTypeRow">
+      <label>&#x1F37D;&#xFE0F; Dine In or Take Away</label>
+      <div class="toggle-group">
+        <button class="toggle-btn selected" data-val="Dine In"   onclick="selectToggle(this,'orderTypeRow')">Dine In</button>
+        <button class="toggle-btn"          data-val="Take Away" onclick="selectToggle(this,'orderTypeRow')">Take Away</button>
+      </div>
+    </div>
     <div class="form-row" id="iceRow">
       <label>&#x1F9CA; Ice Preference</label>
       <div class="toggle-group">
@@ -872,7 +879,7 @@
     </div>
     <div class="bill-number-row">
       <label for="billNoInput">Bill No.</label>
-      <input type="text" id="billNoInput" class="bill-no-input" value="001" oninput="updateHeaderBill(this.value)" />
+      <input type="text" id="billNoInput" class="bill-no-input" value="100" oninput="updateHeaderBill(this.value)" />
     </div>
     <div class="customer-row">
       <label for="customerName">Customer</label>
@@ -1155,7 +1162,8 @@ const MENU = [
 /* ===== STATE ===== */
 let billItems   = [];
 let currentItem = null;
-let billCounter = 1;
+const BILL_START_NUMBER = 100; // Bill numbers start at 100 and reset every day
+let billCounter = BILL_START_NUMBER;
 let activeQrOrderId = null;
 
 /* ===== STORAGE HELPERS ===== */
@@ -2111,16 +2119,28 @@ function checkAndResetDailyCounter() {
   if (storedData) {
     try {
       const data = JSON.parse(storedData);
-      if (data && typeof data === 'object' && data.date === today && typeof data.counter === 'number' && data.counter >= 1) {
+      // Counters saved before the 100 start (e.g. 4) are moved up to 100
+      if (data && typeof data === 'object' && data.date === today && typeof data.counter === 'number' && data.counter >= BILL_START_NUMBER) {
         return data.counter;
       }
     } catch (e) {
       console.warn('Invalid stored bill data:', e);
     }
   }
-  // New day or first time boot -> Reset bill counter to 1 for the new day
-  safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: 1 }));
-  return 1;
+  // New day or first time boot -> Reset bill counter to 100 for the new day
+  safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: BILL_START_NUMBER }));
+  return BILL_START_NUMBER;
+}
+
+function ensureTodayBillCounter() {
+  let savedDate = '';
+  try { savedDate = JSON.parse(safeGetStorage('bfsBillData') || '{}').date; } catch (e) {}
+  if (savedDate === getLocalTodayDate()) return;
+  billCounter = checkAndResetDailyCounter();
+  const pad = String(billCounter);
+  const billNoEl = document.getElementById('billNoInput');
+  if (billNoEl) billNoEl.value = pad;
+  updateHeaderBill(pad);
 }
 
 /* ===== BOOT ===== */
@@ -2219,6 +2239,10 @@ function openModal(id) {
     const btns = row.querySelectorAll('.toggle-btn');
     btns.forEach((b,i) => b.classList.toggle('selected', i === 0));
   });
+  // Default to the order type already used on this bill
+  const lastType = billItems.length ? billItems[billItems.length - 1].orderType : 'Dine In';
+  document.querySelectorAll('#orderTypeRow .toggle-btn')
+    .forEach(b => b.classList.toggle('selected', b.dataset.val === (lastType || 'Dine In')));
 
   document.getElementById('itemOverlay').classList.add('show');
 }
@@ -2253,6 +2277,7 @@ function addToBill() {
   const ice   = getToggleVal('iceRow');
   const sugar = getToggleVal('sugarRow');
   const size  = getToggleVal('sizeRow');
+  const orderType = getToggleVal('orderTypeRow') || 'Dine In';
   const sizeExtra = (size === 'Large') ? 10 : 0;
   const unitPrice = currentItem.price + sizeExtra;
 
@@ -2262,7 +2287,7 @@ function addToBill() {
     emoji: currentItem.emoji,
     price: unitPrice,
     qty,
-    ice, sugar, size, note,
+    ice, sugar, size, note, orderType,
     total: unitPrice * qty
   });
 
@@ -2305,6 +2330,7 @@ function renderBill() {
     if (item.sugar && item.sugar !== 'Normal Sugar') parts.push(item.sugar);
     if (item.size  && item.size  !== 'Regular')      parts.push(item.size);
     if (item.note) parts.push(item.note);
+    if (item.orderType === 'Take Away') parts.push('Take Away');
     const spec = parts.length ? parts.join(' &middot; ') : 'Standard';
     return `
       <div class="bill-item">
@@ -2341,9 +2367,10 @@ function advanceBillCounter() {
     try { currentSavedDate = JSON.parse(storedData).date; } catch(e) {}
   }
   if (currentSavedDate !== today) {
-    billCounter = 1;
+    // First bill of a new day
+    billCounter = BILL_START_NUMBER;
   } else {
-    billCounter++;
+    billCounter = Math.max(BILL_START_NUMBER, billCounter + 1);
   }
   safeSetStorage('bfsBillData', JSON.stringify({ date: today, counter: billCounter }));
   const pad = String(billCounter).padStart(3, '0');
@@ -2623,6 +2650,9 @@ async function printBill() {
   try {
     setPrintLoading(true, 'Generating receipt...');
     
+    // Page left open past midnight: restart at 100 for the new day
+    ensureTodayBillCounter();
+
     // Collect bill data from UI
     const billNo = document.getElementById('billNoInput').value;
     const customer = document.getElementById('customerName').value.trim();
@@ -2648,6 +2678,7 @@ async function printBill() {
         sugar: it.sugar,
         size: it.size,
         note: it.note,
+        orderType: it.orderType || 'Dine In',
         spec: parts.join(', ') || 'Standard' 
       };
     });
@@ -3106,6 +3137,7 @@ function addQrOrder(order, orderId) {
       sugar: item.sugar,
       size: item.size,
       note: item.note,
+      orderType: item.orderType || order.orderType || 'Dine In',
       spec: item.spec || 'Standard'
     };
   });
@@ -3166,7 +3198,7 @@ function loadQrOrder(serverId) {
     return Object.assign(normalizeQrItemPreferences(item), { uid: Date.now() + Math.random() });
   });
   activeQrOrderId = serverId;
-  document.getElementById('billNoInput').value = document.getElementById('billNoInput').value || '001';
+  document.getElementById('billNoInput').value = document.getElementById('billNoInput').value || String(BILL_START_NUMBER);
   document.getElementById('customerName').value = 'Table ' + order.table;
   renderBill();
   printBill();

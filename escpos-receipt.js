@@ -19,6 +19,7 @@ const CMD = {
   FONT_LARGE: [GS, 0x21, 0x11],         // Double width and height
   FONT_XLARGE: [GS, 0x21, 0x22],        // Triple width and height
   FONT_NORMAL: [GS, 0x21, 0x00],        // Normal font
+  FONT_A: [ESC, 0x4D, 0x00],            // Standard 12x24 font (48 columns on 80mm)
   LINE_FEED: [0x0A],                    // Line feed
   CUT_PAPER: [GS, 0x56, 0x00]           // Cut paper
 };
@@ -282,6 +283,69 @@ function buildBillNumber(billNo) {
   ];
 }
 
+const DINE_IN = 'Dine In';
+const TAKE_AWAY = 'Take Away';
+
+// Kitchen ticket layout: 2x size characters, 24 per line on 80mm paper
+const KITCHEN_LARGE_COLS = { NAME: 16, QTY: 4, PREF: 4 };
+const KITCHEN_LEFT_MARGIN_0 = [GS, 0x4C, 0x00, 0x00];    // GS L: left margin 0
+const KITCHEN_PRINT_WIDTH_576 = [GS, 0x57, 0x40, 0x02];  // GS W: 576 dots (72mm)
+
+/**
+ * Builds the centred order type line (e.g. "DINE IN"), 2x and bold.
+ * Returns no bytes when the bill has no order type.
+ * @param {Object} billData - Bill information
+ * @returns {Array<number>} ESC/POS bytes
+ */
+function buildOrderTypeLine(billData) {
+  const label = getOrderTypeLabel(billData);
+  if (!label) return [];
+  // Mixed label is too long for 2x width, so print it at normal width
+  const size = label.length > 24 ? [GS, 0x21, 0x01] : CMD.FONT_LARGE;
+  return [
+    ...CMD.ALIGN_CENTER, ...CMD.BOLD_ON, ...size,
+    ...encodeText(label),
+    ...CMD.LINE_FEED,
+    ...resetEmphasis()
+  ];
+}
+
+/**
+ * Order type for the whole bill, from billData.orderType or the items
+ * @param {Object} billData - Bill information
+ * @returns {string} 'DINE IN', 'TAKE AWAY', 'DINE IN + TAKE AWAY' or ''
+ */
+function getOrderTypeLabel(billData) {
+  if (billData.orderType) return String(billData.orderType).toUpperCase();
+  const types = [...new Set((billData.items || []).map(i => i.orderType).filter(Boolean))];
+  if (types.length === 0) return '';
+  if (types.length === 1) return types[0].toUpperCase();
+  return `${DINE_IN} + ${TAKE_AWAY}`.toUpperCase();
+}
+
+/**
+ * Splits text into lines of at most `width` characters, breaking at spaces
+ * @param {string} text - Text to wrap
+ * @param {number} width - Max characters per line
+ * @returns {Array<string>} Wrapped lines
+ */
+function wrapText(text, width) {
+  const lines = [];
+  let line = '';
+  String(text).split(/\s+/).filter(Boolean).forEach(word => {
+    while (word.length > width) {
+      if (line) { lines.push(line); line = ''; }
+      lines.push(word.substring(0, width));
+      word = word.substring(width);
+    }
+    if (!line) line = word;
+    else if (line.length + 1 + word.length <= width) line += ' ' + word;
+    else { lines.push(line); line = word; }
+  });
+  if (line) lines.push(line);
+  return lines.length ? lines : [''];
+}
+
 /**
  * Builds the normal-size date and time line (max 48 characters)
  * @param {Date} [date] - Bill date, defaults to now
@@ -334,20 +398,12 @@ function generateKitchenTicket(billData) {
     }
   };
   
-  // Initialize printer
-  addBytes(CMD.INIT);
+  // Initialize printer, use the full 72mm print area (576 dots) with no left margin
+  addBytes(CMD.INIT, CMD.FONT_A, KITCHEN_LEFT_MARGIN_0, KITCHEN_PRINT_WIDTH_576);
   
-  // === HEADER ===
-  addBytes(buildShopTitle());
-  addBytes(CMD.ALIGN_CENTER);
-  addText('Fresh Juices | Shakes | Snacks');
-  addLF();
-  addBytes(CMD.ALIGN_LEFT);
-  addText(createLine('-'));
-  addLF();
-  
-  // === BILL METADATA ===
+  // === HEADER (no shop title on the kitchen ticket) ===
   addBytes(buildBillNumber(billData.billNo));
+  addBytes(buildOrderTypeLine(billData));
   addBytes(CMD.ALIGN_LEFT);
   addBytes(buildDateTimeLine(billData.date));
   
@@ -361,46 +417,49 @@ function generateKitchenTicket(billData) {
   addLF();
   
   // === ITEMS TABLE ===
+  // Items print at double width + height, so each large character takes
+  // two normal columns. The header uses the same split to line up.
+  const { NAME, QTY, PREF } = KITCHEN_LARGE_COLS;
   addBytes(CMD.BOLD_ON);
-  addText(padText('ITEM', 28) + padText('QTY', 8, 'right') + padText('PREF', 12, 'center'));
+  addText(padText('ITEM', NAME * 2) + padText('QTY', QTY * 2, 'right') + padText('PREF', PREF * 2, 'right'));
   addLF();
   addBytes(CMD.BOLD_OFF);
   addText(createLine('-'));
   addLF();
   
-  // Add each item
+  // Show the type per item only when the bill mixes dine in and take away
+  const mixedTypes = new Set(billData.items.map(i => i.orderType).filter(Boolean)).size > 1;
+
   billData.items.forEach(item => {
-    const itemName = item.name.substring(0, 26); // Truncate if too long
+    const nameLines = wrapText(item.baseName || item.name, NAME);
     const qty = item.qty.toString();
     const prefSymbol = getPreferenceSymbol(item);
     
-    // Print item name and qty (normal size)
-    const itemLine = padText(itemName, 28) + padText(qty, 8, 'right');
-    addText(itemLine);
+    addBytes(CMD.BOLD_ON, CMD.FONT_LARGE);
+    nameLines.forEach((line, index) => {
+      const row = index === 0
+        ? padText(line, NAME) + padText(qty, QTY, 'right') + padText(prefSymbol, PREF, 'right')
+        : line;
+      addText(row);
+      addLF();
+    });
+    addBytes(CMD.FONT_NORMAL, CMD.BOLD_OFF);
     
-    // Print preference symbol in larger size
-    if (prefSymbol) {
-      addBytes(CMD.FONT_LARGE); // Make symbol bigger
-      addText('  ' + prefSymbol);
-      addBytes(CMD.FONT_NORMAL); // Back to normal
-    }
-    
-    addLF();
-    
-    // Add item details if they exist (size, notes)
+    // Item details (size, note, order type when mixed)
     const details = [];
-    if (item.size) details.push(item.size);
+    if (item.size && item.size !== 'Regular') details.push(item.size);
     if (item.note && item.note.trim() !== '') details.push(item.note);
+    if (mixedTypes && item.orderType) details.push(item.orderType);
     
     if (details.length > 0) {
-      const detailText = '  ' + details.join(' | ');
-      addText(detailText.substring(0, PAPER_WIDTH_80MM));
-      addLF();
+      wrapText(details.join(' | '), PAPER_WIDTH_80MM - 2).forEach(line => {
+        addText('  ' + line);
+        addLF();
+      });
     }
+    addText(createLine('-'));
+    addLF();
   });
-  
-  addText(createLine('='));
-  addLF();
   
   // === FOOTER ===
   addBytes(CMD.ALIGN_CENTER);
@@ -471,6 +530,7 @@ function generateCustomerReceipt(billData) {
   
   // === BILL METADATA ===
   addBytes(buildBillNumber(billData.billNo));
+  addBytes(buildOrderTypeLine(billData));
   addBytes(CMD.ALIGN_LEFT);
   addBytes(buildDateTimeLine(billData.date));
   
@@ -590,8 +650,11 @@ if (typeof module !== 'undefined' && module.exports) {
     formatCurrencyValue,
     formatLineWithTotal,
     formatItemRow,
+    getOrderTypeLabel,
+    wrapText,
     CMD,
     PAPER_WIDTH_80MM,
-    CUSTOMER_RECEIPT_COLS
+    CUSTOMER_RECEIPT_COLS,
+    KITCHEN_LARGE_COLS
   };
 }

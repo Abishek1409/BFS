@@ -200,17 +200,20 @@ test('customer receipt columns stay within 48 characters and line up', () => {
   assert.ok(subtotal.endsWith('Rs.2500.00'));
 });
 
-test('both documents emphasise the title initials and the bill number', () => {
+test('customer receipt emphasises the title initials, both emphasise the bill number', () => {
   const boldStrike = [...CMD.BOLD_ON, ...CMD.DOUBLE_STRIKE_ON];
   const initials = { B: 0x42, F: 0x46, S: 0x53 };
 
   for (const generate of [generateCustomerReceipt, generateKitchenTicket]) {
     const doc = Buffer.from(generate(completeBill));
 
-    for (const code of Object.values(initials)) {
-      assert.ok(doc.includes(bytesOf(CMD.FONT_XLARGE, [code])), 'missing enlarged title initial');
+    // Shop title is on the customer receipt only
+    if (generate === generateCustomerReceipt) {
+      for (const code of Object.values(initials)) {
+        assert.ok(doc.includes(bytesOf(CMD.FONT_XLARGE, [code])), 'missing enlarged title initial');
+      }
+      assert.ok(doc.includes(bytesOf(boldStrike, [0x1D, 0x21, 0x22, initials.B])), 'title not bold + double-strike');
     }
-    assert.ok(doc.includes(bytesOf(boldStrike, [0x1D, 0x21, 0x22, initials.B])), 'title not bold + double-strike');
     assert.ok(doc.includes(bytesOf(boldStrike, CMD.FONT_LARGE, [...Buffer.from('Bill #B-1042')])), 'bill number not emphasised');
 
     const lines = decodeLines(doc);
@@ -337,4 +340,49 @@ test('server accepts POST /print?ip= for a single LAN printer', async () => {
   const res = await fetch(`${baseUrl}/print?ip=192.168.1.9&port=9100`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: Buffer.from('bill') });
   assert.equal(res.status, 200);
   assert.deepEqual(sent, ['192.168.1.9:9100']);
+});
+
+// --- Kitchen ticket layout and order type ---
+
+test('kitchen ticket drops the shop title, customer receipt keeps it', () => {
+  const kitchen = receiptText(generateKitchenTicket(completeBill));
+  const customer = receiptText(generateCustomerReceipt(completeBill));
+  assert.ok(!kitchen.includes('ruits'), 'kitchen ticket still has the shop title');
+  assert.ok(!kitchen.includes('Fresh Juices'));
+  assert.ok(customer.includes('ruits') && customer.includes('Fresh Juices'));
+});
+
+test('kitchen items print large and fill the full paper width', () => {
+  const { KITCHEN_LARGE_COLS } = require('../escpos-receipt');
+  const doc = Buffer.from(generateKitchenTicket(completeBill));
+  const lines = decodeLines(doc);
+  const row = lines.find(l => l.text.startsWith('Mango Shake'));
+  assert.ok(row.enlarged, 'item row is not enlarged');
+  const width = KITCHEN_LARGE_COLS.NAME + KITCHEN_LARGE_COLS.QTY + KITCHEN_LARGE_COLS.PREF;
+  assert.equal(width * 2, PAPER_WIDTH_80MM);
+  assert.equal(row.text.length, width);
+  assert.ok(row.text.trimEnd().endsWith('I'), 'pref symbol not at the right edge');
+  const header = lines.find(l => l.text.startsWith('ITEM')).text;
+  assert.equal(header.length, PAPER_WIDTH_80MM);
+});
+
+test('long kitchen item names wrap instead of being cut', () => {
+  const bill = { ...completeBill, items: [{ name: 'Dragon Fruit Juice Special', qty: 1, price: 70, total: 70 }] };
+  const text = receiptText(generateKitchenTicket(bill));
+  assert.ok(text.includes('Dragon Fruit'));
+  assert.ok(text.includes('Special'));
+});
+
+test('both bills show the order type near the bill number', () => {
+  const dine = { ...completeBill, items: completeBill.items.map(i => ({ ...i, orderType: 'Dine In' })) };
+  const take = { ...completeBill, items: completeBill.items.map(i => ({ ...i, orderType: 'Take Away' })) };
+  for (const generate of [generateCustomerReceipt, generateKitchenTicket]) {
+    const dineText = receiptText(generate(dine));
+    const takeText = receiptText(generate(take));
+    assert.ok(dineText.indexOf('DINE IN') > dineText.indexOf('Bill #B-1042'));
+    assert.ok(dineText.indexOf('DINE IN') < dineText.indexOf('Date:'));
+    assert.ok(takeText.includes('TAKE AWAY'));
+  }
+  const mixed = { ...completeBill, items: [{ ...completeBill.items[0], orderType: 'Dine In' }, { ...completeBill.items[0], name: 'Veg Puffs', orderType: 'Take Away' }] };
+  assert.ok(receiptText(generateKitchenTicket(mixed)).includes('DINE IN + TAKE AWAY'));
 });

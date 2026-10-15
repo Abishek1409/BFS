@@ -297,6 +297,13 @@
         </div>
         <button class="sheet-close" onclick="closeItemSheet()">&#x2715;</button>
       </div>
+      <div class="form-row" id="orderTypeRow">
+        <label>&#x1F37D;&#xFE0F; Dine In or Take Away</label>
+        <div class="toggle-group" id="orderTypeGroup">
+          <button class="toggle-btn selected" data-val="Dine In" onclick="selectToggle(this,'orderTypeGroup')">Dine In</button>
+          <button class="toggle-btn" data-val="Take Away" onclick="selectToggle(this,'orderTypeGroup')">Take Away</button>
+        </div>
+      </div>
       <div class="form-row" id="iceRow">
         <label>&#x1F9CA; Ice Preference</label>
         <div class="toggle-group" id="iceGroup">
@@ -531,6 +538,10 @@
         const g = document.getElementById(gid);
         g.querySelectorAll('.toggle-btn').forEach((b,i) => b.classList.toggle('selected', i === 0));
       });
+      // Keep the order type the customer already picked for this cart
+      const lastType = cart.length ? cart[cart.length - 1].orderType : 'Dine In';
+      document.querySelectorAll('#orderTypeGroup .toggle-btn')
+        .forEach(b => b.classList.toggle('selected', b.dataset.val === (lastType || 'Dine In')));
 
       document.getElementById('itemSheetOverlay').classList.add('show');
     }
@@ -562,6 +573,7 @@
       const sugar = getToggleVal('sugarGroup');
       const size = getToggleVal('sizeGroup');
       const note = document.getElementById('itemNote').value.trim();
+      const orderType = getToggleVal('orderTypeGroup') || 'Dine In';
       const sizeExtra = (size === 'Large') ? 10 : 0;
       const unitPrice = currentItem.price + sizeExtra;
 
@@ -570,6 +582,7 @@
       if (sugar && sugar !== 'Normal Sugar') parts.push(sugar);
       if (size && size !== 'Regular') parts.push(size);
       if (note) parts.push(note);
+      if (orderType === 'Take Away') parts.push(orderType);
       const spec = parts.length ? ' (' + parts.join(', ') + ')' : '';
 
       cart.push({
@@ -584,6 +597,7 @@
         sugar: sugar || '',
         size: size || '',
         note: note || '',
+        orderType: orderType,
         spec: parts.join(', ')
       });
 
@@ -673,6 +687,7 @@
           sugar: i.sugar,
           size: i.size,
           note: i.note,
+          orderType: i.orderType || 'Dine In',
           spec: i.spec || 'Standard',
           total: i.total
         }))
