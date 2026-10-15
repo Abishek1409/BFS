@@ -31,8 +31,34 @@ const PRINTERS = {
 
 function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrinter } = {}) {
   const app = express();
+  // Chrome asks HTTPS sites for permission before calling localhost
+  app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+    next();
+  });
   app.use(cors());
   app.use(express.raw({ type: 'application/octet-stream', limit: '10mb' }));
+
+  // Relay raw ESC/POS bytes to a printer IP chosen in the website settings.
+  // Limited to private LAN addresses so this cannot be used to reach the internet.
+  app.post('/print-to', async (req, res) => {
+    const ip = String(req.query.ip || '');
+    const port = Number(req.query.port || 9100);
+    if (!isPrivateIPv4(ip) || !Number.isInteger(port) || port < 1 || port > 65535) {
+      res.status(400).json({ success: false, error: 'Invalid printer address' });
+      return;
+    }
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+      res.status(400).json({ success: false, error: 'Print job is empty' });
+      return;
+    }
+    try {
+      await send({ ip, port, name: `Printer ${ip}` }, req.body);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(502).json({ success: false, error: error.message || String(error) });
+    }
+  });
 
   app.get('/', (req, res) => {
     res.json({ status: 'running', message: 'Multi-Printer Server', printers });
@@ -97,6 +123,13 @@ function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrint
   return app;
 }
 
+function isPrivateIPv4(ip) {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(n => !Number.isInteger(n) || n < 0 || n > 255)) return false;
+  const [a, b] = parts;
+  return a === 10 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31);
+}
+
 /**
  * Send data to a single printer
  */
@@ -120,19 +153,13 @@ function sendToPrinter(printer, data) {
     
     client.connect(printer.port, printer.ip, () => {
       console.log(`✓ Connected to ${printer.name} at ${printer.ip}:${printer.port}`);
-      client.write(data, error => {
-        if (error) {
-          client.destroy();
-          finish(error);
-        } else {
-          client.end();
-        }
+      // Resolve once bytes are flushed. Some printers never close their side,
+      // so waiting for 'close' would report a timeout after a good print.
+      client.end(data, () => {
+        console.log(`✓ ${printer.name} job sent`);
+        finish();
+        setTimeout(() => client.destroy(), 1000);
       });
-    });
-    
-    client.on('close', hadError => {
-      console.log(`✓ ${printer.name} job completed`);
-      if (!hadError) finish();
     });
     
     client.on('error', (err) => {
@@ -176,10 +203,8 @@ function testPrinter(printer) {
 }
 
 if (require.main === module) {
-  if (!PRINTERS.printer1.ip && !PRINTERS.printer2.ip) {
-    console.error('Configure PRINTER1_IP and/or PRINTER2_IP before starting the print server.');
-    process.exitCode = 1;
-  } else {
+  {
+  // Printer IPs come from the website settings via /print-to; env vars are optional
   const app = createApp();
   app.listen(PORT, () => {
   console.log(`
@@ -207,4 +232,4 @@ Ready to print to BOTH printers simultaneously!
   }
 }
 
-module.exports = { createApp, PRINTERS, sendToPrinter, testPrinter };
+module.exports = { createApp, PRINTERS, sendToPrinter, testPrinter, isPrivateIPv4 };

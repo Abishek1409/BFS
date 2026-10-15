@@ -520,28 +520,37 @@ async function sendToPosiflow(printerId, data) {
         return { success: false, error: `Print server error: ${error}` };
       }
     } else {
-      // Method 2: Direct connection (will fail on HTTPS sites due to CORS)
+      // Method 2: Relay through the local print server so the printer gets
+      // raw ESC/POS bytes. Browser HTTP requests make the printer print headers.
+      try {
+        await sendViaPrintServer(printer, data);
+        return { success: true };
+      } catch (serverError) {
+        // Server answered (e.g. printer offline): report the real failure
+        if (serverError.reachedServer) {
+          return { success: false, error: serverError.message };
+        }
+      }
+
+      // Method 3: Print server not running, fall back to direct HTTP
       warnDirectPrinter(printer);
-      console.log(`Attempting direct connection to ${printer.ip}:${printer.port}`);
-      
-      const response = await fetch(`http://${printer.ip}:${printer.port}`, {
-        method: 'POST',
-        body: data,
-        mode: 'no-cors', // Try no-cors mode
-        signal: AbortSignal.timeout(5000)
-      });
-      
-      // In no-cors mode, we can't verify response, but no error means likely success
-      console.log(`Sent ${data.length} bytes to Possiflow printer at ${printer.ip}`);
+      try {
+        await fetch(`http://${printer.ip}:${printer.port}`, {
+          method: 'POST',
+          body: data,
+          mode: 'no-cors',
+          signal: AbortSignal.timeout(5000)
+        });
+      } catch (directError) {
+        // Raw printers accept the bytes but never send an HTTP reply, so a
+        // timeout means the job was delivered. Anything else is a real failure.
+        if (!isTimeoutError(directError)) throw directError;
+      }
+      console.log(`Sent ${data.length} bytes directly to ${printer.name}`);
       return { success: true };
     }
     
   } catch (error) {
-    // If we get a network error with direct connection, it might still have worked
-    if (!localServer && error.name === 'AbortError') {
-      return { success: true }; // Assume success in no-cors mode
-    }
-    
     console.error(`Possiflow print error:`, error);
     return {
       success: false,
@@ -553,6 +562,46 @@ async function sendToPosiflow(printerId, data) {
 // Add isLocalServer check helper
 function isLocalServer(ip, port) {
   return ip === 'localhost' || ip === '127.0.0.1' || port === 3000;
+}
+
+// Local print server that relays raw bytes to network printers
+const PRINT_SERVER_URL = 'http://localhost:3000';
+
+function isTimeoutError(error) {
+  return !!error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+}
+
+/**
+ * Send a job to a direct-IP printer through the local print server.
+ * Throws with reachedServer=true when the server responded with an error,
+ * or reachedServer=false when the server is not running.
+ */
+async function sendViaPrintServer(printer, data) {
+  const url = `${PRINT_SERVER_URL}/print-to?ip=${encodeURIComponent(printer.ip)}&port=${encodeURIComponent(printer.port)}`;
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: data,
+      signal: AbortSignal.timeout(12000)
+    });
+  } catch (error) {
+    const err = new Error(isTimeoutError(error) ? 'Print server timed out' : 'Print server not running');
+    // A timeout means the server took the job but did not finish in time
+    err.reachedServer = isTimeoutError(error);
+    throw err;
+  }
+  if (!response.ok) {
+    let message = `Print server error (${response.status})`;
+    try {
+      const body = await response.json();
+      message = body.error || (body.results && Object.values(body.results).map(r => r.error).filter(Boolean)[0]) || message;
+    } catch (_) { /* non-JSON body */ }
+    const err = new Error(message);
+    err.reachedServer = true;
+    throw err;
+  }
 }
 
 // Printers already warned about in this page load
@@ -571,7 +620,7 @@ function warnDirectPrinter(printer) {
   directWarnedPrinters.add(printer.name);
 
   const title = 'Direct printer connection';
-  const message = `Printing directly to ${printer.name} may print network details on the receipt. Use the local print server instead.`;
+  const message = `Print server not running, so ${printer.name} will print network details on the receipt. Start it with "npm start" on this computer.`;
 
   if (typeof showWarningToast === 'function') {
     showWarningToast(title, message);

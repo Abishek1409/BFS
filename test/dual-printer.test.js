@@ -221,11 +221,15 @@ test('both documents emphasise the title initials and the bill number', () => {
 
 // --- Direct-mode warning ---
 
-function createCommContext(warnings) {
+function createCommContext(warnings, fetchImpl) {
   const context = vm.createContext({
     localStorage: { getItem: () => null, setItem: () => {} },
     console: { log() {}, warn() {}, error() {} },
-    fetch: async () => ({ ok: true, json: async () => ({ success: true }) }),
+    // Default: print server not running, other requests succeed
+    fetch: fetchImpl || (async url => {
+      if (url.includes('/print-to')) throw new TypeError('Failed to fetch');
+      return { ok: true, json: async () => ({ success: true }) };
+    }),
     showWarningToast: (...args) => warnings.push(args),
     AbortSignal
   });
@@ -246,4 +250,69 @@ test('direct printer address shows one warning without the IP, print server addr
   vm.runInContext("printerConnections.printer2.type = 'wifi'; printerConnections.printer2.ip = 'localhost'; printerConnections.printer2.port = 3000;", context);
   await vm.runInContext("sendToPosiflow('printer2', new Uint8Array([1]))", context);
   assert.equal(warnings.length, 1);
+});
+
+test('direct printer IP is relayed through the print server, so no HTTP headers reach the printer', async () => {
+  const requests = [];
+  const warnings = [];
+  const context = createCommContext(warnings, async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, json: async () => ({ success: true }) };
+  });
+  vm.runInContext("printerConnections.printer1.type = 'wifi'; printerConnections.printer1.ip = '192.168.1.8'; printerConnections.printer1.port = 9100;", context);
+  const result = await vm.runInContext("sendToPosiflow('printer1', new Uint8Array([1]))", context);
+  assert.equal(result.success, true);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].url, 'http://localhost:3000/print-to?ip=192.168.1.8&port=9100');
+  assert.equal(warnings.length, 0);
+});
+
+test('direct fallback treats a timeout as delivered so the bill clears', async () => {
+  const context = createCommContext([], async url => {
+    if (url.includes('/print-to')) throw new TypeError('Failed to fetch');
+    const err = new Error('signal timed out');
+    err.name = 'TimeoutError';
+    throw err;
+  });
+  vm.runInContext("printerConnections.printer1.type = 'wifi'; printerConnections.printer1.ip = '192.168.1.8'; printerConnections.printer1.port = 9100;", context);
+  const result = await vm.runInContext("sendToPosiflow('printer1', new Uint8Array([1]))", context);
+  assert.equal(result.success, true);
+});
+
+test('print server reports a real printer failure', async () => {
+  const context = createCommContext([], async () => ({ ok: false, status: 502, json: async () => ({ success: false, error: 'ECONNREFUSED' }) }));
+  vm.runInContext("printerConnections.printer1.type = 'wifi'; printerConnections.printer1.ip = '192.168.1.8'; printerConnections.printer1.port = 9100;", context);
+  const result = await vm.runInContext("sendToPosiflow('printer1', new Uint8Array([1]))", context);
+  assert.equal(result.success, false);
+  assert.match(result.error, /ECONNREFUSED/);
+});
+
+test('/print-to relays to private LAN printers only', async () => {
+  const sent = [];
+  const baseUrl = await startTestServer({ send: async (printer, data) => { sent.push({ ip: printer.ip, port: printer.port, data: data.toString() }); } });
+  const ok = await fetch(`${baseUrl}/print-to?ip=192.168.1.8&port=9100`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: Buffer.from('bill') });
+  assert.equal(ok.status, 200);
+  assert.deepEqual(sent, [{ ip: '192.168.1.8', port: 9100, data: 'bill' }]);
+  const blocked = await fetch(`${baseUrl}/print-to?ip=8.8.8.8&port=9100`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: Buffer.from('x') });
+  assert.equal(blocked.status, 400);
+});
+
+test('sendToPrinter resolves after flushing even if the printer keeps the socket open', async () => {
+  const net = require('node:net');
+  const { sendToPrinter } = require('../print-server');
+  const received = [];
+  const sockets = [];
+  const fake = net.createServer({ allowHalfOpen: true }, socket => {
+    sockets.push(socket);
+    socket.on('data', d => received.push(d)); // never closes its side
+  });
+  await new Promise(r => fake.listen(0, '127.0.0.1', r));
+  const start = Date.now();
+  await sendToPrinter({ ip: '127.0.0.1', port: fake.address().port, name: 'Fake' }, Buffer.from('ESC'));
+  assert.ok(Date.now() - start < 3000);
+  await new Promise(r => setTimeout(r, 50));
+  assert.equal(Buffer.concat(received).toString(), 'ESC');
+  // The fake printer holds its half open, so close it from the test side
+  sockets.forEach(s => s.destroy());
+  await new Promise(r => fake.close(r));
 });
