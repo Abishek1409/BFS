@@ -42,7 +42,7 @@ const server = http.createServer((req, res) => {
   }
   
   // Test endpoint
-  if (req.method === 'GET' && req.url === '/test') {
+  if (req.method === 'GET' && /^\/test(?:\/printer[12])?$/.test(req.url)) {
     const client = new net.Socket();
     client.setTimeout(3000);
     
@@ -66,7 +66,7 @@ const server = http.createServer((req, res) => {
   }
   
   // Print endpoint
-  if (req.method === 'POST' && req.url === '/print') {
+  if (req.method === 'POST' && /^\/print(?:\/printer[12])?$/.test(req.url)) {
     let body = [];
     
     req.on('data', chunk => {

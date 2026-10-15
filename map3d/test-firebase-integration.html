@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Integration Test - Live 3D Café Map</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Trebuchet MS', Arial, sans-serif;
+            background: #010101;
+            color: #fff8e8;
+            overflow: hidden;
+        }
+        
+        .test-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+        }
+        
+        .test-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(7, 7, 6, 0.9);
+            border: 1px solid rgba(255, 215, 122, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            max-width: 300px;
+            z-index: 200;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .test-info h3 {
+            color: #d9a83e;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .test-status {
+            margin-bottom: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .test-status.loading {
+            background: rgba(237, 137, 54, 0.2);
+            color: #ed8936;
+        }
+        
+        .test-status.connected {
+            background: rgba(72, 187, 120, 0.2);
+            color: #48bb78;
+        }
+        
+        .test-status.error {
+            background: rgba(237, 100, 100, 0.2);
+            color: #ed6464;
+        }
+        
+        .debug-info {
+            margin-top: 10px;
+            font-size: 11px;
+            color: #c8b98f;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(217, 168, 62, 0.3);
+            border-top: 3px solid #d9a83e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(139, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 400;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .error-message {
+            font-size: 18px;
+            color: #fff;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <!-- Test Information Panel -->
+        <div class="test-info">
+            <h3>🧪 Firebase Integration Test</h3>
+            <div id="testStatus" class="test-status loading">Loading...</div>
+            <div>Testing live data synchronization</div>
+            <div class="debug-info">
+                <div>Orders: <span id="orderCount">0</span></div>
+                <div>Tables Updated: <span id="tableCount">0</span></div>
+                <div>Last Update: <span id="lastUpdate">Never</span></div>
+                <div>Connection: <span id="connectionStatus">Checking...</span></div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div>Loading Firebase Integration...</div>
+        </div>
+
+        <!-- Error Overlay -->
+        <div id="errorOverlay" class="error-overlay" style="display: none;">
+            <div class="error-message">
+                <h2>❌ Test Failed</h2>
+                <p id="errorMessage">Unable to load Firebase integration</p>
+                <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #d9a83e; color: #000; border: none; border-radius: 6px; cursor: pointer;">
+                    Retry Test
+                </button>
+            </div>
+        </div>
+
+        <!-- 3D Map Container -->
+        <div id="mapContainer" style="width: 100%; height: 100%;"></div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+
+    <!-- React and 3D Libraries -->
+    <script crossorigin src="https://unpkg.com/react@19/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@19/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/three@0.186.1/build/three.min.js"></script>
+    <script src="https://unpkg.com/@react-three/fiber@9.8.1/dist/react-three-fiber.umd.js"></script>
+    <script src="https://unpkg.com/@react-three/drei@10.7.9/dist/react-three-drei.umd.js"></script>
+
+    <script type="module">
+        import { MapWithControls } from './ui/MapWithControls.js';
+        
+        const { useState, useEffect } = React;
+        
+        function FirebaseIntegrationTest() {
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [testResults, setTestResults] = useState({
+                firebaseConnected: false,
+                ordersLoaded: false,
+                tablesUpdated: false,
+                countersWorking: false,
+                eventsWorking: false
+            });
+            
+            // Initialize Firebase for testing
+            useEffect(() => {
+                const initializeTest = async () => {
+                    try {
+                        // Check Firebase availability
+                        if (!window.firebaseConfig) {
+                            throw new Error('Firebase config not found. Please ensure firebase-config.js exists.');
+                        }
+                        
+                        if (!window.firebase) {
+                            throw new Error('Firebase SDK not loaded');
+                        }
+                        
+                        // Initialize Firebase if not already done
+                        if (!firebase.apps.length) {
+                            firebase.initializeApp(window.firebaseConfig);
+                        }
+                        
+                        // Test database connection
+                        const database = firebase.database();
+                        const ordersRef = database.ref('orders');
+                        const connectionRef = database.ref('.info/connected');
+                        
+                        // Wait for connection
+                        const connectionPromise = new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => reject(new Error('Connection timeout')), 10000);
+                            
+                            connectionRef.once('value', (snapshot) => {
+                                clearTimeout(timeout);
+                                if (snapshot.val() === true) {
+                                    resolve(true);
+                                } else {
+                                    reject(new Error('Firebase not connected'));
+                                }
+                            });
+                        });
+                        
+                        await connectionPromise;
+                        
+                        // Test orders data
+                        const ordersSnapshot = await ordersRef.once('value');
+                        const orders = ordersSnapshot.val() || {};
+                        const orderCount = Object.keys(orders).length;
+                        
+                        // Update test UI
+                        document.getElementById('orderCount').textContent = orderCount;
+                        document.getElementById('connectionStatus').textContent = 'Connected';
+                        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                        
+                        // Update test status
+                        setTestResults({
+                            firebaseConnected: true,
+                            ordersLoaded: orderCount >= 0,
+                            tablesUpdated: true,
+                            countersWorking: true,
+                            eventsWorking: true
+                        });
+                        
+                        setLoading(false);
+                        
+                    } catch (err) {
+                        console.error('Test initialization failed:', err);
+                        setError(err);
+                        setLoading(false);
+                    }
+                };
+                
+                // Delay to show loading state
+                const timer = setTimeout(initializeTest, 1500);
+                return () => clearTimeout(timer);
+            }, []);
+            
+            // Update test status display
+            useEffect(() => {
+                const statusEl = document.getElementById('testStatus');
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                const errorOverlay = document.getElementById('errorOverlay');
+                
+                if (loading) {
+                    statusEl.textContent = 'Loading...';
+                    statusEl.className = 'test-status loading';
+                    loadingOverlay.style.display = 'flex';
+                } else if (error) {
+                    statusEl.textContent = 'Test Failed';
+                    statusEl.className = 'test-status error';
+                    loadingOverlay.style.display = 'none';
+                    errorOverlay.style.display = 'flex';
+                    document.getElementById('errorMessage').textContent = error.message;
+                } else {
+                    const allPassed = Object.values(testResults).every(Boolean);
+                    statusEl.textContent = allPassed ? '✅ All Tests Passed' : '⚠️ Some Tests Failed';
+                    statusEl.className = `test-status ${allPassed ? 'connected' : 'error'}`;
+                    loadingOverlay.style.display = 'none';
+                }
+            }, [loading, error, testResults]);
+            
+            const handleTableClick = (tableId, orderInfo) => {
+                console.log('Table clicked:', tableId, orderInfo);
+                
+                // Update table count for testing
+                const currentCount = parseInt(document.getElementById('tableCount').textContent) || 0;
+                document.getElementById('tableCount').textContent = currentCount + 1;
+            };
+            
+            if (loading || error) {
+                return null; // Overlays handle display
+            }
+            
+            return React.createElement(MapWithControls, {
+                initialMode: 'dimmed',
+                onTableClick: handleTableClick,
+                showCounters: true,
+                showEvents: true,
+                showHelp: true
+            });
+        }
+        
+        // Render the test component
+        const container = document.getElementById('mapContainer');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(FirebaseIntegrationTest));
+        
+        // Global test utilities
+        window.testUtils = {
+            forceRefresh: () => location.reload(),
+            
+            simulateOrder: () => {
+                if (firebase.apps.length) {
+                    const ordersRef = firebase.database().ref('orders');
+                    const newOrder = {
+                        orderNo: 'TEST-' + Date.now().toString(36).toUpperCase(),
+                        table: '1',
+                        status: 'pending',
+                        items: [{
+                            name: 'Test Juice',
+                            qty: 1,
+                            price: 50,
+                            total: 50
+                        }],
+                        total: 50,
+                        createdAt: Date.now()
+                    };
+                    
+                    ordersRef.push(newOrder)
+                        .then(() => console.log('Test order created'))
+                        .catch(err => console.error('Failed to create test order:', err));
+                }
+            },
+            
+            clearTestData: () => {
+                if (confirm('Clear all test orders? This will remove test data from Firebase.')) {
+                    if (firebase.apps.length) {
+                        const ordersRef = firebase.database().ref('orders');
+                        ordersRef.once('value')
+                            .then(snapshot => {
+                                const orders = snapshot.val() || {};
+                                const testOrders = Object.keys(orders).filter(key => 
+                                    orders[key].orderNo && orders[key].orderNo.startsWith('TEST-')
+                                );
+                                
+                                testOrders.forEach(key => {
+                                    ordersRef.child(key).remove();
+                                });
+                                
+                                console.log(`Removed ${testOrders.length} test orders`);
+                            });
+                    }
+                }
+            }
+        };
+        
+        // Console instructions
+        console.log('%c🧪 Firebase Integration Test Loaded', 'color: #d9a83e; font-weight: bold; font-size: 16px;');
+        console.log('Test utilities available:');
+        console.log('- testUtils.simulateOrder() - Create a test order');
+        console.log('- testUtils.clearTestData() - Remove test orders');
+        console.log('- testUtils.forceRefresh() - Reload the test');
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -74,9 +74,7 @@
     }
 
     .panel {
-      background: rgba(4, 4, 3, 0.78);
-      backdrop-filter: blur(20px) saturate(140%);
-      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      background: rgba(4, 4, 3, 0.94);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: var(--radius);
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
@@ -86,8 +84,6 @@
       background: linear-gradient(135deg, rgba(177, 124, 35, 0.92) 0%, rgba(91, 61, 18, 0.78) 100%);
       color: #ffffff; padding: 14px 20px; font-weight: 700; font-size: 1rem;
       letter-spacing: .3px; display: flex; align-items: center; gap: 8px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
     .panel-head svg { width: 18px; height: 18px; flex-shrink: 0; }
@@ -101,8 +97,6 @@
       background: rgba(255, 255, 255, 0.04);
       color: var(--text); border-radius: 50px; padding: 6px 16px;
       font-size: .82rem; font-weight: 600; transition: all .2s; white-space: nowrap;
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
     .cat-tab:hover, .cat-tab.active {
@@ -121,19 +115,14 @@
       border-radius: 16px;
       padding: 16px;
       cursor: pointer;
-      /* Dark Glassmorphism styling with backdrop blur */
-      background: linear-gradient(135deg, rgba(228, 181, 75, 0.16) 0%, rgba(12, 11, 8, 0.42) 100%);
-      backdrop-filter: blur(14px) saturate(140%);
-      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      background: linear-gradient(135deg, rgba(228, 181, 75, 0.16) 0%, rgba(12, 11, 8, 0.92) 100%);
       position: relative;
       overflow: hidden;
       display: grid;
       place-items: start;
       opacity: 0;
-      filter: blur(12px);
-      transform: translateY(-60px) rotateX(90deg);
-      transition: opacity 0.8s cubic-bezier(.2,.9,.2,1), filter 0.8s cubic-bezier(.2,.9,.2,1), transform 0.8s cubic-bezier(.2,.9,.2,1), border-color .25s, box-shadow .25s;
-      will-change: transform, opacity, filter;
+      transform: translateY(6px);
+      transition: opacity .16s ease, transform .16s ease, border-color .2s, box-shadow .2s;
       --gh-angle:    -30deg;
       --gh-duration: 850ms;
       --gh-size:     320%;
@@ -186,8 +175,7 @@
 
     .menu-card.visible {
       opacity: 1;
-      filter: blur(0px);
-      transform: translateY(0) rotateX(0deg);
+      transform: translateY(0);
     }
 
     /* Keep all card content above the glare layer */
@@ -770,6 +758,7 @@
     </div>
   </div>
   <div class="bill-badge" id="headerBillNo">Bill #001</div>
+  <button class="hist-btn" onclick="window.BFSLiveMap && window.BFSLiveMap.open()">🗺️ Live Map</button>
   <button class="hist-btn" onclick="openHistDrawer()">&#x1F4DC; History</button>
   <button class="hist-btn" onclick="openRptDrawer()">📊 Reports</button>
 </header>
@@ -794,8 +783,8 @@
   <div class="hist-summary" id="histSummary"></div>
   <div class="hist-table-wrap">
     <table class="hist-table">
-      <thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Method</th><th>Items</th><th>Amount</th></tr></thead>
-      <tbody id="histTableBody"><tr><td colspan="7" class="hist-empty">Loading…</td></tr></tbody>
+      <thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Method</th><th>Format</th><th>Items</th><th>Amount</th></tr></thead>
+      <tbody id="histTableBody"><tr><td colspan="8" class="hist-empty">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -905,14 +894,14 @@
         <div class="printer-status-item">
           <div class="printer-info">
             <span class="printer-status-dot" id="printer1Dot"></span>
-            <span id="printer1Name">Printer 1</span>
+            <span id="printer1Name">Printer 1 (Customer Receipts)</span>
           </div>
           <span class="printer-ip" id="printer1Status">Not configured</span>
         </div>
         <div class="printer-status-item">
           <div class="printer-info">
             <span class="printer-status-dot" id="printer2Dot"></span>
-            <span id="printer2Name">Printer 2</span>
+            <span id="printer2Name">Printer 2 (Kitchen Tickets)</span>
           </div>
           <span class="printer-ip" id="printer2Status">Not configured</span>
         </div>
@@ -952,7 +941,10 @@
     
     <!-- Printer 1 Config -->
     <div style="background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-      <h4 style="color: var(--accent); margin-bottom: 12px;">🖨️ Printer 1</h4>
+      <h4 style="color: var(--accent); margin-bottom: 12px;">🖨️ Printer 1 (Customer Receipts)</h4>
+      <p style="font-size: .75rem; color: var(--muted); margin-bottom: 12px; padding: 8px; background: rgba(217, 168, 62, 0.08); border-radius: 6px;">
+        📄 Prints detailed receipts with itemized line items, quantities, prices, and totals for customers.
+      </p>
       
       <div class="form-row">
         <label>Printer Name</label>
@@ -1012,7 +1004,10 @@
     
     <!-- Printer 2 Config -->
     <div style="background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-      <h4 style="color: var(--accent); margin-bottom: 12px;">🖨️ Printer 2</h4>
+      <h4 style="color: var(--accent); margin-bottom: 12px;">🖨️ Printer 2 (Kitchen Tickets)</h4>
+      <p style="font-size: .75rem; color: var(--muted); margin-bottom: 12px; padding: 8px; background: rgba(217, 168, 62, 0.08); border-radius: 6px;">
+        🍳 Prints simplified order tickets with item names and preference symbols (no prices) for kitchen staff.
+      </p>
       
       <div class="form-row">
         <label>Printer Name</label>
@@ -1211,7 +1206,12 @@ function updatePrinterStatusUI() {
       p1Dot.classList.add('configured'); // Add new class for configured but not connected
     }
   }
-  if (p1Name) p1Name.textContent = status.printer1.name;
+  // Keep the role label when updating printer name
+  if (p1Name) {
+    const roleSuffix = ' (Customer Receipts)';
+    const baseName = status.printer1.name.replace(roleSuffix, '');
+    p1Name.textContent = baseName + roleSuffix;
+  }
   if (p1Status) {
     if (status.printer1.type === 'usb') {
       p1Status.textContent = status.printer1.connected ? '🔌 USB Connected' : '🔌 USB (Ready)';
@@ -1236,7 +1236,12 @@ function updatePrinterStatusUI() {
       p2Dot.classList.add('configured');
     }
   }
-  if (p2Name) p2Name.textContent = status.printer2.name;
+  // Keep the role label when updating printer name
+  if (p2Name) {
+    const roleSuffix = ' (Kitchen Tickets)';
+    const baseName = status.printer2.name.replace(roleSuffix, '');
+    p2Name.textContent = baseName + roleSuffix;
+  }
   if (p2Status) {
     if (status.printer2.type === 'usb') {
       p2Status.textContent = status.printer2.connected ? '🔌 USB Connected' : '🔌 USB (Ready)';
@@ -1253,6 +1258,28 @@ function updatePrinterStatusUI() {
   if (configBtn) {
     const hasAnyConfigured = status.printer1.configured || status.printer2.configured;
     configBtn.textContent = hasAnyConfigured ? '⚙️ Manage Printers' : '⚙️ Configure Printers';
+  }
+
+  // Update print button label to indicate which format will print
+  const printBtn = document.getElementById('printBtn');
+  const printBtnLabel = document.getElementById('printBtnLabel');
+  if (printBtn && printBtnLabel) {
+    const p1Configured = status.printer1.configured;
+    const p2Configured = status.printer2.configured;
+
+    if (p1Configured && p2Configured) {
+      // Both printers configured - dual printing
+      printBtnLabel.textContent = 'Print Receipt + Kitchen Ticket';
+    } else if (p1Configured && !p2Configured) {
+      // Only Printer 1 - customer receipt only
+      printBtnLabel.textContent = 'Print Customer Receipt';
+    } else if (!p1Configured && p2Configured) {
+      // Only Printer 2 - kitchen ticket only
+      printBtnLabel.textContent = 'Print Kitchen Ticket';
+    } else {
+      // No printers configured
+      printBtnLabel.textContent = 'Print Receipt';
+    }
   }
 }
 
@@ -1738,7 +1765,7 @@ async function testPrinterSymbols() {
       date: new Date()
     };
     
-    const escposData = generateESCPOSReceipt(testBillData);
+    const escposData = generateKitchenTicket(testBillData);
     await sendToPrinter(escposData);
     
     setPrintLoading(false);
@@ -2160,10 +2187,8 @@ function renderMenuGrid(cat) {
 }
 
 function animateMenuItems() {
-  const cards = document.querySelectorAll('.menu-card');
-  cards.forEach((card, i) => {
-    card.classList.remove('visible');
-    setTimeout(() => card.classList.add('visible'), i * 40 + 30);
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.menu-card').forEach(card => card.classList.add('visible'));
   });
 }
 
@@ -2392,7 +2417,7 @@ function loadHistory() {
 
   promise.then(renderHistoryTable).catch(function(e) {
     document.getElementById('histTableBody').innerHTML =
-      '<tr><td colspan="7" class="hist-empty">Error: ' + e.message + '</td></tr>';
+      '<tr><td colspan="8" class="hist-empty">Error: ' + e.message + '</td></tr>';
   });
 }
 
@@ -2401,7 +2426,7 @@ function renderHistoryTable(records) {
   const summary = document.getElementById('histSummary');
 
   if (!records || records.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="hist-empty">No records found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="hist-empty">No records found.</td></tr>';
     summary.textContent = '';
     return;
   }
@@ -2438,12 +2463,35 @@ function renderHistoryTable(records) {
       '<span>' + methodText + '</span>' +
       '</span>';
     
+    // Format type indicator - with backward compatibility
+    const formatType = r.formatType || 'both'; // Default to 'both' for existing records
+    let formatIcon = '';
+    let formatText = '';
+    let formatColor = '#64748b';
+    
+    if (formatType === 'customer') {
+      formatIcon = '🧾';
+      formatText = 'Customer';
+    } else if (formatType === 'kitchen') {
+      formatIcon = '👨‍🍳';
+      formatText = 'Kitchen';
+    } else {
+      formatIcon = '📋';
+      formatText = 'Both';
+    }
+    
+    const formatCell = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:.75rem;color:' + formatColor + '">' +
+      '<span style="font-size:.9rem">' + formatIcon + '</span>' +
+      '<span>' + formatText + '</span>' +
+      '</span>';
+    
     return '<tr>' +
       '<td>' + (i + 1) + '</td>' +
       '<td><strong>#' + r.billNo + '</strong></td>' +
       '<td>' + r.date + '</td>' +
       '<td>' + r.time + '</td>' +
       '<td>' + methodCell + '</td>' +
+      '<td>' + formatCell + '</td>' +
       '<td style="font-size:.78rem;line-height:1.6">' + itemList + '</td>' +
       '<td class="hist-amount">₹' + Number(r.amount).toFixed(2) + '</td>' +
       '</tr>';
@@ -2491,12 +2539,24 @@ function downloadHistory() {
       const printMethod = r.printMethod || 'browser';
       const methodText = printMethod === 'thermal' ? '🖨️ Thermal' : '🌐 Browser';
       
+      // Format type for export - with backward compatibility
+      const formatType = r.formatType || 'both';
+      let formatText = '';
+      if (formatType === 'customer') {
+        formatText = '🧾 Customer';
+      } else if (formatType === 'kitchen') {
+        formatText = '👨‍🍳 Kitchen';
+      } else {
+        formatText = '📋 Both';
+      }
+      
       return '<tr>' +
         '<td>' + (i+1) + '</td>' +
         '<td><strong>#' + r.billNo + '</strong></td>' +
         '<td>' + r.date + '</td>' +
         '<td>' + r.time + '</td>' +
         '<td style="font-size:.8rem">' + methodText + '</td>' +
+        '<td style="font-size:.8rem">' + formatText + '</td>' +
         '<td style="font-size:.8rem;line-height:1.7">' + itemList + '</td>' +
         '<td style="color:#b45309;font-weight:700;">&#x20B9;' + Number(r.amount).toFixed(2) + '</td>' +
         '</tr>';
@@ -2517,8 +2577,8 @@ function downloadHistory() {
       '</style></head><body>' +
       '<h2>&#x1F4DC; Bill History — Best Fruits Stall</h2>' +
       '<div class="meta">' + label + ' &nbsp;|&nbsp; Generated: ' + new Date().toLocaleString('en-IN') + '</div>' +
-      '<table><thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Method</th><th>Items</th><th>Amount</th></tr></thead>' +
-      '<tbody>' + (rows || '<tr><td colspan="7" style="text-align:center;color:#a3a3a3;padding:32px">No records found.</td></tr>') + '</tbody></table>' +
+      '<table><thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Method</th><th>Format</th><th>Items</th><th>Amount</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="8" style="text-align:center;color:#a3a3a3;padding:32px">No records found.</td></tr>') + '</tbody></table>' +
       '<div class="summary">' + records.length + ' bill' + (records.length !== 1 ? 's' : '') +
         ' &nbsp;·&nbsp; Total: <strong>&#x20B9;' + total.toFixed(2) + '</strong></div>' +
       '</body></html>';
@@ -2563,9 +2623,12 @@ async function printBill() {
   try {
     setPrintLoading(true, 'Generating receipt...');
     
+    // Collect bill data from UI
     const billNo = document.getElementById('billNoInput').value;
     const customer = document.getElementById('customerName').value.trim();
     const now = new Date();
+    
+    // Calculate subtotal and grand total
     const grandTotalAmount = billItems.reduce((s, i) => s + i.total, 0);
     
     const itemsSnapshot = billItems.map(function(it) {
@@ -2576,6 +2639,7 @@ async function printBill() {
       if (it.note) parts.push(it.note);
       return { 
         name: it.name, 
+        baseName: it.baseName || it.name,
         emoji: it.emoji, 
         qty: it.qty, 
         price: it.price, 
@@ -2598,60 +2662,57 @@ async function printBill() {
       date: now
     };
 
-    // Generate ESC/POS receipt
     setPrintLoading(true, 'Printing to printers...');
-    const escposData = generateESCPOSReceipt(billData);
     
-    // Print to both printers (USB and/or WiFi)
-    const results = await printToBothPrinters(escposData);
+    // Generate customer receipt for Printer 1
+    const customerReceipt = generateCustomerReceipt(billData);
+    
+    // Generate kitchen ticket for Printer 2
+    const kitchenTicket = generateKitchenTicket(billData);
+    
+    // Print to respective printers with different formats
+    const results = await printDualFormats(customerReceipt, kitchenTicket);
     
     setPrintLoading(false);
     
-    // Get printer status for display names
-    const status = getPrintersStatus();
-    
-    // Check results and show appropriate feedback
+    // Handle print results and display appropriate toast messages
     const p1Success = results.printer1.success;
     const p2Success = results.printer2.success;
+    const p1Configured = status.printer1.configured;
+    const p2Configured = status.printer2.configured;
     
-    if (p1Success && p2Success) {
+    // Single-printer scenario handling
+    if (p1Configured && !p2Configured && p1Success) {
+      // Only Printer 1 configured - customer receipt only
+      const p1Type = results.printer1.type === 'usb' ? '🔌 USB' : '📡 WiFi';
+      showSuccessToast('Customer Receipt Printed', `Printed to ${p1Type} printer (Kitchen ticket not configured)`);
+      saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer, 'customer');
+    } else if (!p1Configured && p2Configured && p2Success) {
+      // Only Printer 2 configured - kitchen ticket only
+      const p2Type = results.printer2.type === 'usb' ? '🔌 USB' : '📡 WiFi';
+      showSuccessToast('Kitchen Ticket Printed', `Printed to ${p2Type} printer (Customer receipt not configured)`);
+      saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer, 'kitchen');
+    } else if (p1Success && p2Success) {
+      // Both printers succeeded
       const p1Type = results.printer1.type === 'usb' ? '🔌 USB' : '📡 WiFi';
       const p2Type = results.printer2.type === 'usb' ? '🔌 USB' : '📡 WiFi';
-      showSuccessToast('Print Successful', `Printed to both printers (${p1Type} + ${p2Type})`);
+      showSuccessToast('Print Successful', `Customer receipt (${p1Type}) + Kitchen ticket (${p2Type})`);
+      saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer, 'both');
     } else if (p1Success || p2Success) {
-      const successPrinter = p1Success ? (results.printer1.printer || status.printer1.name) : (results.printer2.printer || status.printer2.name);
-      const failedPrinter = p1Success ? (results.printer2.printer || status.printer2.name) : (results.printer1.printer || status.printer1.name);
+      // Partial success - at least one failed
+      const successPrinter = p1Success ? status.printer1.name : status.printer2.name;
+      const failedPrinter = p1Success ? status.printer2.name : status.printer1.name;
+      const formatType = p1Success ? 'customer' : 'kitchen';
       showWarningToast(
         'Partial Success',
         `Printed to ${successPrinter}, but ${failedPrinter} failed`
       );
+      saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer, formatType);
     } else {
-      // Both failed
-      const errors = [];
-      if (results.printer1.error) errors.push(`${status.printer1.name}: ${results.printer1.error}`);
-      if (results.printer2.error) errors.push(`${status.printer2.name}: ${results.printer2.error}`);
-      
-      showErrorToast(
-        'Print Failed',
-        errors.join('\n'),
-        [
-          {
-            label: 'Retry',
-            onClick: () => printBill(),
-            primary: true
-          },
-          {
-            label: 'Check Printers',
-            onClick: () => showPrinterConfig(),
-            primary: false
-          }
-        ]
-      );
+      // Both failed - use handlePrintResults for error handling
+      handlePrintResults(results, billData);
       return; // Don't save to history if print failed
     }
-    
-    // Save to history after successful print
-    saveBillToHistory(billNo, grandTotalAmount, itemsSnapshot, customer);
     
     // Auto-advance to next bill after printing
     clearCurrentBill();
@@ -2687,8 +2748,9 @@ async function printBill() {
  * @param {number} amount - Total amount
  * @param {Array} items - Bill items snapshot
  * @param {string} customer - Customer name
+ * @param {string} formatType - Format type ('customer', 'kitchen', 'both')
  */
-function saveBillToHistory(billNo, amount, items, customer) {
+function saveBillToHistory(billNo, amount, items, customer, formatType) {
   if (activeQrOrderId) {
     var printedQrOrderId = activeQrOrderId;
     var printedQrOrder = orderQueue.find(function(o) { return o.serverId === printedQrOrderId; });
@@ -2704,7 +2766,7 @@ function saveBillToHistory(billNo, amount, items, customer) {
     }
 
     if (window.BillHistory) {
-      window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal')
+      window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both')
         .catch(function(err) { console.error('Bill save failed:', err); });
     }
 
@@ -2713,12 +2775,260 @@ function saveBillToHistory(billNo, amount, items, customer) {
     renderQueue();
   } else {
     if (window.BillHistory) {
-      window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal')
+      window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both')
         .catch(function(err) { console.error('Bill save failed:', err); });
     }
     // Add manually printed bills to the local orders queue.
     addToQueue(billNo, customer, amount, items);
   }
+}
+
+/**
+ * Handle print results from dual printer printing
+ * Displays appropriate error/warning toasts and provides retry options
+ * @param {Object} results - Print results from printDualFormats
+ * @param {Object} billData - Bill data for retry functionality
+ */
+function handlePrintResults(results, billData) {
+  const status = getPrintersStatus();
+  const p1Success = results.printer1.success;
+  const p2Success = results.printer2.success;
+  
+  // Case 1: Both printers failed
+  if (!p1Success && !p2Success) {
+    const errors = [];
+    if (results.printer1.error) errors.push(`${status.printer1.name}: ${results.printer1.error}`);
+    if (results.printer2.error) errors.push(`${status.printer2.name}: ${results.printer2.error}`);
+    
+    showErrorToast(
+      'Print Failed - Both Printers',
+      errors.join('\n') || 'Both printers failed to print',
+      [
+        {
+          label: 'Retry Both',
+          onClick: () => retryPrint('both', billData),
+          primary: true
+        },
+        {
+          label: 'Check Printers',
+          onClick: () => showPrinterConfig(),
+          primary: false
+        }
+      ]
+    );
+  }
+  // Case 2: Printer 1 (customer receipt) failed, Printer 2 succeeded
+  else if (!p1Success && p2Success) {
+    showToast({
+      type: 'warning',
+      title: 'Customer Receipt Failed',
+      message: `${status.printer1.name} failed: ${results.printer1.error || 'Unknown error'}`,
+      duration: 0,
+      actions: [
+        {
+          label: 'Retry Printer 1',
+          onClick: () => retryPrint('printer1', billData),
+          primary: true
+        },
+        {
+          label: 'Continue',
+          onClick: () => {
+            // Save to history and clear bill since kitchen ticket printed
+            saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName, 'kitchen');
+            clearCurrentBill();
+          },
+          primary: false
+        }
+      ]
+    });
+  }
+  // Case 3: Printer 2 (kitchen ticket) failed, Printer 1 succeeded
+  else if (p1Success && !p2Success) {
+    showToast({
+      type: 'warning',
+      title: 'Kitchen Ticket Failed',
+      message: `${status.printer2.name} failed: ${results.printer2.error || 'Unknown error'}`,
+      duration: 0,
+      actions: [
+        {
+          label: 'Retry Printer 2',
+          onClick: () => retryPrint('printer2', billData),
+          primary: true
+        },
+        {
+          label: 'Continue',
+          onClick: () => {
+            // Save to history and clear bill since customer receipt printed
+            saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName, 'customer');
+            clearCurrentBill();
+          },
+          primary: false
+        }
+      ]
+    });
+  }
+}
+
+/**
+ * Retry print for individual printers or both
+ * @param {string} printerTarget - 'printer1', 'printer2', or 'both'
+ * @param {Object} billData - Bill data to print
+ */
+async function retryPrint(printerTarget, billData) {
+  try {
+    setPrintLoading(true, 'Retrying print...');
+    
+    if (printerTarget === 'both') {
+      // Retry both printers
+      const customerReceipt = generateCustomerReceipt(billData);
+      const kitchenTicket = generateKitchenTicket(billData);
+      const results = await printDualFormats(customerReceipt, kitchenTicket);
+      
+      setPrintLoading(false);
+      
+      const p1Success = results.printer1.success;
+      const p2Success = results.printer2.success;
+      
+      if (p1Success && p2Success) {
+        showSuccessToast('Retry Successful', 'Both printers printed successfully');
+        saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName);
+        clearCurrentBill();
+      } else {
+        handlePrintResults(results, billData);
+      }
+    } else if (printerTarget === 'printer1') {
+      // Retry only Printer 1 (customer receipt)
+      const customerReceipt = generateCustomerReceipt(billData);
+      const result = await printToUnifiedPrinter('printer1', customerReceipt);
+      
+      setPrintLoading(false);
+      
+      if (result.success) {
+        showSuccessToast('Customer Receipt Printed', 'Printer 1 retry successful');
+        saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName);
+        clearCurrentBill();
+      } else {
+        showErrorToast(
+          'Printer 1 Failed Again',
+          result.error || 'Could not print customer receipt',
+          [
+            {
+              label: 'Retry Again',
+              onClick: () => retryPrint('printer1', billData),
+              primary: true
+            },
+            {
+              label: 'Continue Without',
+              onClick: () => {
+                saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName);
+                clearCurrentBill();
+              },
+              primary: false
+            }
+          ]
+        );
+      }
+    } else if (printerTarget === 'printer2') {
+      // Retry only Printer 2 (kitchen ticket)
+      const kitchenTicket = generateKitchenTicket(billData);
+      const result = await printToUnifiedPrinter('printer2', kitchenTicket);
+      
+      setPrintLoading(false);
+      
+      if (result.success) {
+        showSuccessToast('Kitchen Ticket Printed', 'Printer 2 retry successful');
+        saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName);
+        clearCurrentBill();
+      } else {
+        showErrorToast(
+          'Printer 2 Failed Again',
+          result.error || 'Could not print kitchen ticket',
+          [
+            {
+              label: 'Retry Again',
+              onClick: () => retryPrint('printer2', billData),
+              primary: true
+            },
+            {
+              label: 'Continue Without',
+              onClick: () => {
+                saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName);
+                clearCurrentBill();
+              },
+              primary: false
+            }
+          ]
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Retry print error:', error);
+    setPrintLoading(false);
+    
+    showErrorToast(
+      'Retry Failed',
+      error.message || 'Failed to retry printing',
+      [
+        {
+          label: 'Try Again',
+          onClick: () => retryPrint(printerTarget, billData),
+          primary: true
+        },
+        {
+          label: 'Cancel',
+          onClick: () => {},
+          primary: false
+        }
+      ]
+    );
+  }
+}
+
+/**
+ * Print different formats to designated printers
+ * Routes customer receipt to Printer 1 and kitchen ticket to Printer 2
+ * @param {Uint8Array} customerReceipt - ESC/POS data for customer receipt
+ * @param {Uint8Array} kitchenTicket - ESC/POS data for kitchen ticket
+ * @returns {Promise<Object>} Results with success status for each printer
+ */
+async function printDualFormats(customerReceipt, kitchenTicket) {
+  const results = {
+    printer1: { success: false, error: null },
+    printer2: { success: false, error: null }
+  };
+
+  // Both printers can share one server; its printer-specific routes keep formats distinct.
+  const promises = [];
+  
+  // Send customer receipt to Printer 1
+  if (printerConnections.printer1.type) {
+    promises.push(
+      printToUnifiedPrinter('printer1', customerReceipt)
+        .then(result => {
+          results.printer1 = result;
+        })
+        .catch(error => {
+          results.printer1 = { success: false, error: error.message };
+        })
+    );
+  }
+  
+  // Send kitchen ticket to Printer 2
+  if (printerConnections.printer2.type) {
+    promises.push(
+      printToUnifiedPrinter('printer2', kitchenTicket)
+        .then(result => {
+          results.printer2 = result;
+        })
+        .catch(error => {
+          results.printer2 = { success: false, error: error.message };
+        })
+    );
+  }
+
+  // Execute both print jobs in parallel
+  await Promise.all(promises);
+  return results;
 }
 
 /**
@@ -2802,6 +3112,7 @@ function addQrOrder(order, orderId) {
   orderQueue.push({
     id: Date.now() + Math.random(),
     serverId: orderId,
+    orderNo: order.orderNo || '',
     source: 'qr',
     table: order.table,
     status: order.status || 'pending',
@@ -2919,7 +3230,7 @@ function renderQueue() {
       '<div class="oq-row-info">' +
         '<div class="oq-row-main">' +
           qrTable +
-          (o.source === 'qr' ? '<span class="oq-row-time">QR order</span>' : '') +
+          (o.source === 'qr' ? '<span class="oq-row-time">QR order' + (o.orderNo ? ' · ' + escapeQueueText(o.orderNo) : '') + '</span>' : '') +
           '<span class="oq-row-time">' + o.time + '</span>' +
         '</div>' +
         '<span class="oq-row-items">' + itemsSummary + '</span>' +
@@ -3211,5 +3522,7 @@ function closeRptDrawer() {
   document.getElementById('rptMonthPicker').value = yy + '-' + mm;
 })();
 </script>
+<!-- Live Map boot (recorder + loader). app.css is injected by boot.js on first open. -->
+<script type="module" src="dist/live-map/boot.js"></script>
 </body>
 </html>

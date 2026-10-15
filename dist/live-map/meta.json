@@ -1,0 +1,2244 @@
+{
+  "inputs": {
+    "map3d/lib/firebase.ts": {
+      "bytes": 3439,
+      "imports": [],
+      "format": "esm"
+    },
+    "map3d/lib/orders.ts": {
+      "bytes": 3113,
+      "imports": [],
+      "format": "esm"
+    },
+    "map3d/lib/progress.ts": {
+      "bytes": 2850,
+      "imports": [
+        {
+          "path": "map3d/lib/orders.ts",
+          "kind": "import-statement",
+          "original": "./orders.ts"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/lib/counters.ts": {
+      "bytes": 2266,
+      "imports": [
+        {
+          "path": "map3d/lib/progress.ts",
+          "kind": "import-statement",
+          "original": "./progress.ts"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/lib/layout.ts": {
+      "bytes": 3628,
+      "imports": [],
+      "format": "esm"
+    },
+    "map3d/lib/recorder.ts": {
+      "bytes": 6095,
+      "imports": [
+        {
+          "path": "map3d/lib/counters.ts",
+          "kind": "import-statement",
+          "original": "./counters.ts"
+        },
+        {
+          "path": "map3d/lib/firebase.ts",
+          "kind": "import-statement",
+          "original": "./firebase.ts"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "./layout.ts"
+        },
+        {
+          "path": "map3d/lib/orders.ts",
+          "kind": "import-statement",
+          "original": "./orders.ts"
+        },
+        {
+          "path": "map3d/lib/progress.ts",
+          "kind": "import-statement",
+          "original": "./progress.ts"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/lib/view.ts": {
+      "bytes": 902,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/scheduler/cjs/scheduler.production.js": {
+      "bytes": 10181,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/scheduler/index.js": {
+      "bytes": 194,
+      "imports": [
+        {
+          "path": "node_modules/scheduler/cjs/scheduler.production.js",
+          "kind": "require-call",
+          "original": "./cjs/scheduler.production.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/react/cjs/react.production.js": {
+      "bytes": 18040,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/react/index.js": {
+      "bytes": 186,
+      "imports": [
+        {
+          "path": "node_modules/react/cjs/react.production.js",
+          "kind": "require-call",
+          "original": "./cjs/react.production.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/react-dom/cjs/react-dom.production.js": {
+      "bytes": 7326,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "require-call",
+          "original": "react"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/react-dom/index.js": {
+      "bytes": 1359,
+      "imports": [
+        {
+          "path": "node_modules/react-dom/cjs/react-dom.production.js",
+          "kind": "require-call",
+          "original": "./cjs/react-dom.production.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/react-dom/cjs/react-dom-client.production.js": {
+      "bytes": 625168,
+      "imports": [
+        {
+          "path": "node_modules/scheduler/index.js",
+          "kind": "require-call",
+          "original": "scheduler"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "require-call",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/react-dom/index.js",
+          "kind": "require-call",
+          "original": "react-dom"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/react-dom/client.js": {
+      "bytes": 1373,
+      "imports": [
+        {
+          "path": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "kind": "require-call",
+          "original": "./cjs/react-dom-client.production.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "map3d/lib/format.ts": {
+      "bytes": 1024,
+      "imports": [],
+      "format": "esm"
+    },
+    "map3d/lib/events.ts": {
+      "bytes": 2291,
+      "imports": [
+        {
+          "path": "map3d/lib/format.ts",
+          "kind": "import-statement",
+          "original": "./format.ts"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/lib/status.ts": {
+      "bytes": 2213,
+      "imports": [
+        {
+          "path": "map3d/lib/progress.ts",
+          "kind": "import-statement",
+          "original": "./progress.ts"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/lib/store.ts": {
+      "bytes": 11807,
+      "imports": [
+        {
+          "path": "map3d/lib/counters.ts",
+          "kind": "import-statement",
+          "original": "./counters.ts"
+        },
+        {
+          "path": "map3d/lib/events.ts",
+          "kind": "import-statement",
+          "original": "./events.ts"
+        },
+        {
+          "path": "map3d/lib/firebase.ts",
+          "kind": "import-statement",
+          "original": "./firebase.ts"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "./layout.ts"
+        },
+        {
+          "path": "map3d/lib/progress.ts",
+          "kind": "import-statement",
+          "original": "./progress.ts"
+        },
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "./status.ts"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/hooks/useViewMode.ts": {
+      "bytes": 805,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/lib/view.ts",
+          "kind": "import-statement",
+          "original": "../lib/view.ts"
+        },
+        {
+          "path": "map3d/lib/view.ts",
+          "kind": "import-statement",
+          "original": "../lib/view.ts"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/lib/webgl.ts": {
+      "bytes": 611,
+      "imports": [],
+      "format": "esm"
+    },
+    "map3d/lib/bridge.ts": {
+      "bytes": 2031,
+      "imports": [],
+      "format": "esm"
+    },
+    "map3d/hooks/useLiveStore.ts": {
+      "bytes": 1194,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/LiveMapContext.tsx": {
+      "bytes": 2161,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "../lib/status.ts"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/react/cjs/react-jsx-runtime.production.js": {
+      "bytes": 976,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/react/jsx-runtime.js": {
+      "bytes": 210,
+      "imports": [
+        {
+          "path": "node_modules/react/cjs/react-jsx-runtime.production.js",
+          "kind": "require-call",
+          "original": "./cjs/react-jsx-runtime.production.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "map3d/ui/EventsFeed.tsx": {
+      "bytes": 917,
+      "imports": [
+        {
+          "path": "map3d/hooks/useLiveStore.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useLiveStore.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/BottomBar.tsx": {
+      "bytes": 1853,
+      "imports": [
+        {
+          "path": "map3d/lib/bridge.ts",
+          "kind": "import-statement",
+          "original": "../lib/bridge.ts"
+        },
+        {
+          "path": "map3d/ui/EventsFeed.tsx",
+          "kind": "import-statement",
+          "original": "./EventsFeed.tsx"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/Legend.tsx": {
+      "bytes": 578,
+      "imports": [
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "../lib/status.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/hooks/useNow.ts": {
+      "bytes": 844,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/ListView.tsx": {
+      "bytes": 2065,
+      "imports": [
+        {
+          "path": "map3d/hooks/useNow.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useNow.ts"
+        },
+        {
+          "path": "map3d/hooks/useLiveStore.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useLiveStore.ts"
+        },
+        {
+          "path": "map3d/lib/format.ts",
+          "kind": "import-statement",
+          "original": "../lib/format.ts"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "../lib/status.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/LoadingSkeleton.tsx": {
+      "bytes": 489,
+      "imports": [
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/Minimap.tsx": {
+      "bytes": 2444,
+      "imports": [
+        {
+          "path": "map3d/hooks/useLiveStore.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useLiveStore.ts"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "../lib/status.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/SceneBoundary.tsx": {
+      "bytes": 729,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/OrderList.tsx": {
+      "bytes": 2182,
+      "imports": [
+        {
+          "path": "map3d/hooks/useNow.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useNow.ts"
+        },
+        {
+          "path": "map3d/hooks/useLiveStore.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useLiveStore.ts"
+        },
+        {
+          "path": "map3d/lib/format.ts",
+          "kind": "import-statement",
+          "original": "../lib/format.ts"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "../lib/status.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/OrderPanel.tsx": {
+      "bytes": 4190,
+      "imports": [
+        {
+          "path": "map3d/hooks/useNow.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useNow.ts"
+        },
+        {
+          "path": "map3d/hooks/useLiveStore.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useLiveStore.ts"
+        },
+        {
+          "path": "map3d/lib/bridge.ts",
+          "kind": "import-statement",
+          "original": "../lib/bridge.ts"
+        },
+        {
+          "path": "map3d/lib/format.ts",
+          "kind": "import-statement",
+          "original": "../lib/format.ts"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "../lib/status.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/SidePanel.tsx": {
+      "bytes": 824,
+      "imports": [
+        {
+          "path": "map3d/hooks/useLiveStore.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useLiveStore.ts"
+        },
+        {
+          "path": "map3d/ui/OrderList.tsx",
+          "kind": "import-statement",
+          "original": "./OrderList.tsx"
+        },
+        {
+          "path": "map3d/ui/OrderPanel.tsx",
+          "kind": "import-statement",
+          "original": "./OrderPanel.tsx"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/TopBar.tsx": {
+      "bytes": 2500,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/hooks/useLiveStore.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useLiveStore.ts"
+        },
+        {
+          "path": "map3d/lib/events.ts",
+          "kind": "import-statement",
+          "original": "../lib/events.ts"
+        },
+        {
+          "path": "map3d/lib/format.ts",
+          "kind": "import-statement",
+          "original": "../lib/format.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/three/build/three.core.js": {
+      "bytes": 1458113,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/three/build/three.module.js": {
+      "bytes": 662772,
+      "imports": [
+        {
+          "path": "node_modules/three/build/three.core.js",
+          "kind": "import-statement",
+          "original": "./three.core.js"
+        },
+        {
+          "path": "node_modules/three/build/three.core.js",
+          "kind": "import-statement",
+          "original": "./three.core.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js": {
+      "bytes": 1967,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "require-call",
+          "original": "react"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/use-sync-external-store/shim/index.js": {
+      "bytes": 234,
+      "imports": [
+        {
+          "path": "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js",
+          "kind": "require-call",
+          "original": "../cjs/use-sync-external-store-shim.production.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js": {
+      "bytes": 2685,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "require-call",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/use-sync-external-store/shim/index.js",
+          "kind": "require-call",
+          "original": "use-sync-external-store/shim"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/use-sync-external-store/shim/with-selector.js": {
+      "bytes": 262,
+      "imports": [
+        {
+          "path": "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js",
+          "kind": "require-call",
+          "original": "../cjs/use-sync-external-store-shim/with-selector.production.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/zustand/esm/vanilla.mjs": {
+      "bytes": 1001,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/zustand/esm/traditional.mjs": {
+      "bytes": 1097,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/use-sync-external-store/shim/with-selector.js",
+          "kind": "import-statement",
+          "original": "use-sync-external-store/shim/with-selector.js"
+        },
+        {
+          "path": "node_modules/zustand/esm/vanilla.mjs",
+          "kind": "import-statement",
+          "original": "zustand/vanilla"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/suspend-react/index.js": {
+      "bytes": 2895,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/its-fine/dist/index.js": {
+      "bytes": 5337,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/@react-three/fiber/dist/events-9ce18a08.esm.js": {
+      "bytes": 710191,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        },
+        {
+          "path": "node_modules/zustand/esm/traditional.mjs",
+          "kind": "import-statement",
+          "original": "zustand/traditional"
+        },
+        {
+          "path": "node_modules/suspend-react/index.js",
+          "kind": "import-statement",
+          "original": "suspend-react"
+        },
+        {
+          "path": "node_modules/scheduler/index.js",
+          "kind": "import-statement",
+          "original": "scheduler"
+        },
+        {
+          "path": "node_modules/its-fine/dist/index.js",
+          "kind": "import-statement",
+          "original": "its-fine"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/react-use-measure/dist/index.js": {
+      "bytes": 3174,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js": {
+      "bytes": 7067,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/events-9ce18a08.esm.js",
+          "kind": "import-statement",
+          "original": "./events-9ce18a08.esm.js"
+        },
+        {
+          "path": "node_modules/@react-three/fiber/dist/events-9ce18a08.esm.js",
+          "kind": "import-statement",
+          "original": "./events-9ce18a08.esm.js"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "node_modules/react-use-measure/dist/index.js",
+          "kind": "import-statement",
+          "original": "react-use-measure"
+        },
+        {
+          "path": "node_modules/its-fine/dist/index.js",
+          "kind": "import-statement",
+          "original": "its-fine"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        },
+        {
+          "path": "node_modules/zustand/esm/traditional.mjs",
+          "kind": "import-statement",
+          "original": "zustand/traditional"
+        },
+        {
+          "path": "node_modules/suspend-react/index.js",
+          "kind": "import-statement",
+          "original": "suspend-react"
+        },
+        {
+          "path": "node_modules/scheduler/index.js",
+          "kind": "import-statement",
+          "original": "scheduler"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/hooks/useReducedMotion.ts": {
+      "bytes": 578,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/hooks/useTabVisible.ts": {
+      "bytes": 509,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/lib/theme.ts": {
+      "bytes": 1145,
+      "imports": [],
+      "format": "esm"
+    },
+    "map3d/scene/materials.ts": {
+      "bytes": 2741,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/CounterBase.tsx": {
+      "bytes": 1239,
+      "imports": [
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/BillingCounter.tsx": {
+      "bytes": 1196,
+      "imports": [
+        {
+          "path": "map3d/scene/CounterBase.tsx",
+          "kind": "import-statement",
+          "original": "./CounterBase.tsx"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/@babel/runtime/helpers/esm/extends.js": {
+      "bytes": 336,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/camera-controls/dist/camera-controls.module.js": {
+      "bytes": 117547,
+      "imports": [
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/@react-three/drei/core/CameraControls.js": {
+      "bytes": 5302,
+      "imports": [
+        {
+          "path": "node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/camera-controls/dist/camera-controls.module.js",
+          "kind": "import-statement",
+          "original": "camera-controls"
+        },
+        {
+          "path": "node_modules/camera-controls/dist/camera-controls.module.js",
+          "kind": "import-statement",
+          "original": "camera-controls"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/CameraRig.tsx": {
+      "bytes": 3005,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/drei/core/CameraControls.js",
+          "kind": "import-statement",
+          "original": "@react-three/drei/core/CameraControls.js"
+        },
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/@react-three/drei/helpers/deprecated.js": {
+      "bytes": 185,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/@react-three/drei/core/Instances.js": {
+      "bytes": 11399,
+      "imports": [
+        {
+          "path": "node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/@react-three/drei/helpers/deprecated.js",
+          "kind": "import-statement",
+          "original": "../helpers/deprecated.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/three/examples/jsm/utils/BufferGeometryUtils.js": {
+      "bytes": 37712,
+      "imports": [
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/Chairs.tsx": {
+      "bytes": 1734,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/drei/core/Instances.js",
+          "kind": "import-statement",
+          "original": "@react-three/drei/core/Instances.js"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+          "kind": "import-statement",
+          "original": "three/examples/jsm/utils/BufferGeometryUtils.js"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/Floor.tsx": {
+      "bytes": 1057,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/drei/core/Instances.js",
+          "kind": "import-statement",
+          "original": "@react-three/drei/core/Instances.js"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/FrameGovernor.tsx": {
+      "bytes": 907,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/FruitCrates.tsx": {
+      "bytes": 1642,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/drei/core/Instances.js",
+          "kind": "import-statement",
+          "original": "@react-three/drei/core/Instances.js"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/JuicePour.tsx": {
+      "bytes": 1411,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/JuiceStation.tsx": {
+      "bytes": 1767,
+      "imports": [
+        {
+          "path": "map3d/scene/CounterBase.tsx",
+          "kind": "import-statement",
+          "original": "./CounterBase.tsx"
+        },
+        {
+          "path": "map3d/scene/FruitCrates.tsx",
+          "kind": "import-statement",
+          "original": "./FruitCrates.tsx"
+        },
+        {
+          "path": "map3d/scene/JuicePour.tsx",
+          "kind": "import-statement",
+          "original": "./JuicePour.tsx"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/Steam.tsx": {
+      "bytes": 1496,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/SnackCounter.tsx": {
+      "bytes": 1267,
+      "imports": [
+        {
+          "path": "map3d/scene/CounterBase.tsx",
+          "kind": "import-statement",
+          "original": "./CounterBase.tsx"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "map3d/scene/Steam.tsx",
+          "kind": "import-statement",
+          "original": "./Steam.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/StaffFigure.tsx": {
+      "bytes": 1767,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/OrderPulse.tsx": {
+      "bytes": 1111,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/lib/events.ts",
+          "kind": "import-statement",
+          "original": "../lib/events.ts"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/SelectionRing.tsx": {
+      "bytes": 808,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/@react-three/drei/web/Html.js": {
+      "bytes": 14702,
+      "imports": [
+        {
+          "path": "node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/react-dom/client.js",
+          "kind": "import-statement",
+          "original": "react-dom/client"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/StatusMarker.tsx": {
+      "bytes": 1371,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/drei/web/Html.js",
+          "kind": "import-statement",
+          "original": "@react-three/drei/web/Html.js"
+        },
+        {
+          "path": "map3d/hooks/useNow.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useNow.ts"
+        },
+        {
+          "path": "map3d/lib/format.ts",
+          "kind": "import-statement",
+          "original": "../lib/format.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "../ui/LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/Tooltip.tsx": {
+      "bytes": 873,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/drei/web/Html.js",
+          "kind": "import-statement",
+          "original": "@react-three/drei/web/Html.js"
+        },
+        {
+          "path": "map3d/lib/format.ts",
+          "kind": "import-statement",
+          "original": "../lib/format.ts"
+        },
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "../lib/status.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "../ui/LiveMapContext.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/TableEntity.tsx": {
+      "bytes": 3499,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "node_modules/three/build/three.module.js",
+          "kind": "import-statement",
+          "original": "three"
+        },
+        {
+          "path": "map3d/lib/status.ts",
+          "kind": "import-statement",
+          "original": "../lib/status.ts"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "map3d/scene/OrderPulse.tsx",
+          "kind": "import-statement",
+          "original": "./OrderPulse.tsx"
+        },
+        {
+          "path": "map3d/scene/SelectionRing.tsx",
+          "kind": "import-statement",
+          "original": "./SelectionRing.tsx"
+        },
+        {
+          "path": "map3d/scene/StatusMarker.tsx",
+          "kind": "import-statement",
+          "original": "./StatusMarker.tsx"
+        },
+        {
+          "path": "map3d/scene/Tooltip.tsx",
+          "kind": "import-statement",
+          "original": "./Tooltip.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/Walls.tsx": {
+      "bytes": 1027,
+      "imports": [
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/scene/ShopScene.tsx": {
+      "bytes": 4127,
+      "imports": [
+        {
+          "path": "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js",
+          "kind": "import-statement",
+          "original": "@react-three/fiber"
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/hooks/useLiveStore.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useLiveStore.ts"
+        },
+        {
+          "path": "map3d/hooks/useReducedMotion.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useReducedMotion.ts"
+        },
+        {
+          "path": "map3d/hooks/useTabVisible.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useTabVisible.ts"
+        },
+        {
+          "path": "map3d/lib/layout.ts",
+          "kind": "import-statement",
+          "original": "../lib/layout.ts"
+        },
+        {
+          "path": "map3d/lib/theme.ts",
+          "kind": "import-statement",
+          "original": "../lib/theme.ts"
+        },
+        {
+          "path": "map3d/scene/BillingCounter.tsx",
+          "kind": "import-statement",
+          "original": "./BillingCounter.tsx"
+        },
+        {
+          "path": "map3d/scene/CameraRig.tsx",
+          "kind": "import-statement",
+          "original": "./CameraRig.tsx"
+        },
+        {
+          "path": "map3d/scene/Chairs.tsx",
+          "kind": "import-statement",
+          "original": "./Chairs.tsx"
+        },
+        {
+          "path": "map3d/scene/Floor.tsx",
+          "kind": "import-statement",
+          "original": "./Floor.tsx"
+        },
+        {
+          "path": "map3d/scene/FrameGovernor.tsx",
+          "kind": "import-statement",
+          "original": "./FrameGovernor.tsx"
+        },
+        {
+          "path": "map3d/scene/JuiceStation.tsx",
+          "kind": "import-statement",
+          "original": "./JuiceStation.tsx"
+        },
+        {
+          "path": "map3d/scene/materials.ts",
+          "kind": "import-statement",
+          "original": "./materials.ts"
+        },
+        {
+          "path": "map3d/scene/SnackCounter.tsx",
+          "kind": "import-statement",
+          "original": "./SnackCounter.tsx"
+        },
+        {
+          "path": "map3d/scene/StaffFigure.tsx",
+          "kind": "import-statement",
+          "original": "./StaffFigure.tsx"
+        },
+        {
+          "path": "map3d/scene/TableEntity.tsx",
+          "kind": "import-statement",
+          "original": "./TableEntity.tsx"
+        },
+        {
+          "path": "map3d/scene/Walls.tsx",
+          "kind": "import-statement",
+          "original": "./Walls.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/LiveMapApp.tsx": {
+      "bytes": 4490,
+      "imports": [
+        {
+          "path": "node_modules/react/index.js",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "map3d/hooks/useViewMode.ts",
+          "kind": "import-statement",
+          "original": "../hooks/useViewMode.ts"
+        },
+        {
+          "path": "map3d/lib/webgl.ts",
+          "kind": "import-statement",
+          "original": "../lib/webgl.ts"
+        },
+        {
+          "path": "map3d/ui/BottomBar.tsx",
+          "kind": "import-statement",
+          "original": "./BottomBar.tsx"
+        },
+        {
+          "path": "map3d/ui/Legend.tsx",
+          "kind": "import-statement",
+          "original": "./Legend.tsx"
+        },
+        {
+          "path": "map3d/ui/ListView.tsx",
+          "kind": "import-statement",
+          "original": "./ListView.tsx"
+        },
+        {
+          "path": "map3d/ui/LiveMapContext.tsx",
+          "kind": "import-statement",
+          "original": "./LiveMapContext.tsx"
+        },
+        {
+          "path": "map3d/ui/LoadingSkeleton.tsx",
+          "kind": "import-statement",
+          "original": "./LoadingSkeleton.tsx"
+        },
+        {
+          "path": "map3d/ui/Minimap.tsx",
+          "kind": "import-statement",
+          "original": "./Minimap.tsx"
+        },
+        {
+          "path": "map3d/ui/SceneBoundary.tsx",
+          "kind": "import-statement",
+          "original": "./SceneBoundary.tsx"
+        },
+        {
+          "path": "map3d/ui/SidePanel.tsx",
+          "kind": "import-statement",
+          "original": "./SidePanel.tsx"
+        },
+        {
+          "path": "map3d/ui/TopBar.tsx",
+          "kind": "import-statement",
+          "original": "./TopBar.tsx"
+        },
+        {
+          "path": "map3d/scene/ShopScene.tsx",
+          "kind": "dynamic-import",
+          "original": "../scene/ShopScene.tsx"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/ui/live-map.css": {
+      "bytes": 12544,
+      "imports": []
+    },
+    "map3d/app.tsx": {
+      "bytes": 1148,
+      "imports": [
+        {
+          "path": "node_modules/react-dom/client.js",
+          "kind": "import-statement",
+          "original": "react-dom/client"
+        },
+        {
+          "path": "map3d/lib/firebase.ts",
+          "kind": "import-statement",
+          "original": "./lib/firebase.ts"
+        },
+        {
+          "path": "map3d/lib/store.ts",
+          "kind": "import-statement",
+          "original": "./lib/store.ts"
+        },
+        {
+          "path": "map3d/ui/LiveMapApp.tsx",
+          "kind": "import-statement",
+          "original": "./ui/LiveMapApp.tsx"
+        },
+        {
+          "path": "map3d/ui/live-map.css",
+          "kind": "import-statement",
+          "original": "./ui/live-map.css"
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "kind": "import-statement",
+          "original": "react/jsx-runtime"
+        }
+      ],
+      "format": "esm"
+    },
+    "map3d/boot.ts": {
+      "bytes": 5187,
+      "imports": [
+        {
+          "path": "map3d/lib/firebase.ts",
+          "kind": "import-statement",
+          "original": "./lib/firebase.ts"
+        },
+        {
+          "path": "map3d/lib/recorder.ts",
+          "kind": "import-statement",
+          "original": "./lib/recorder.ts"
+        },
+        {
+          "path": "map3d/lib/view.ts",
+          "kind": "import-statement",
+          "original": "./lib/view.ts"
+        },
+        {
+          "path": "map3d/app.tsx",
+          "kind": "dynamic-import",
+          "original": "./app.tsx"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/live-map/boot.js": {
+      "imports": [
+        {
+          "path": "dist/live-map/chunks/chunk-6ZP3O46T.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/live-map/chunks/chunk-ZBF6JOSJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/live-map/app.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [],
+      "entryPoint": "map3d/boot.ts",
+      "cssBundle": "dist/live-map/boot.css",
+      "inputs": {
+        "map3d/lib/recorder.ts": {
+          "bytesInOutput": 1886
+        },
+        "map3d/boot.ts": {
+          "bytesInOutput": 2149
+        }
+      },
+      "bytes": 4221
+    },
+    "dist/live-map/app.js": {
+      "imports": [
+        {
+          "path": "dist/live-map/chunks/chunk-6ZP3O46T.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/live-map/chunks/chunk-NQ7BEZGH.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/live-map/chunks/chunk-ZBF6JOSJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/live-map/chunks/ShopScene-SOOU2CBC.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [
+        "mount",
+        "unmount"
+      ],
+      "entryPoint": "map3d/app.tsx",
+      "cssBundle": "dist/live-map/app.css",
+      "inputs": {
+        "map3d/app.tsx": {
+          "bytesInOutput": 271
+        },
+        "map3d/lib/store.ts": {
+          "bytesInOutput": 3764
+        },
+        "map3d/ui/LiveMapApp.tsx": {
+          "bytesInOutput": 1963
+        },
+        "map3d/hooks/useViewMode.ts": {
+          "bytesInOutput": 131
+        },
+        "map3d/lib/webgl.ts": {
+          "bytesInOutput": 222
+        },
+        "map3d/lib/bridge.ts": {
+          "bytesInOutput": 739
+        },
+        "map3d/ui/EventsFeed.tsx": {
+          "bytesInOutput": 604
+        },
+        "map3d/ui/BottomBar.tsx": {
+          "bytesInOutput": 1345
+        },
+        "map3d/ui/Legend.tsx": {
+          "bytesInOutput": 322
+        },
+        "map3d/ui/ListView.tsx": {
+          "bytesInOutput": 1054
+        },
+        "map3d/ui/LoadingSkeleton.tsx": {
+          "bytesInOutput": 400
+        },
+        "map3d/ui/Minimap.tsx": {
+          "bytesInOutput": 1304
+        },
+        "map3d/ui/SceneBoundary.tsx": {
+          "bytesInOutput": 300
+        },
+        "map3d/ui/OrderList.tsx": {
+          "bytesInOutput": 1202
+        },
+        "map3d/ui/OrderPanel.tsx": {
+          "bytesInOutput": 2785
+        },
+        "map3d/ui/SidePanel.tsx": {
+          "bytesInOutput": 384
+        },
+        "map3d/ui/TopBar.tsx": {
+          "bytesInOutput": 1528
+        },
+        "map3d/ui/live-map.css": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 18780
+    },
+    "dist/live-map/chunks/chunk-6ZP3O46T.js": {
+      "imports": [
+        {
+          "path": "dist/live-map/chunks/chunk-ZBF6JOSJ.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "k",
+        "l"
+      ],
+      "inputs": {
+        "map3d/lib/firebase.ts": {
+          "bytesInOutput": 832
+        },
+        "map3d/lib/view.ts": {
+          "bytesInOutput": 300
+        },
+        "map3d/lib/counters.ts": {
+          "bytesInOutput": 862
+        }
+      },
+      "bytes": 2127
+    },
+    "dist/live-map/chunks/ShopScene-SOOU2CBC.js": {
+      "imports": [
+        {
+          "path": "dist/live-map/chunks/chunk-NQ7BEZGH.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/live-map/chunks/chunk-ZBF6JOSJ.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "map3d/scene/ShopScene.tsx",
+      "inputs": {
+        "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js": {
+          "bytesInOutput": 778
+        },
+        "node_modules/use-sync-external-store/shim/index.js": {
+          "bytesInOutput": 51
+        },
+        "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js": {
+          "bytesInOutput": 813
+        },
+        "node_modules/use-sync-external-store/shim/with-selector.js": {
+          "bytesInOutput": 51
+        },
+        "node_modules/@react-three/fiber/dist/events-9ce18a08.esm.js": {
+          "bytesInOutput": 167433
+        },
+        "node_modules/three/build/three.module.js": {
+          "bytesInOutput": 366365
+        },
+        "node_modules/three/build/three.core.js": {
+          "bytesInOutput": 377490
+        },
+        "node_modules/zustand/esm/traditional.mjs": {
+          "bytesInOutput": 308
+        },
+        "node_modules/zustand/esm/vanilla.mjs": {
+          "bytesInOutput": 320
+        },
+        "node_modules/suspend-react/index.js": {
+          "bytesInOutput": 1032
+        },
+        "node_modules/its-fine/dist/index.js": {
+          "bytesInOutput": 3015
+        },
+        "node_modules/@react-three/fiber/dist/react-three-fiber.esm.js": {
+          "bytesInOutput": 2246
+        },
+        "node_modules/react-use-measure/dist/index.js": {
+          "bytesInOutput": 3173
+        },
+        "map3d/scene/ShopScene.tsx": {
+          "bytesInOutput": 1454
+        },
+        "map3d/hooks/useReducedMotion.ts": {
+          "bytesInOutput": 312
+        },
+        "map3d/hooks/useTabVisible.ts": {
+          "bytesInOutput": 256
+        },
+        "map3d/lib/theme.ts": {
+          "bytesInOutput": 482
+        },
+        "map3d/scene/materials.ts": {
+          "bytesInOutput": 1020
+        },
+        "map3d/scene/CounterBase.tsx": {
+          "bytesInOutput": 627
+        },
+        "map3d/scene/BillingCounter.tsx": {
+          "bytesInOutput": 741
+        },
+        "node_modules/@babel/runtime/helpers/esm/extends.js": {
+          "bytesInOutput": 219
+        },
+        "node_modules/@react-three/drei/core/CameraControls.js": {
+          "bytesInOutput": 1833
+        },
+        "node_modules/camera-controls/dist/camera-controls.module.js": {
+          "bytesInOutput": 46282
+        },
+        "map3d/scene/CameraRig.tsx": {
+          "bytesInOutput": 1100
+        },
+        "node_modules/@react-three/drei/core/Instances.js": {
+          "bytesInOutput": 3044
+        },
+        "node_modules/@react-three/drei/helpers/deprecated.js": {
+          "bytesInOutput": 36
+        },
+        "map3d/scene/Chairs.tsx": {
+          "bytesInOutput": 655
+        },
+        "node_modules/three/examples/jsm/utils/BufferGeometryUtils.js": {
+          "bytesInOutput": 3720
+        },
+        "map3d/scene/Floor.tsx": {
+          "bytesInOutput": 452
+        },
+        "map3d/scene/FrameGovernor.tsx": {
+          "bytesInOutput": 284
+        },
+        "map3d/scene/FruitCrates.tsx": {
+          "bytesInOutput": 866
+        },
+        "map3d/scene/JuicePour.tsx": {
+          "bytesInOutput": 634
+        },
+        "map3d/scene/JuiceStation.tsx": {
+          "bytesInOutput": 968
+        },
+        "map3d/scene/Steam.tsx": {
+          "bytesInOutput": 624
+        },
+        "map3d/scene/SnackCounter.tsx": {
+          "bytesInOutput": 708
+        },
+        "map3d/scene/StaffFigure.tsx": {
+          "bytesInOutput": 959
+        },
+        "map3d/scene/TableEntity.tsx": {
+          "bytesInOutput": 1464
+        },
+        "map3d/scene/OrderPulse.tsx": {
+          "bytesInOutput": 426
+        },
+        "map3d/scene/SelectionRing.tsx": {
+          "bytesInOutput": 354
+        },
+        "node_modules/@react-three/drei/web/Html.js": {
+          "bytesInOutput": 7640
+        },
+        "map3d/scene/StatusMarker.tsx": {
+          "bytesInOutput": 797
+        },
+        "map3d/scene/Tooltip.tsx": {
+          "bytesInOutput": 481
+        },
+        "map3d/scene/Walls.tsx": {
+          "bytesInOutput": 542
+        }
+      },
+      "bytes": 1004227
+    },
+    "dist/live-map/chunks/chunk-NQ7BEZGH.js": {
+      "imports": [
+        {
+          "path": "dist/live-map/chunks/chunk-ZBF6JOSJ.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "k",
+        "l",
+        "m",
+        "n",
+        "o",
+        "p",
+        "q",
+        "r",
+        "s",
+        "t",
+        "u",
+        "v",
+        "w",
+        "x"
+      ],
+      "inputs": {
+        "node_modules/react/cjs/react.production.js": {
+          "bytesInOutput": 7942
+        },
+        "node_modules/react/index.js": {
+          "bytesInOutput": 51
+        },
+        "node_modules/scheduler/cjs/scheduler.production.js": {
+          "bytesInOutput": 3638
+        },
+        "node_modules/scheduler/index.js": {
+          "bytesInOutput": 51
+        },
+        "node_modules/react-dom/cjs/react-dom.production.js": {
+          "bytesInOutput": 3666
+        },
+        "node_modules/react-dom/index.js": {
+          "bytesInOutput": 253
+        },
+        "node_modules/react-dom/cjs/react-dom-client.production.js": {
+          "bytesInOutput": 205184
+        },
+        "node_modules/react-dom/client.js": {
+          "bytesInOutput": 253
+        },
+        "node_modules/react/cjs/react-jsx-runtime.production.js": {
+          "bytesInOutput": 364
+        },
+        "node_modules/react/jsx-runtime.js": {
+          "bytesInOutput": 51
+        },
+        "map3d/hooks/useLiveStore.ts": {
+          "bytesInOutput": 343
+        },
+        "map3d/lib/format.ts": {
+          "bytesInOutput": 479
+        },
+        "map3d/lib/events.ts": {
+          "bytesInOutput": 912
+        },
+        "map3d/lib/status.ts": {
+          "bytesInOutput": 903
+        },
+        "map3d/ui/LiveMapContext.tsx": {
+          "bytesInOutput": 614
+        },
+        "map3d/hooks/useNow.ts": {
+          "bytesInOutput": 316
+        }
+      },
+      "bytes": 226813
+    },
+    "dist/live-map/chunks/chunk-ZBF6JOSJ.js": {
+      "imports": [],
+      "exports": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "k",
+        "l",
+        "m"
+      ],
+      "inputs": {
+        "map3d/lib/layout.ts": {
+          "bytesInOutput": 1111
+        },
+        "map3d/lib/orders.ts": {
+          "bytesInOutput": 1080
+        },
+        "map3d/lib/progress.ts": {
+          "bytesInOutput": 1007
+        }
+      },
+      "bytes": 4009
+    },
+    "dist/live-map/boot.css": {
+      "imports": [],
+      "inputs": {
+        "map3d/ui/live-map.css": {
+          "bytesInOutput": 9574
+        }
+      },
+      "bytes": 9575
+    },
+    "dist/live-map/app.css": {
+      "imports": [],
+      "inputs": {
+        "map3d/ui/live-map.css": {
+          "bytesInOutput": 9574
+        }
+      },
+      "bytes": 9575
+    }
+  }
+}

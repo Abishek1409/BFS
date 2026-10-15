@@ -348,9 +348,9 @@ async function connectWiFiPrinter(printerId, ip, port = 9100) {
     
     if (isLocalServer) {
       // Test print server connection
-      const testResponse = await fetch(`http://${ip}:${port}/test`, {
+      const testResponse = await fetch(`http://${ip}:${port}/test/${printerId}`, {
         method: 'GET',
-        signal: AbortSignal.timeout(3000) // Reduced from 5s to 3s
+        signal: AbortSignal.timeout(5000)
       });
       
       if (testResponse.ok) {
@@ -400,13 +400,16 @@ async function sendToWiFiPrinter(printerId, data) {
   try {
     // Method 1: Try direct HTTP POST (works for HTTP sites and some CORS-enabled printers)
     try {
-      const response = await fetch(`http://${printer.ip}:${printer.port}/print`, {
+      const localServer = isLocalServer(printer.ip, printer.port);
+      warnDirectPrinter(printer);
+      const endpoint = localServer ? `/print/${printerId}` : '/print';
+      const response = await fetch(`http://${printer.ip}:${printer.port}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/octet-stream'
         },
         body: data,
-        signal: AbortSignal.timeout(3000), // Reduced from 10s to 3s for faster response
+        signal: AbortSignal.timeout(10000),
         mode: 'no-cors' // Use no-cors mode for local network
       });
 
@@ -492,82 +495,53 @@ async function sendToPosiflow(printerId, data) {
     };
   }
 
+  const localServer = isLocalServer(printer.ip, printer.port);
+
   try {
-    // Check if using localhost print server (recommended for Vercel)
-    const isLocalServer = printer.ip === 'localhost' || printer.ip === '127.0.0.1' || printer.port === 3000;
-    
-    if (isLocalServer) {
+    if (localServer) {
       // Method 1: Send via local print server (NO CORS issues!)
       console.log(`Sending to ${printer.name} via print server at ${printer.ip}:${printer.port}`);
       
-      const response = await fetch(`http://${printer.ip}:${printer.port}/print`, {
+      const response = await fetch(`http://${printer.ip}:${printer.port}/print/${printerId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/octet-stream'
         },
         body: data,
-        signal: AbortSignal.timeout(3000) // Reduced from 10s to 3s - server responds immediately
+        signal: AbortSignal.timeout(10000)
       });
       
       if (response.ok) {
         const result = await response.json();
         console.log(`Print server response:`, result);
-        // Server sends response immediately, actual printing happens in background
         return { success: true };
       } else {
         const error = await response.text();
         return { success: false, error: `Print server error: ${error}` };
       }
     } else {
-      // Method 2 (preferred): relay through the local print server.
-      // The server writes raw bytes over TCP, so the browser's HTTP headers
-      // (POST / HTTP/1.1, Host, User-Agent...) never get printed on the bill.
-      let relayResponse = null;
-      try {
-        relayResponse = await fetch(
-          `http://localhost:3000/print?ip=${encodeURIComponent(printer.ip)}&port=${encodeURIComponent(printer.port)}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/octet-stream' },
-            body: data,
-            signal: AbortSignal.timeout(6000)
-          }
-        );
-      } catch (relayError) {
-        console.warn('Local print server not reachable, falling back to direct printing:', relayError.message);
-      }
-
-      if (relayResponse) {
-        if (relayResponse.ok) {
-          console.log(`Printed on ${printer.name} via local print server`);
-          return { success: true };
-        }
-        const errText = await relayResponse.text();
-        return { success: false, error: `Printer ${printer.ip} unreachable: ${errText}` };
-      }
-
-      // Method 3 (fallback): direct browser -> printer. Works, but the printer
-      // will also print the HTTP headers. Raw port-9100 printers never send an
-      // HTTP reply, so a timeout here means the data WAS delivered.
+      // Method 2: Direct connection (will fail on HTTPS sites due to CORS)
+      warnDirectPrinter(printer);
       console.log(`Attempting direct connection to ${printer.ip}:${printer.port}`);
-      try {
-        await fetch(`http://${printer.ip}:${printer.port}`, {
-          method: 'POST',
-          body: data,
-          mode: 'no-cors',
-          signal: AbortSignal.timeout(4000)
-        });
-        return { success: true };
-      } catch (directError) {
-        if (directError.name === 'TimeoutError' || directError.name === 'AbortError') {
-          console.log(`Sent ${data.length} bytes directly to ${printer.ip} (no HTTP reply, expected)`);
-          return { success: true };
-        }
-        throw directError; // real network failure (printer off / wrong IP)
-      }
+      
+      const response = await fetch(`http://${printer.ip}:${printer.port}`, {
+        method: 'POST',
+        body: data,
+        mode: 'no-cors', // Try no-cors mode
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      // In no-cors mode, we can't verify response, but no error means likely success
+      console.log(`Sent ${data.length} bytes to Possiflow printer at ${printer.ip}`);
+      return { success: true };
     }
     
   } catch (error) {
+    // If we get a network error with direct connection, it might still have worked
+    if (!localServer && error.name === 'AbortError') {
+      return { success: true }; // Assume success in no-cors mode
+    }
+    
     console.error(`Possiflow print error:`, error);
     return {
       success: false,
@@ -579,6 +553,31 @@ async function sendToPosiflow(printerId, data) {
 // Add isLocalServer check helper
 function isLocalServer(ip, port) {
   return ip === 'localhost' || ip === '127.0.0.1' || port === 3000;
+}
+
+// Printers already warned about in this page load
+const directWarnedPrinters = new Set();
+
+/**
+ * Warn once per printer per page load when it is configured for direct mode.
+ * Direct requests to port 9100 can make the printer print HTTP headers.
+ * The printer IP is intentionally left out of the message.
+ * @param {Object} printer - Entry from printerConnections
+ */
+function warnDirectPrinter(printer) {
+  if (isLocalServer(printer.ip, printer.port) || directWarnedPrinters.has(printer.name)) {
+    return;
+  }
+  directWarnedPrinters.add(printer.name);
+
+  const title = 'Direct printer connection';
+  const message = `Printing directly to ${printer.name} may print network details on the receipt. Use the local print server instead.`;
+
+  if (typeof showWarningToast === 'function') {
+    showWarningToast(title, message);
+  } else {
+    console.warn(`${title}: ${message}`);
+  }
 }
 
 /* ===== UNIFIED PRINTING FUNCTIONS ===== */
@@ -636,34 +635,6 @@ async function printToBothPrinters(escposData) {
     printer1: { success: false, error: null },
     printer2: { success: false, error: null }
   };
-
-  // Special case: when both printers route through the SAME local print
-  // server (localhost:3000), that server already fans the job out to BOTH
-  // physical printers on a single /print call. Sending one request per
-  // printer would make each printer print twice. So send just ONE request.
-  const p1 = printerConnections.printer1;
-  const p2 = printerConnections.printer2;
-  const usesLocalServer = (p) =>
-    p.type === 'wifi' &&
-    (p.ip === 'localhost' || p.ip === '127.0.0.1' || p.port === 3000);
-
-  if (
-    usesLocalServer(p1) &&
-    usesLocalServer(p2) &&
-    p1.ip === p2.ip &&
-    p1.port === p2.port
-  ) {
-    try {
-      // A single call to printer1 hits the local server, which prints to both.
-      await printToUnifiedPrinter('printer1', escposData);
-      results.printer1 = { success: true, printer: p1.name, type: 'wifi' };
-      results.printer2 = { success: true, printer: p2.name, type: 'wifi' };
-    } catch (error) {
-      results.printer1 = { success: false, error: error.message };
-      results.printer2 = { success: false, error: error.message };
-    }
-    return results;
-  }
 
   const promises = [];
   

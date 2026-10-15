@@ -4,8 +4,14 @@
   "description": "Local print server for Possiflow thermal printer - bypasses CORS restrictions",
   "main": "print-server.js",
   "scripts": {
+    "build": "esbuild map3d/boot.ts map3d/app.tsx --bundle --splitting --format=esm --platform=browser --minify --target=es2020 --jsx=automatic --outdir=dist/live-map --entry-names=[name] --chunk-names=chunks/[name]-[hash] --metafile=dist/live-map/meta.json && node scripts/check-bundle-size.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:live-map": "node --test \"test/live-map/**/*.test.ts\"",
     "start": "node print-server.js",
-    "dev": "nodemon print-server.js"
+    "dev": "nodemon print-server.js",
+    "test": "node --test test/dual-printer.test.js",
+    "test-deployment": "node --test test/deployment-verification.test.js",
+    "test-all": "node --test test/*.test.js test/deployment-verification.test.js"
   },
   "keywords": [
     "possiflow",
@@ -16,10 +22,20 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
     "cors": "^2.8.6",
-    "express": "^4.22.3"
+    "esbuild": "0.25.11",
+    "express": "^4.22.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "three": "^0.186.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
+    "nodemon": "^3.0.1",
+    "typescript": "7.0.2"
   }
 }

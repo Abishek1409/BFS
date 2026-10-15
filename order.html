@@ -359,8 +359,12 @@
     <div class="confirm-icon">&#x2705;</div>
     <div class="confirm-title">Order placed!</div>
     <div class="confirm-msg" id="confirmMsg">Table — your order is with the kitchen. You can close this tab now.</div>
+    <div class="confirm-msg" id="confirmOrderNo" style="margin-top:12px;font-weight:800;color:var(--accent-light)"></div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script>
     /* ===== STATE ===== */
     let menuData = null;
@@ -368,6 +372,46 @@
     let currentItem = null;
     let currentQty = 1;
     let tableNum = '';
+    let ordersRef = null;
+
+    const MENU_CATEGORIES = [
+      { name: 'Juices', items: [
+        { id: 1, name: 'Badham Milk', emoji: '🥛', price: 30 },
+        { id: 2, name: 'Rose Milk', emoji: '🌸', price: 30 },
+        { id: 3, name: 'Nannari Sarbath', emoji: '🌿', price: 30 },
+        { id: 4, name: 'Lemon Juice', emoji: '🍋', price: 30 },
+        { id: 5, name: 'Lemon Soda', emoji: '🍋', price: 30 },
+        { id: 6, name: 'Sweet Lemon Soda', emoji: '🍋', price: 40 },
+        { id: 7, name: 'Musk Melon Juice', emoji: '🍈', price: 40 },
+        { id: 8, name: 'Watermelon Juice', emoji: '🍉', price: 40 },
+        { id: 9, name: 'Grape Juice', emoji: '🍇', price: 60 },
+        { id: 10, name: 'Fig Juice', emoji: '🫐', price: 60 },
+        { id: 11, name: 'Dates Juice', emoji: '🟤', price: 60 },
+        { id: 12, name: 'Red Banana Juice', emoji: '🍌', price: 60 },
+        { id: 13, name: 'Dragon Fruit Juice', emoji: '🐉', price: 70 },
+        { id: 14, name: 'Pineapple Juice', emoji: '🍍', price: 70 },
+        { id: 15, name: 'Pomegranate Juice', emoji: '❤️', price: 80 },
+        { id: 16, name: 'Avocado Juice', emoji: '🥑', price: 80 },
+        { id: 17, name: 'Kiwi Juice', emoji: '🥝', price: 80 },
+        { id: 18, name: 'Fig + Dates Juice', emoji: '🫐', price: 80 },
+        { id: 19, name: 'Mappilai Juice', emoji: '💪', price: 100 }
+      ] },
+      { name: 'Shakes', items: [
+        { id: 20, name: 'Vanilla Milkshake', emoji: '🍦', price: 60 },
+        { id: 21, name: 'Chocolate Milkshake', emoji: '🍫', price: 80 },
+        { id: 22, name: 'Strawberry Milkshake', emoji: '🍓', price: 70 },
+        { id: 23, name: 'Oreo Milkshake', emoji: '🍪', price: 90 },
+        { id: 24, name: 'Dairy Milk', emoji: '🍫', price: 100 },
+        { id: 25, name: 'Kit Kat Milkshake', emoji: '🍫', price: 100 },
+        { id: 26, name: 'Magnum Milkshake', emoji: '🍦', price: 150 }
+      ] },
+      { name: 'Snacks', items: [
+        { id: 27, name: 'Veg Puffs', emoji: '🥐', price: 25 },
+        { id: 28, name: 'Egg Puffs', emoji: '🥚', price: 25 },
+        { id: 29, name: 'Mushroom Puffs', emoji: '🍄', price: 30 },
+        { id: 30, name: 'Chicken Puffs', emoji: '🍗', price: 30 }
+      ] }
+    ];
 
     /* ===== INIT ===== */
     (function init() {
@@ -377,25 +421,26 @@
       if (!tableNum) {
         document.getElementById('tableBadge').textContent = 'Table —';
       }
+      if (window.firebaseConfig && window.firebase) {
+        try {
+          if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
+          ordersRef = firebase.database().ref('orders');
+        } catch (error) {
+          console.error('Could not initialize Firebase orders:', error);
+        }
+      }
       loadMenu();
     })();
 
-    async function loadMenu() {
-      try {
-        const res = await fetch('/api/menu');
-        if (!res.ok) throw new Error('Failed to load menu');
-        menuData = await res.json();
-        renderCategories();
-        renderMenu('All');
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('appHeader').style.display = 'flex';
-        document.getElementById('catScroll').style.display = 'flex';
-        document.getElementById('menuWrap').style.display = 'block';
-        animateMenuItems();
-      } catch (e) {
-        document.getElementById('loadingScreen').innerHTML =
-          '<div class="confirm-msg" style="color:var(--danger)">Could not load menu. Please check your connection and refresh.</div>';
-      }
+    function loadMenu() {
+      menuData = { categories: MENU_CATEGORIES };
+      renderCategories();
+      renderMenu('All');
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('appHeader').style.display = 'flex';
+      document.getElementById('catScroll').style.display = 'flex';
+      document.getElementById('menuWrap').style.display = 'block';
+      animateMenuItems();
     }
 
     /* ===== CATEGORIES ===== */
@@ -531,9 +576,14 @@
         uid: Date.now() + Math.random(),
         name: currentItem.name + spec,
         baseName: currentItem.name,
+        emoji: currentItem.emoji || '',
         price: unitPrice,
         qty: currentQty,
         total: unitPrice * currentQty,
+        ice: ice || '',
+        sugar: sugar || '',
+        size: size || '',
+        note: note || '',
         spec: parts.join(', ')
       });
 
@@ -595,15 +645,28 @@
     /* ===== CONFIRM ORDER ===== */
     async function confirmOrder() {
       if (!cart.length) return;
+      if (!ordersRef) {
+        alert('Ordering is temporarily unavailable. Please ask staff for help.');
+        return;
+      }
       const btn = document.getElementById('confirmBtn');
       btn.disabled = true;
       btn.textContent = 'Sending…';
 
+      const orderRef = ordersRef.push();
+      const orderNo = 'QR-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 5).toUpperCase();
+      const total = cart.reduce((sum, item) => sum + item.total, 0);
+
       const payload = {
+        orderNo: orderNo,
         table: String(tableNum),
+        total: total,
+        createdAt: Date.now(),
+        status: 'pending',
         items: cart.map(i => ({
           name: i.name,
           baseName: i.baseName,
+          emoji: i.emoji,
           price: i.price,
           qty: i.qty,
           ice: i.ice,
@@ -616,29 +679,21 @@
       };
 
       try {
-        const res = await fetch('/api/order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error('Server error');
-        const data = await res.json();
-        showConfirmation();
+        await orderRef.set(payload);
+        showConfirmation(orderNo);
       } catch (e) {
-        alert('Could not place order. Please check your WiFi and try again.');
+        console.error('Could not place QR order:', e);
+        alert('Could not place order. Check your connection or ask staff for help.');
         btn.disabled = false;
         btn.textContent = 'Confirm Order';
       }
     }
 
-    function showConfirmation() {
+    function showConfirmation(orderNo) {
       document.getElementById('confirmMsg').innerHTML =
-        'Table <strong>' + escapeHtml(tableNum) + '</strong> — your order is with the kitchen. You can close this tab now.';
+        'Table <strong>' + escapeHtml(tableNum) + '</strong> — your order is with the kitchen.';
+      document.getElementById('confirmOrderNo').textContent = 'Order number: ' + orderNo;
       document.getElementById('confirmScreen').style.display = 'flex';
-      // Note: browsers only allow scripts to auto-close tabs they opened themselves.
-      // This will silently do nothing on a tab opened by scanning a QR code —
-      // the on-screen message is the real fallback, not the auto-close.
-      setTimeout(() => { try { window.close(); } catch(e){} }, 1000);
     }
   </script>
 </body>
