@@ -131,11 +131,8 @@ try {
 
 try {
   window.BFSLiveMap = { open, close };
-  // Reopen the last View_Mode after billing has painted (Req 12.5).
-  if (readViewMode() !== 'closed') {
-    const idle = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 200));
-    idle(() => { void open(readViewMode()); });
-  }
+  // The billing/menu page always loads first; the map opens only from the Live Map button.
+  // The last View_Mode is still remembered and used when the button is clicked.
 } catch (err) {
   log('boot failed', err);
 }

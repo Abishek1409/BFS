@@ -6797,7 +6797,7 @@
       "format": "esm"
     },
     "map3d/boot.ts": {
-      "bytes": 5187,
+      "bytes": 5109,
       "imports": [
         {
           "path": "map3d/lib/firebase.ts",
@@ -6847,10 +6847,10 @@
           "bytesInOutput": 1886
         },
         "map3d/boot.ts": {
-          "bytesInOutput": 2149
+          "bytesInOutput": 2066
         }
       },
-      "bytes": 4221
+      "bytes": 4138
     },
     "dist/live-map/app.js": {
       "imports": [
