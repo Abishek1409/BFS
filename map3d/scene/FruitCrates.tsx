@@ -28,7 +28,7 @@ export function FruitCrates({ position }: { position: [number, number, number] }
         {crates.map((c, i) => <Instance key={i} position={[c.x, CRATE.h / 2, c.z]} color={m.wood.color} />)}
       </Instances>
       <Instances limit={fruit.length} material={m.instanced}>
-        <icosahedronGeometry args={[0.075, 0]} />
+        <icosahedronGeometry args={[0.075, 2]} />
         {fruit.map((f, i) => <Instance key={i} position={[f.x, CRATE.h + 0.04, f.z]} color={f.color} />)}
       </Instances>
     </group>

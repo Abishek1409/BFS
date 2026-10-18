@@ -15,7 +15,7 @@ export function SelectionRing({ radius, reduced }: { radius: number; reduced: bo
 
   return (
     <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} material={material}>
-      <torusGeometry args={[radius, 0.05, 6, 32]} />
+      <torusGeometry args={[radius, 0.05, 16, 64]} />
     </mesh>
   );
 }

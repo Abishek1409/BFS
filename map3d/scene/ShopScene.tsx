@@ -1,8 +1,10 @@
 // Map_Scene entry, loaded through React.lazy as its own chunk.
-// Full-viewport Canvas (Req 3.3) with DPR capped at 1.5 (Req 17.1), flat-shaded theme
-// materials (Req 3.4), camera rig, frame governor and the shop contents.
+// Full-viewport Canvas (Req 3.3) with DPR capped at 1.5 (Req 17.1), PBR materials with an
+// environment map, soft shadows and ACES tone mapping, camera rig, frame governor and contents.
+// The canvas is transparent so the CSS gradient backdrop on .lm-stage shows through.
 import { Canvas } from '@react-three/fiber';
 import { useEffect, useMemo, type RefObject } from 'react';
+import { ACESFilmicToneMapping } from 'three';
 import { useLiveStore } from '../hooks/useLiveStore.ts';
 import { useReducedMotion } from '../hooks/useReducedMotion.ts';
 import { useTabVisible } from '../hooks/useTabVisible.ts';
@@ -13,9 +15,11 @@ import type { LiveSnapshot, ViewMode } from '../lib/types.ts';
 import { BillingCounter } from './BillingCounter.tsx';
 import { CameraRig, START_POSITION } from './CameraRig.tsx';
 import { Chairs } from './Chairs.tsx';
+import { Decor } from './Decor.tsx';
 import { Floor } from './Floor.tsx';
 import { FrameGovernor } from './FrameGovernor.tsx';
 import { JuiceStation } from './JuiceStation.tsx';
+import { Lighting } from './Lighting.tsx';
 import { createMaterials, disposeMaterials, MaterialsContext } from './materials.ts';
 import { SnackCounter } from './SnackCounter.tsx';
 import { StaffFigure } from './StaffFigure.tsx';
@@ -51,6 +55,7 @@ function ShopContents({ store, reduced }: { store: LiveStore; reduced: boolean }
     <>
       <Floor />
       <Walls />
+      <Decor />
       <Chairs />
       <BillingCounter />
       <JuiceStation pouring={preparing} reduced={reduced} />
@@ -78,14 +83,13 @@ export default function ShopScene({ store, view, resetRef }: ShopSceneProps) {
   return (
     <Canvas
       dpr={[1, 1.5]}
-      flat
-      gl={{ antialias: true, powerPreference: 'low-power' }}
+      shadows="soft"
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
       camera={{ fov: 35, position: [...START_POSITION], near: 0.1, far: 100 }}
       aria-label="3D map of the shop"
     >
-      <color attach="background" args={[theme.bg]} />
-      <hemisphereLight args={[theme.text, theme.bg, 1.1]} />
-      <directionalLight position={[6, 12, 8]} intensity={1.6} color={theme.gold} />
+      <fog attach="fog" args={['#140d0a', 24, 46]} />
+      <Lighting />
       <FrameGovernor view={view} visible={visible} />
       <CameraRig view={view} reduced={reduced} resetRef={resetRef} />
       <MaterialsContext.Provider value={materials}>

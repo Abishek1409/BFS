@@ -23,7 +23,7 @@ export function OrderPulse({ at, radius }: { at: number; radius: number }) {
 
   return (
     <mesh ref={ref} position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} material={material} visible={false}>
-      <ringGeometry args={[radius * 0.9, radius, 32]} />
+      <ringGeometry args={[radius * 0.9, radius, 64]} />
     </mesh>
   );
 }

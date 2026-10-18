@@ -29,10 +29,10 @@ export function JuicePour({ top, bottom, glassH, reduced }: JuicePourProps) {
   return (
     <group>
       <mesh ref={stream} position={[0, bottom + len / 2, 0]} material={m.juice}>
-        <cylinderGeometry args={[0.015, 0.02, len, 6]} />
+        <cylinderGeometry args={[0.015, 0.02, len, 12]} />
       </mesh>
       <mesh ref={fill} material={m.juice}>
-        <cylinderGeometry args={[0.062, 0.05, glassH, 8]} />
+        <cylinderGeometry args={[0.062, 0.05, glassH, 32]} />
       </mesh>
     </group>
   );

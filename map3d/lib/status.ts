@@ -5,12 +5,12 @@ import type { ProgressRecord, Stage, TableRecord, TableStatus, TableView } from 
 export interface StatusMeta { label: string; color: string; cssVar: string; }
 
 export const STATUS_META: Record<TableStatus, StatusMeta> = {
-  free:           { label: 'Free',           color: '#3a3530', cssVar: '--lm-free' },
-  occupied:       { label: 'Occupied',       color: '#8c7a5b', cssVar: '--lm-occupied' },
-  order_placed:   { label: 'Order placed',   color: '#e8bd58', cssVar: '--lm-order-placed' },
-  preparing:      { label: 'Preparing',      color: '#d98a3e', cssVar: '--lm-preparing' },
-  ready_to_serve: { label: 'Ready to serve', color: '#6fbf73', cssVar: '--lm-ready' },
-  needs_bill:     { label: 'Needs bill',     color: '#d96b55', cssVar: '--lm-needs-bill' },
+  free:           { label: 'Free',           color: '#5fd3c6', cssVar: '--lm-free' },
+  occupied:       { label: 'Occupied',       color: '#9b7bff', cssVar: '--lm-occupied' },
+  order_placed:   { label: 'Order placed',   color: '#ffc93c', cssVar: '--lm-order-placed' },
+  preparing:      { label: 'Preparing',      color: '#ff8a2b', cssVar: '--lm-preparing' },
+  ready_to_serve: { label: 'Ready to serve', color: '#4ade80', cssVar: '--lm-ready' },
+  needs_bill:     { label: 'Needs bill',     color: '#ff4d6d', cssVar: '--lm-needs-bill' },
 };
 
 export const STATUS_ORDER: readonly TableStatus[] = [

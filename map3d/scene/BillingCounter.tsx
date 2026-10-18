@@ -8,12 +8,12 @@ export function BillingCounter() {
     <CounterBase slot={counterSlot('billing')}>
       {/* till screen on a stand, tilted toward the owner (behind the counter, +z) */}
       <mesh position={[-0.5, 0.12, 0]} material={m.metal}>
-        <cylinderGeometry args={[0.04, 0.06, 0.24, 6]} />
+        <cylinderGeometry args={[0.04, 0.06, 0.24, 16]} />
       </mesh>
       <mesh position={[-0.5, 0.36, 0]} rotation={[-0.3, 0, 0]} material={m.woodDark}>
         <boxGeometry args={[0.55, 0.36, 0.04]} />
       </mesh>
-      <mesh position={[-0.5, 0.36, 0.022]} rotation={[-0.3, 0, 0]} material={m.trim}>
+      <mesh position={[-0.5, 0.36, 0.022]} rotation={[-0.3, 0, 0]} material={m.screen}>
         <boxGeometry args={[0.48, 0.29, 0.005]} />
       </mesh>
       {/* receipt printer */}

@@ -30,7 +30,7 @@ export function Steam({ position, reduced }: { position: [number, number, number
 
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, PUFFS]} position={position} material={m.steam} frustumCulled={false}>
-      <icosahedronGeometry args={[1, 0]} />
+      <icosahedronGeometry args={[1, 2]} />
     </instancedMesh>
   );
 }

@@ -55,7 +55,7 @@ function receiptText(bytes) {
 
 test('customer receipt includes all populated bill and item fields', () => {
   const text = receiptText(generateCustomerReceipt(completeBill));
-  for (const expected of ['B-1042', 'Asha Customer', '02-Oct-2026', '14:35', 'Mango Shake', 'Large', 'Less thick', 'Rs.75.00', 'Rs.150.00', 'GRAND TOTAL']) {
+  for (const expected of ['B-1042', 'Asha Customer', '02-Oct-2026', '14:35', 'Mango Shake', 'Large', 'Less thick', 'Rs.75.00', 'Rs.150.00', 'TOTAL: Rs.150.00']) {
     assert.ok(text.includes(expected), `customer receipt missing ${expected}`);
   }
 });
@@ -195,9 +195,17 @@ test('customer receipt columns stay within 48 characters and line up', () => {
   assert.ok(header.slice(0, priceEnd).endsWith('PRICE') && row.slice(0, priceEnd).endsWith('Rs.1250.00'));
   assert.ok(header.endsWith('TOTAL') && row.endsWith('Rs.2500.00'));
 
-  const subtotal = lines.find(l => l.text.includes('SUBTOTAL')).text;
-  assert.equal(subtotal.length, PAPER_WIDTH_80MM);
-  assert.ok(subtotal.endsWith('Rs.2500.00'));
+  // One total only, no subtotal or grand total
+  const totals = lines.filter(l => l.text.includes('TOTAL:'));
+  assert.equal(totals.length, 1);
+  assert.equal(totals[0].text.trim(), 'TOTAL: Rs.2500.00');
+  assert.equal(totals[0].text.length, PAPER_WIDTH_80MM);
+  const text = lines.map(l => l.text).join('\n');
+  assert.ok(!text.includes('SUBTOTAL') && !text.includes('GRAND TOTAL'));
+  // Total is double height only, not double width
+  const doc = Buffer.from(generateCustomerReceipt(bill));
+  assert.ok(doc.includes(bytesOf(CMD.FONT_TALL, [...Buffer.from(' ')])));
+  assert.ok(!doc.includes(bytesOf(CMD.FONT_LARGE, [...Buffer.from('TOTAL')])));
 });
 
 test('customer receipt emphasises the title initials, both emphasise the bill number', () => {
@@ -352,14 +360,15 @@ test('kitchen ticket drops the shop title, customer receipt keeps it', () => {
   assert.ok(customer.includes('ruits') && customer.includes('Fresh Juices'));
 });
 
-test('kitchen items print large and fill the full paper width', () => {
+test('kitchen items print medium (double height) and fill the full paper width', () => {
   const { KITCHEN_LARGE_COLS } = require('../escpos-receipt');
   const doc = Buffer.from(generateKitchenTicket(completeBill));
   const lines = decodeLines(doc);
   const row = lines.find(l => l.text.startsWith('Mango Shake'));
   assert.ok(row.enlarged, 'item row is not enlarged');
   const width = KITCHEN_LARGE_COLS.NAME + KITCHEN_LARGE_COLS.QTY + KITCHEN_LARGE_COLS.PREF;
-  assert.equal(width * 2, PAPER_WIDTH_80MM);
+  assert.equal(width, PAPER_WIDTH_80MM);
+  assert.ok(doc.includes(bytesOf(CMD.FONT_TALL, [...Buffer.from('Mango Shake')])), 'item row not double height');
   assert.equal(row.text.length, width);
   assert.ok(row.text.trimEnd().endsWith('I'), 'pref symbol not at the right edge');
   const header = lines.find(l => l.text.startsWith('ITEM')).text;

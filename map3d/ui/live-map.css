@@ -2,12 +2,12 @@
 
 .lm-root {
   --lm-panel: rgba(1, 1, 1, 0.62);
-  --lm-free: #3a3530;
-  --lm-occupied: #8c7a5b;
-  --lm-order-placed: var(--accent-cta, #e8bd58);
-  --lm-preparing: #d98a3e;
-  --lm-ready: #6fbf73;
-  --lm-needs-bill: var(--accent-2, #d96b55);
+  --lm-free: #5fd3c6;
+  --lm-occupied: #9b7bff;
+  --lm-order-placed: #ffc93c;
+  --lm-preparing: #ff8a2b;
+  --lm-ready: #4ade80;
+  --lm-needs-bill: #ff4d6d;
   --lm-gap: 12px;
   position: fixed;
   inset: 0;
@@ -21,7 +21,13 @@
 .lm-root *, .lm-root *::before, .lm-root *::after { box-sizing: border-box; }
 
 /* Map_Scene layer fills the viewport behind the HUD (Req 3.3). */
-.lm-stage { position: absolute; inset: 0; transition: filter .3s ease; }
+.lm-stage {
+  position: absolute; inset: 0; transition: filter .3s ease;
+  /* warm spotlight backdrop behind the transparent canvas */
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, #3a2418 0%, #1c120d 45%, #0a0706 100%),
+    #0a0706;
+}
 .lm-stage canvas { display: block; }
 
 /* HUD grid: panels take pointer events, gaps let input through to the scene. */

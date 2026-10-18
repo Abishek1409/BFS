@@ -23,10 +23,10 @@ export function SnackCounter({ reduced }: { reduced: boolean }) {
       </group>
       {/* warmer pot with lid */}
       <mesh position={[POT_X, POT_H / 2, 0]} material={m.metal}>
-        <cylinderGeometry args={[0.22, 0.2, POT_H, 8]} />
+        <cylinderGeometry args={[0.22, 0.2, POT_H, 32]} />
       </mesh>
       <mesh position={[POT_X, POT_H + 0.02, 0]} material={m.trim}>
-        <cylinderGeometry args={[0.23, 0.23, 0.04, 8]} />
+        <cylinderGeometry args={[0.23, 0.23, 0.04, 32]} />
       </mesh>
       <Steam position={[POT_X, POT_H + 0.08, 0]} reduced={reduced} />
     </CounterBase>

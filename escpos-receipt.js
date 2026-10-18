@@ -17,6 +17,7 @@ const CMD = {
   DOUBLE_STRIKE_ON: [ESC, 0x47, 0x01],  // Double-strike on (darker print)
   DOUBLE_STRIKE_OFF: [ESC, 0x47, 0x00], // Double-strike off
   FONT_LARGE: [GS, 0x21, 0x11],         // Double width and height
+  FONT_TALL: [GS, 0x21, 0x01],          // Double height, normal width (medium)
   FONT_XLARGE: [GS, 0x21, 0x22],        // Triple width and height
   FONT_NORMAL: [GS, 0x21, 0x00],        // Normal font
   FONT_A: [ESC, 0x4D, 0x00],            // Standard 12x24 font (48 columns on 80mm)
@@ -286,8 +287,8 @@ function buildBillNumber(billNo) {
 const DINE_IN = 'Dine In';
 const TAKE_AWAY = 'Take Away';
 
-// Kitchen ticket layout: 2x size characters, 24 per line on 80mm paper
-const KITCHEN_LARGE_COLS = { NAME: 16, QTY: 4, PREF: 4 };
+// Kitchen ticket items: double height, normal width (medium), 48 per line on 80mm paper
+const KITCHEN_LARGE_COLS = { NAME: 34, QTY: 7, PREF: 7 };
 const KITCHEN_LEFT_MARGIN_0 = [GS, 0x4C, 0x00, 0x00];    // GS L: left margin 0
 const KITCHEN_PRINT_WIDTH_576 = [GS, 0x57, 0x40, 0x02];  // GS W: 576 dots (72mm)
 
@@ -417,11 +418,10 @@ function generateKitchenTicket(billData) {
   addLF();
   
   // === ITEMS TABLE ===
-  // Items print at double width + height, so each large character takes
-  // two normal columns. The header uses the same split to line up.
+  // Items print at double height only, so columns match the normal-width header.
   const { NAME, QTY, PREF } = KITCHEN_LARGE_COLS;
   addBytes(CMD.BOLD_ON);
-  addText(padText('ITEM', NAME * 2) + padText('QTY', QTY * 2, 'right') + padText('PREF', PREF * 2, 'right'));
+  addText(padText('ITEM', NAME) + padText('QTY', QTY, 'right') + padText('PREF', PREF, 'right'));
   addLF();
   addBytes(CMD.BOLD_OFF);
   addText(createLine('-'));
@@ -435,7 +435,7 @@ function generateKitchenTicket(billData) {
     const qty = item.qty.toString();
     const prefSymbol = getPreferenceSymbol(item);
     
-    addBytes(CMD.BOLD_ON, CMD.FONT_LARGE);
+    addBytes(CMD.BOLD_ON, CMD.FONT_TALL);
     nameLines.forEach((line, index) => {
       const row = index === 0
         ? padText(line, NAME) + padText(qty, QTY, 'right') + padText(prefSymbol, PREF, 'right')
@@ -568,29 +568,12 @@ function generateCustomerReceipt(billData) {
   addText(createLine('-'));
   addLF();
   
-  // Subtotal
-  const subtotalLabel = 'SUBTOTAL:';
-  const subtotalValue = formatCurrencyValue(billData.subtotal || billData.grandTotal);
-  const subtotalLine = padText(subtotalLabel + ' ' + subtotalValue, PAPER_WIDTH_80MM, 'right');
-  addText(subtotalLine);
+  // Single total: bold, double height only (normal width), so it stays on one 48-column line
+  const total = billData.grandTotal ?? billData.subtotal ?? 0;
+  addBytes(CMD.BOLD_ON, CMD.FONT_TALL);
+  addText(padText('TOTAL: ' + formatCurrencyValue(total), PAPER_WIDTH_80MM, 'right'));
   addLF();
-  
-  addText(createLine('='));
-  addLF();
-  
-  // Grand Total (emphasized)
-  addBytes(CMD.BOLD_ON);
-  addBytes(CMD.FONT_LARGE);
-  const grandTotalLabel = 'GRAND TOTAL:';
-  const grandTotalValue = formatCurrencyValue(billData.grandTotal);
-  addBytes(CMD.ALIGN_RIGHT);
-  addText(grandTotalLabel);
-  addLF();
-  addText(grandTotalValue);
-  addLF();
-  addBytes(CMD.FONT_NORMAL);
-  addBytes(CMD.BOLD_OFF);
-  addBytes(CMD.ALIGN_LEFT);
+  addBytes(CMD.FONT_NORMAL, CMD.BOLD_OFF);
   
   addText(createLine('='));
   addLF();
