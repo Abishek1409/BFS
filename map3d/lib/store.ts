@@ -28,6 +28,14 @@ type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null;
 const log = (msg: string, err: unknown) => console.error('[live-map]', msg, err);
 
+/** RTDB compat errors carry `code: 'PERMISSION_DENIED'` or a `permission_denied` message. */
+export function isPermissionDenied(err: unknown): boolean {
+  if (!isObj(err)) return false;
+  const code = String(err.code ?? '').toUpperCase();
+  const msg = String(err.message ?? '').toLowerCase();
+  return code.includes('PERMISSION_DENIED') || msg.includes('permission_denied') || msg.includes('permission denied');
+}
+
 interface BillHistoryApi { getBillRecordsByDateRange(start: string, end: string): Promise<unknown[]>; }
 
 function asBill(v: unknown): BillRecord | null {
@@ -154,12 +162,17 @@ export function createLiveStore(db: Database | null, now: () => number = Date.no
   const tableOf = (orderId: string) => progress.get(orderId)?.table ?? '';
   const fail = (table: string, err: unknown) => {
     if (err) log(`write failed for table ${table}`, err);
-    addEvents([errorEvent(table, `Couldn't update Table ${table || '?'}. Try again`, now())]);
+    const text = !db
+      ? 'Offline: Firebase is not configured'
+      : isPermissionDenied(err)
+        ? 'Firebase rules block liveMap/. Publish the Live Map rules'
+        : `Couldn't update Table ${table || '?'}. Try again`;
+    addEvents([errorEvent(table, text, now())]);
     schedule();
   };
 
-  function listen(ref: Reference, event: EventType, cb: SnapshotCb): void {
-    ref.on(event, cb, err => log(`listener ${event} failed`, err));
+  function listen(ref: Reference, event: EventType, cb: SnapshotCb, onCancel?: (err: Error) => void): void {
+    ref.on(event, cb, err => { log(`listener ${event} failed`, err); onCancel?.(err); });
     subs.push(() => ref.off(event, cb));
   }
 
@@ -191,8 +204,13 @@ export function createLiveStore(db: Database | null, now: () => number = Date.no
   // --- Firebase subscriptions (Req 15.1–15.3) ---
   if (db) {
     try {
-      listen(db.ref(PATHS.progress), 'value', onProgress);
-      listen(db.ref(PATHS.tables), 'value', onTables);
+      // A denied read must not leave the map stuck loading: fall back to defaults.
+      const unblock = (which: 'progress' | 'tables') => () => {
+        if (which === 'progress') progressReady = true; else tablesReady = true;
+        schedule();
+      };
+      listen(db.ref(PATHS.progress), 'value', onProgress, unblock('progress'));
+      listen(db.ref(PATHS.tables), 'value', onTables, unblock('tables'));
       listen(db.ref(PATHS.connected), 'value', snap => { connected = snap.val() === true; schedule(); });
       db.ref(PATHS.history(historyDate(today))).once('value').then(snap => {
         for (const [id, p] of parseRecords(snap.val())) if (!history.has(id)) history.set(id, p);

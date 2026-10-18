@@ -1,30 +1,24 @@
-// Floor as instanced 1×1 tiles in a two-tone checker (Req 3.1, 17.2).
-import { Instance, Instances } from '@react-three/drei/core/Instances.js';
-import { useMemo } from 'react';
+// Wooden plank floor with a rug under the dining area (Req 3.1). Receives shadows.
 import { SHOP_LAYOUT } from '../lib/layout.ts';
 import { useMaterials } from './materials.ts';
 
-const TILE_H = 0.1;
+const FLOOR_H = 0.1;
 
 export function Floor() {
   const m = useMaterials();
   const { width, depth } = SHOP_LAYOUT.floor;
-  const tiles = useMemo(() => {
-    const out: { x: number; z: number; even: boolean }[] = [];
-    for (let i = 0; i < width; i++) {
-      for (let j = 0; j < depth; j++) {
-        out.push({ x: -width / 2 + i + 0.5, z: -depth / 2 + j + 0.5, even: (i + j) % 2 === 0 });
-      }
-    }
-    return out;
-  }, [width, depth]);
-
   return (
-    <Instances limit={tiles.length} material={m.instanced} receiveShadow={false}>
-      <boxGeometry args={[0.98, TILE_H, 0.98]} />
-      {tiles.map((t, i) => (
-        <Instance key={i} position={[t.x, -TILE_H / 2, t.z]} color={t.even ? m.floorA : m.floorB} />
-      ))}
-    </Instances>
+    <group>
+      <mesh position={[0, -FLOOR_H / 2, 0]} material={m.floor} receiveShadow>
+        <boxGeometry args={[width, FLOOR_H, depth]} />
+      </mesh>
+      {/* rug covering both table rows, with a gold border underneath */}
+      <mesh position={[0, 0.004, 0.3]} rotation={[-Math.PI / 2, 0, 0]} material={m.trim} receiveShadow>
+        <planeGeometry args={[11.4, 5.8]} />
+      </mesh>
+      <mesh position={[0, 0.008, 0.3]} rotation={[-Math.PI / 2, 0, 0]} material={m.rug} receiveShadow>
+        <planeGeometry args={[11.1, 5.5]} />
+      </mesh>
+    </group>
   );
 }

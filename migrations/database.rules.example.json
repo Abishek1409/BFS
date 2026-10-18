@@ -3,6 +3,8 @@
     ".read": true,
     ".write": true,
     "liveMap": {
+      ".read": true,
+      ".write": true,
       "schemaVersion": { ".validate": "newData.isNumber()" },
       "tables": {
         "$table": {
