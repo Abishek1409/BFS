@@ -206,6 +206,13 @@
     .menu-card[data-cat="Shakes"] .item-cat-badge { background: #D24D88; }
     .menu-card[data-cat="Snacks"] .item-cat-badge { background: #F4A72A; color: #2B2B23; }
     .menu-card[data-cat="Specials"] .item-cat-badge { background: #7C4D9C; }
+    .menu-card.out-of-stock { opacity: .6; }
+    .menu-card.out-of-stock.visible { opacity: .6; }
+    .out-of-stock-label {
+      position: absolute; top: 8px; left: 8px; z-index: 2;
+      background: #B3261E; color: #fff; font-size: .72rem; font-weight: 800;
+      border-radius: 12px; padding: 6px 8px;
+    }
 
 
     .overlay {
@@ -224,6 +231,13 @@
       animation: fadeIn .15s ease;
     }
     .overlay.show { display: flex; }
+    .hist-btn[hidden] { display: none; }
+    .form-row input[type="password"] {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 8px 12px; font-size: .9rem; font-family: inherit;
+      color: var(--text); background: rgba(1, 37, 28, 0.82); outline: none;
+    }
+    .admin-login-error { min-height: 1.2em; color: #FF8A80; font-size: .85rem; font-weight: 600; margin-bottom: 10px; }
     @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
     .modal {
       background: rgba(12, 10, 7, 0.9); 
@@ -624,6 +638,32 @@
     .hist-amount { color: var(--accent); font-weight: 700; }
     .hist-empty { text-align: center; color: var(--muted); padding: 40px; }
 
+    /* === Admin_Panel drawer === */
+    .hist-drawer.admin-drawer { width: 820px; right: -860px; }
+    .hist-drawer.admin-drawer.open { right: 0; }
+    .ap-body { flex: 1; overflow-y: auto; }
+    .ap-section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .ap-section h4 { font-size: .9rem; color: var(--text); margin-bottom: 10px; }
+    .ap-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+    .ap-form label { display: flex; flex-direction: column; gap: 4px; font-size: .75rem; color: var(--muted); font-weight: 600; }
+    .ap-form label.ap-check { flex-direction: row; align-items: center; padding-bottom: 8px; }
+    .ap-body input[type="text"], .ap-body input[type="number"] {
+      border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 8px;
+      font-size: .82rem; font-family: inherit; color: var(--text); background: var(--bg); outline: none;
+    }
+    .ap-body input:focus { border-color: var(--accent); }
+    .ap-num { width: 76px; }
+    .ap-err { min-height: 1em; color: #FF8A80; font-size: .78rem; font-weight: 600; margin-top: 6px; }
+    .ap-ok { color: var(--accent); }
+    .ap-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .ap-small-btn {
+      background: var(--card2); color: var(--accent); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 8px; font-size: .75rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .ap-small-btn:hover { background: var(--accent); color: #fff; }
+    .ap-low { background: #b71c1c; color: #fff; border-radius: 99px; padding: 2px 8px; font-size: .7rem; font-weight: 700; }
+    .ap-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
@@ -759,9 +799,29 @@
   </div>
   <div class="bill-badge" id="headerBillNo">Bill #001</div>
   <button class="hist-btn" onclick="window.BFSLiveMap && window.BFSLiveMap.open()">🗺️ Live Map</button>
-  <button class="hist-btn" onclick="openHistDrawer()">&#x1F4DC; History</button>
-  <button class="hist-btn" onclick="openRptDrawer()">📊 Reports</button>
+  <!-- Protected controls stay hidden until the stored JWT is validated (Req 1.3, 3.1) -->
+  <button class="hist-btn" id="histBtn" data-admin-only hidden onclick="openHistDrawer()">&#x1F4DC; History</button>
+  <button class="hist-btn" id="rptBtn" data-admin-only hidden onclick="openRptDrawer()">📊 Reports</button>
+  <button class="hist-btn" id="adminPanelBtn" data-admin-only hidden onclick="openAdminPanel()">🛠️ Admin Panel</button>
+  <button class="hist-btn" id="adminLogoutBtn" data-admin-only hidden onclick="adminLogout()">🚪 Logout</button>
+  <button class="hist-btn" id="adminLoginBtn" onclick="showAdminLogin()">🔐 Admin</button>
 </header>
+
+<!-- ADMIN LOGIN MODAL (Req 2.1, 2.4, 2.5) -->
+<div class="overlay" id="adminLoginOverlay" onclick="if (event.target === this) closeAdminLogin()">
+  <form class="modal" id="adminLoginForm" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle" onsubmit="submitAdminLogin(event)">
+    <h3 id="adminLoginTitle">🔐 Admin Login</h3>
+    <div class="form-row">
+      <label for="adminPassword">Password</label>
+      <input type="password" id="adminPassword" autocomplete="current-password" required />
+    </div>
+    <p class="admin-login-error" id="adminLoginError" role="alert" aria-live="assertive"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeAdminLogin()">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="adminLoginSubmit">Login</button>
+    </div>
+  </form>
+</div>
 
 <!-- HISTORY BACKDROP + DRAWER -->
 <div class="hist-backdrop" id="histBackdrop" onclick="closeHistDrawer()"></div>
@@ -1108,11 +1168,53 @@
   </div>
 </div>
 
+<!-- ADMIN PANEL DRAWER (Req 4-8) -->
+<div class="hist-backdrop" id="adminBackdrop" onclick="closeAdminPanel()"></div>
+<div class="hist-drawer admin-drawer" id="adminDrawer" role="dialog" aria-modal="true" aria-labelledby="adminPanelTitle">
+  <div class="hist-head">
+    <span id="adminPanelTitle">🛠️ Admin Panel</span>
+    <button class="hist-close" onclick="closeAdminPanel()" aria-label="Close admin panel">&#x2715;</button>
+  </div>
+  <div class="ap-body">
+    <div class="ap-section ap-cell">
+      <button class="hist-dl-btn" onclick="apOpen(showHistDrawer)">&#x1F4DC; History</button>
+      <button class="hist-dl-btn" onclick="apOpen(showRptDrawer)">📊 Reports</button>
+      <button class="hist-dl-btn" onclick="apExport()">&#x2B07; Export inventory</button>
+      <label class="hist-dl-btn" for="apImportFile" tabindex="0" role="button"
+             onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">&#x2B06; Import inventory</label>
+      <input type="file" id="apImportFile" class="ap-file" accept="application/json,.json" onchange="apImport(this)" />
+      <span class="ap-err" id="apFileMsg" role="status" aria-live="polite"></span>
+    </div>
+
+    <div class="ap-section">
+      <h4>➕ New item</h4>
+      <form class="ap-form" id="apNewForm" onsubmit="apAddItem(event)">
+        <label>Name <input type="text" id="apNewName" maxlength="60" required /></label>
+        <label>Emoji <input type="text" id="apNewEmoji" maxlength="8" style="width:60px" /></label>
+        <label>Price <input type="number" id="apNewPrice" class="ap-num" min="1" max="100000" step="any" required /></label>
+        <label>Category <input type="text" id="apNewCat" list="apCatList" maxlength="30" required style="width:110px" /></label>
+        <datalist id="apCatList"></datalist>
+        <label class="ap-check"><input type="checkbox" id="apNewIce" checked /> Ice</label>
+        <label class="ap-check"><input type="checkbox" id="apNewSugar" checked /> Sugar</label>
+        <button type="submit" class="hist-dl-btn">Add item</button>
+      </form>
+      <p class="ap-err" id="apNewErr" role="alert" aria-live="assertive"></p>
+    </div>
+
+    <table class="hist-table">
+      <thead><tr><th>Item</th><th>Category</th><th>Price (₹)</th><th>Available</th><th>Stock</th></tr></thead>
+      <tbody id="apTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
+<script src="inventory.js"></script>
+<script src="adminAuth.js"></script>
 <script src="unified-printer-comm.js"></script>
 <script src="escpos-receipt.js"></script>
 <script>
@@ -1123,7 +1225,8 @@ if (!window.firebaseConfig) {
 }
 
 /* ===== MENU DATA ===== */
-const MENU = [
+// Built-in seed for the Inventory on first run (Req 8.1). Live menu comes from Inventory.
+const DEFAULT_MENU = [
   // FRESH JUICES
   { id:1,  name:"Badham Milk",         emoji:"🥛", price:30,  cat:"Juices",  specs:["ice","sugar"] },
   { id:2,  name:"Rose Milk",           emoji:"🌸", price:30,  cat:"Juices",  specs:["ice","sugar"] },
@@ -2159,8 +2262,8 @@ function init() {
   // Load printer character set preference
   loadPrinterCharacterSetPreference();
   
-  buildCategoryTabs();
-  renderMenuGrid("All");
+  initMenuFromInventory();
+  initAdminAuthUI();
   renderQueue();
   connectOrderServer();
 }
@@ -2186,23 +2289,63 @@ if (document.readyState === 'loading') {
 }
 
 /* ===== MENU ===== */
+// Live menu items, rebuilt from Inventory.getAvailable() (Req 6.5, 8.2)
+let menuItems = [];
+let activeMenuCat = "All";
+
+function escMenu(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, ch =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+function refreshMenuItems() {
+  menuItems = window.Inventory ? window.Inventory.getAvailable() : DEFAULT_MENU.slice();
+}
+
+function initMenuFromInventory() {
+  if (window.Inventory) {
+    // Re-render menu whenever prices, items, availability, or stock change (Req 5.2)
+    window.Inventory.onChange(() => {
+      refreshMenuItems();
+      buildCategoryTabs();
+      renderMenuGrid(activeMenuCat);
+    });
+    window.Inventory.load(DEFAULT_MENU); // seeds on first run and fires onChange
+  } else {
+    console.warn('inventory.js not loaded; using built-in menu');
+    refreshMenuItems();
+    buildCategoryTabs();
+    renderMenuGrid(activeMenuCat);
+  }
+}
+
 function buildCategoryTabs() {
-  const cats = ["All", ...new Set(MENU.map(i => i.cat))];
+  const cats = ["All", ...new Set(menuItems.map(i => i.cat))];
+  if (!cats.includes(activeMenuCat)) activeMenuCat = "All";
   const icons = { All: '🍽️', Juices: '🍹', Shakes: '🥤', Snacks: '🍿' };
   document.getElementById('catTabs').innerHTML = cats.map(c =>
-    `<button class="cat-tab ${c==='All'?'active':''}" onclick="filterCat(this,'${c}')">${icons[c] ? icons[c] + ' ' : ''}${c}</button>`
+    `<button class="cat-tab ${c===activeMenuCat?'active':''}" data-cat="${escMenu(c)}" onclick="filterCat(this, this.dataset.cat)">${icons[c] ? icons[c] + ' ' : ''}${escMenu(c)}</button>`
   ).join('');
 }
 
+function isMenuItemOutOfStock(item) {
+  return !!(item.stock && item.stock.tracked && item.stock.qty === 0);
+}
+
 function renderMenuGrid(cat) {
-  const items = cat === "All" ? MENU : MENU.filter(i => i.cat === cat);
-  document.getElementById('menuGrid').innerHTML = items.map(item => `
-    <div class="menu-card" id="menuCard-${item.id}" data-cat="${item.cat}" onclick="openModal(${item.id})">
-      <span class="emoji">${item.emoji}</span>
-      <div class="item-name">${item.name}</div>
+  activeMenuCat = cat;
+  const items = cat === "All" ? menuItems : menuItems.filter(i => i.cat === cat);
+  document.getElementById('menuGrid').innerHTML = items.map(item => {
+    const out = isMenuItemOutOfStock(item); // Req 7.5
+    return `
+    <div class="menu-card${out ? ' out-of-stock' : ''}" id="menuCard-${item.id}" data-cat="${escMenu(item.cat)}" onclick="openModal(${item.id})">
+      ${out ? '<div class="out-of-stock-label">Out of stock</div>' : ''}
+      <span class="emoji">${escMenu(item.emoji)}</span>
+      <div class="item-name">${escMenu(item.name)}</div>
       <div class="item-price">&#x20B9;${item.price}</div>
-      <div class="item-cat-badge">${item.cat}</div>
-    </div>`).join('');
+      <div class="item-cat-badge">${escMenu(item.cat)}</div>
+    </div>`;
+  }).join('');
   animateMenuItems();
 }
 
@@ -2220,7 +2363,8 @@ function filterCat(btn, cat) {
 
 /* ===== MODAL ===== */
 function openModal(id) {
-  currentItem = MENU.find(i => i.id === id);
+  // Lookup from live Inventory so new prices apply to new bills (Req 5.4)
+  currentItem = menuItems.find(i => i.id === id);
   if (!currentItem) return;
   document.getElementById('modalItemName').textContent  = currentItem.emoji + ' ' + currentItem.name;
   document.getElementById('modalItemPrice').textContent = '&#x20B9;' + currentItem.price + ' each';
@@ -2228,7 +2372,7 @@ function openModal(id) {
   document.getElementById('modalQty').value  = 1;
   document.getElementById('modalNote').value = '';
 
-  const s = currentItem.specs;
+  const s = currentItem.specs || [];
   document.getElementById('iceRow').style.display   = s.includes('ice')   ? '' : 'none';
   document.getElementById('sugarRow').style.display = s.includes('sugar') ? '' : 'none';
   document.getElementById('sizeRow').style.display  = s.includes('size')  ? '' : 'none';
@@ -2391,8 +2535,299 @@ function updateHeaderBill(val) {
   document.getElementById('headerBillNo').textContent = 'Bill #' + (val || '---');
 }
 
+/* ===== ADMIN AUTH UI ===== */
+let adminLockTimer = null;
+let adminPendingAction = null; // runs after a successful login (e.g. open History)
+
+function setAdminControls(active) {
+  document.querySelectorAll('[data-admin-only]').forEach(el => { el.hidden = !active; });
+  document.getElementById('adminLoginBtn').hidden = active;
+  if (!active) {
+    // Close protected views when the session ends (Req 3.3, 3.4)
+    closeHistDrawer();
+    closeRptDrawer();
+    if (typeof closeAdminPanel === 'function') closeAdminPanel();
+  }
+}
+
+function initAdminAuthUI() {
+  setAdminControls(false);
+  if (!window.AdminAuth) { console.warn('adminAuth.js not loaded; admin features disabled'); return; }
+  AdminAuth.onChange(setAdminControls);
+  AdminAuth.setLoginPrompt(showAdminLogin);
+  // Validate stored token with the server before showing protected controls (Req 3.1)
+  AdminAuth.validate().then(setAdminControls);
+}
+
+function showAdminLogin(onGranted) {
+  adminPendingAction = typeof onGranted === 'function' ? onGranted : null;
+  const err = document.getElementById('adminLoginError');
+  const pw = document.getElementById('adminPassword');
+  err.textContent = '';
+  pw.value = '';
+  document.getElementById('adminLoginOverlay').classList.add('show');
+  updateAdminLockout();
+  if (!pw.disabled) pw.focus();
+}
+
+function closeAdminLogin() {
+  document.getElementById('adminLoginOverlay').classList.remove('show');
+  if (adminLockTimer) { clearInterval(adminLockTimer); adminLockTimer = null; }
+  adminPendingAction = null;
+}
+
+/** Disables the form and shows a countdown while locked out (Req 2.5). */
+function updateAdminLockout() {
+  const ms = window.AdminAuth ? AdminAuth.lockedForMs() : 0;
+  const pw = document.getElementById('adminPassword');
+  const btn = document.getElementById('adminLoginSubmit');
+  const err = document.getElementById('adminLoginError');
+  const locked = ms > 0;
+  pw.disabled = locked;
+  btn.disabled = locked;
+  if (locked) {
+    const s = Math.ceil(ms / 1000);
+    err.textContent = `Too many attempts. Try again in ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    if (!adminLockTimer) adminLockTimer = setInterval(updateAdminLockout, 1000);
+  } else if (adminLockTimer) {
+    clearInterval(adminLockTimer);
+    adminLockTimer = null;
+    err.textContent = '';
+    pw.focus();
+  }
+}
+
+function submitAdminLogin(e) {
+  e.preventDefault();
+  if (!window.AdminAuth) return;
+  const pw = document.getElementById('adminPassword');
+  const btn = document.getElementById('adminLoginSubmit');
+  const err = document.getElementById('adminLoginError');
+  btn.disabled = true;
+  err.textContent = '';
+  AdminAuth.login(pw.value).then(res => {
+    btn.disabled = false;
+    if (res.ok) {
+      const next = adminPendingAction;
+      closeAdminLogin();
+      // Open the requested view, or the Admin_Panel by default (Req 2.3)
+      (next || openAdminPanel)();
+      return;
+    }
+    pw.value = '';
+    err.textContent = res.error || 'Login failed'; // "Incorrect password" (Req 2.4)
+    if (res.lockedForMs) updateAdminLockout();
+  });
+}
+
+function adminLogout() {
+  if (window.AdminAuth) AdminAuth.logout(); // fires onChange -> hides controls (Req 3.4)
+  setAdminControls(false);
+}
+
+/** Gate helper: runs fn only with a valid session, else shows login (Req 3.2, 4.3). */
+function withAdmin(fn) {
+  if (!window.AdminAuth) return;
+  AdminAuth.requireAdmin(fn);
+}
+
+function openAdminPanel() {
+  withAdmin(showAdminPanelDrawer);
+}
+
+/* ===== ADMIN PANEL DRAWER ===== */
+let apListenerBound = false;
+
+function showAdminPanelDrawer() {
+  if (!window.Inventory) { showToast({ type: 'error', title: 'Inventory unavailable', message: 'inventory.js not loaded' }); return; }
+  if (!apListenerBound) {
+    // Keep the table in sync with any Inventory change while open
+    Inventory.onChange(() => { if (document.getElementById('adminDrawer').classList.contains('open')) renderAdminPanel(); });
+    apListenerBound = true;
+  }
+  document.getElementById('apFileMsg').textContent = '';
+  document.getElementById('apNewErr').textContent = '';
+  renderAdminPanel();
+  document.getElementById('adminDrawer').classList.add('open');
+  document.getElementById('adminBackdrop').classList.add('open');
+}
+
+function closeAdminPanel() {
+  const d = document.getElementById('adminDrawer');
+  if (!d) return;
+  d.classList.remove('open');
+  document.getElementById('adminBackdrop').classList.remove('open');
+}
+
+/** Opens History/Reports from the panel (Req 4.1, 4.2). */
+function apOpen(showFn) {
+  withAdmin(() => { closeAdminPanel(); showFn(); });
+}
+
+/** Re-validates the session before every admin save (Req 3.2). */
+function apGuard(action) {
+  withAdmin(action);
+}
+
+function apEl(tag, props, children) {
+  const el = document.createElement(tag);
+  const { ariaLabel, ...rest } = props || {};
+  Object.assign(el, rest);
+  if (ariaLabel) el.setAttribute('aria-label', ariaLabel);
+  (children || []).forEach(c => el.append(c));
+  return el;
+}
+
+function apNumInput(value, label, min) {
+  return apEl('input', { type: 'number', className: 'ap-num', value: String(value), min: String(min), step: '1', ariaLabel: label });
+}
+
+function renderAdminPanel() {
+  const items = Inventory.getAll();
+  const body = document.getElementById('apTableBody');
+  body.replaceChildren();
+
+  // Category suggestions for the new item form
+  const cats = [...new Set(items.map(i => i.cat).filter(Boolean))];
+  document.getElementById('apCatList').replaceChildren(...cats.map(c => apEl('option', { value: c })));
+
+  if (!items.length) {
+    body.append(apEl('tr', {}, [apEl('td', { colSpan: 5, className: 'hist-empty', textContent: 'No items' })]));
+    return;
+  }
+  items.forEach(item => body.append(apRow(item)));
+}
+
+function apRow(item) {
+  const err = apEl('div', { className: 'ap-err', role: 'alert' });
+  const show = res => { err.textContent = res.ok ? '' : res.error; return res.ok; };
+
+  // Name (Req 5.1)
+  const nameCell = apEl('td', {}, [`${item.emoji || ''} ${item.name}`.trim()]);
+
+  // Price edit (Req 5.2, 5.3)
+  const priceIn = apEl('input', { type: 'number', className: 'ap-num', value: String(item.price), min: '1', max: '100000', step: 'any', ariaLabel: `Price for ${item.name}` });
+  const priceBtn = apEl('button', { type: 'button', className: 'ap-small-btn', textContent: 'Save' });
+  const savePrice = () => apGuard(() => show(Inventory.updatePrice(item.id, priceIn.value)));
+  priceBtn.onclick = savePrice;
+  priceIn.onkeydown = e => { if (e.key === 'Enter') savePrice(); };
+  const priceCell = apEl('td', {}, [apEl('div', { className: 'ap-cell' }, [priceIn, priceBtn]), err]);
+
+  // Availability (Req 6.4)
+  const avail = apEl('input', { type: 'checkbox', checked: item.available, ariaLabel: `${item.name} available` });
+  avail.onchange = () => {
+    const want = avail.checked;
+    avail.checked = !want; // revert until the save succeeds
+    apGuard(() => show(Inventory.setAvailable(item.id, want)));
+  };
+
+  return apEl('tr', {}, [
+    nameCell,
+    apEl('td', { textContent: item.cat }),
+    priceCell,
+    apEl('td', {}, [avail]),
+    apEl('td', {}, apStockCell(item))
+  ]);
+}
+
+/** Stock tracking, qty, threshold, restock, and low-stock flag (Req 7.1, 7.2, 7.4). */
+function apStockCell(item) {
+  const err = apEl('div', { className: 'ap-err', role: 'alert' });
+  const show = res => { err.textContent = res.ok ? '' : res.error; return res.ok; };
+  const wrap = apEl('div', { className: 'ap-cell' });
+  const track = apEl('input', { type: 'checkbox', checked: item.stock.tracked, ariaLabel: `Track stock for ${item.name}` });
+  const trackLbl = apEl('label', { className: 'ap-cell' }, [track, 'Track']);
+  wrap.append(trackLbl);
+
+  if (!item.stock.tracked) {
+    track.onchange = () => {
+      track.checked = false;
+      apGuard(() => show(Inventory.setTracking(item.id, true)));
+    };
+    return [wrap, err];
+  }
+
+  track.onchange = () => {
+    track.checked = true;
+    apGuard(() => show(Inventory.setTracking(item.id, false)));
+  };
+
+  const qty = apNumInput(item.stock.qty, `Stock quantity for ${item.name}`, 0);
+  const low = apNumInput(item.stock.lowAt, `Low-stock threshold for ${item.name}`, 0);
+  const setBtn = apEl('button', { type: 'button', className: 'ap-small-btn', textContent: 'Set' });
+  setBtn.onclick = () => apGuard(() => show(Inventory.setTracking(item.id, true, qty.value, low.value)));
+
+  const add = apEl('input', { type: 'number', className: 'ap-num', min: '1', step: '1', placeholder: '+qty', ariaLabel: `Restock amount for ${item.name}` });
+  const addBtn = apEl('button', { type: 'button', className: 'ap-small-btn', textContent: 'Restock' });
+  addBtn.onclick = () => apGuard(() => show(Inventory.restock(item.id, add.value)));
+
+  wrap.append(
+    apEl('label', { className: 'ap-cell' }, ['Qty', qty]),
+    apEl('label', { className: 'ap-cell' }, ['Low at', low]),
+    setBtn, add, addBtn
+  );
+  if (Inventory.isLowStock(item)) {
+    wrap.append(apEl('span', { className: 'ap-low', textContent: item.stock.qty === 0 ? 'Out of stock' : 'Low stock' }));
+  }
+  return [wrap, err];
+}
+
+/** New item form (Req 6.1, 6.2, 6.3). */
+function apAddItem(e) {
+  e.preventDefault();
+  const err = document.getElementById('apNewErr');
+  const val = id => document.getElementById(id).value;
+  const specs = [];
+  if (document.getElementById('apNewIce').checked) specs.push('ice');
+  if (document.getElementById('apNewSugar').checked) specs.push('sugar');
+  const fields = { name: val('apNewName'), emoji: val('apNewEmoji').trim(), price: val('apNewPrice'), cat: val('apNewCat'), specs };
+
+  apGuard(() => {
+    const res = Inventory.addItem(fields);
+    err.classList.toggle('ap-ok', res.ok);
+    if (!res.ok) { err.textContent = res.error; return; }
+    err.textContent = `Added "${res.item.name}" to ${res.item.cat}`;
+    ['apNewName', 'apNewEmoji', 'apNewPrice'].forEach(id => { document.getElementById(id).value = ''; });
+  });
+}
+
+/** Downloads the Inventory as JSON (Req 8.4). */
+function apExport() {
+  apGuard(() => {
+    const blob = new Blob([Inventory.exportJson()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = apEl('a', { href: url, download: `inventory-${new Date().toISOString().slice(0, 10)}.json` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+}
+
+/** Imports the Inventory from a JSON file (Req 8.4, 8.5). */
+function apImport(input) {
+  const file = input.files && input.files[0];
+  const msg = document.getElementById('apFileMsg');
+  input.value = ''; // allow re-selecting the same file
+  if (!file) return;
+  apGuard(() => {
+    file.text().then(text => {
+      const res = Inventory.importJson(text);
+      msg.classList.toggle('ap-ok', res.ok);
+      msg.textContent = res.ok ? `Imported ${res.count} items` : res.error; // "Invalid inventory file"
+    }, () => {
+      msg.classList.remove('ap-ok');
+      msg.textContent = 'Invalid inventory file';
+    });
+  });
+}
+
 /* ===== HISTORY DRAWER ===== */
 function openHistDrawer() {
+  withAdmin(showHistDrawer);
+}
+
+function showHistDrawer() {
   document.getElementById('histDrawer').classList.add('open');
   document.getElementById('histBackdrop').classList.add('open');
   loadHistory();
@@ -2782,6 +3217,16 @@ async function printBill() {
  * @param {string} formatType - Format type ('customer', 'kitchen', 'both')
  */
 function saveBillToHistory(billNo, amount, items, customer, formatType) {
+  // Save the record, then deduct tracked stock (Req 7.3). The saved record is not modified (Req 5.5).
+  function saveRecordAndDeduct() {
+    if (!window.BillHistory) return;
+    window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both')
+      .then(function() {
+        if (window.Inventory) window.Inventory.deductForBill(items);
+      })
+      .catch(function(err) { console.error('Bill save failed:', err); });
+  }
+
   if (activeQrOrderId) {
     var printedQrOrderId = activeQrOrderId;
     var printedQrOrder = orderQueue.find(function(o) { return o.serverId === printedQrOrderId; });
@@ -2796,19 +3241,13 @@ function saveBillToHistory(billNo, amount, items, customer, formatType) {
         });
     }
 
-    if (window.BillHistory) {
-      window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both')
-        .catch(function(err) { console.error('Bill save failed:', err); });
-    }
+    saveRecordAndDeduct();
 
     if (printedQrOrder) printedQrOrder.status = 'printed';
     activeQrOrderId = null;
     renderQueue();
   } else {
-    if (window.BillHistory) {
-      window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both')
-        .catch(function(err) { console.error('Bill save failed:', err); });
-    }
+    saveRecordAndDeduct();
     // Add manually printed bills to the local orders queue.
     addToQueue(billNo, customer, amount, items);
   }
@@ -3523,6 +3962,10 @@ function drawBar(items) {
 
 /* ===== REPORTS DRAWER ===== */
 function openRptDrawer() {
+  withAdmin(showRptDrawer);
+}
+
+function showRptDrawer() {
   var d = document.getElementById('rptDrawer');
   var b = document.getElementById('rptBackdrop');
   // make elements visible first

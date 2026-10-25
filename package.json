@@ -7,6 +7,7 @@
     "build": "esbuild map3d/boot.ts map3d/app.tsx --bundle --splitting --format=esm --platform=browser --minify --target=es2020 --jsx=automatic --outdir=dist/live-map --entry-names=[name] --chunk-names=chunks/[name]-[hash] --metafile=dist/live-map/meta.json && node scripts/check-bundle-size.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:live-map": "node --test \"test/live-map/**/*.test.ts\"",
+    "test:admin": "node --test test/admin-jwt.test.js test/inventory.test.js",
     "start": "node print-server.js",
     "dev": "nodemon print-server.js",
     "test": "node --test test/dual-printer.test.js",
