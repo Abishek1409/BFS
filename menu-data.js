@@ -7,7 +7,7 @@
   var S = ['sugar'];         // hot drinks
   var N = [];                // food
 
-  // [id, name, emoji, price, category, specs, image slug in assets/]
+  // [id, name, emoji, price, category, specs, icon slug -> assets/icons/<slug>.png]
   var ROWS = [
     // HOT
     [1,  'Tea',                     '🍵', 15,  'Hot', S, 'tea'],
@@ -100,7 +100,7 @@
   ];
 
   var MENU = ROWS.map(function (r) {
-    return { id: r[0], name: r[1], emoji: r[2], price: r[3], cat: r[4], specs: r[5].slice(), img: 'assets/' + r[6] + '.jpg' };
+    return { id: r[0], name: r[1], emoji: r[2], price: r[3], cat: r[4], specs: r[5].slice(), img: 'assets/icons/' + r[6] + '.png' };
   });
 
   var CAT_ICONS = {

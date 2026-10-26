@@ -156,7 +156,15 @@
 
       if (validateInventoryFile(parsed) && parsed.items.length) {
         var items = parsed.items.map(normalizeItem);
+        // Keep artwork paths current with the built-in menu; prices and stock stay as saved.
+        var seedImg = {};
+        (Array.isArray(seedMenu) ? seedMenu : []).forEach(function (s) { if (s && s.img) seedImg[s.id] = s.img; });
+        var imgChanged = false;
+        items.forEach(function (it) {
+          if (seedImg[it.id] && it.img !== seedImg[it.id]) { it.img = seedImg[it.id]; imgChanged = true; }
+        });
         state = { version: 1, nextId: Math.max(parsed.nextId, maxId(items) + 1), items: items };
+        if (imgChanged) persist();
       } else {
         var seed = Array.isArray(seedMenu) ? seedMenu : [];
         var seeded = seed.map(normalizeItem);

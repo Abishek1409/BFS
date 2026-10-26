@@ -213,11 +213,11 @@
     .menu-card[data-cat="Wraps"] .item-cat-badge,
     .menu-card[data-cat="Burgers"] .item-cat-badge { background: #C0392B; }
     .menu-card[data-cat="Fried Snacks"] .item-cat-badge { background: #7C4D9C; }
-    /* Item photo (falls back to emoji when the file is missing) */
+    /* Item icon: transparent PNG, falls back to emoji when the file is missing */
     .menu-card .item-photo {
       position: relative; z-index: 1; display: block;
-      width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
-      border-radius: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.05);
+      width: 72px; height: 72px; object-fit: contain; margin: 4px 0 8px;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
     }
     .menu-card.out-of-stock { opacity: .6; }
     .menu-card.out-of-stock.visible { opacity: .6; }
