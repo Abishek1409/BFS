@@ -202,10 +202,23 @@
       box-shadow: 0 6px 18px rgba(0,0,0,0.12);
     }
     /* Category badge colors (data-cat on menu-card) */
-    .menu-card[data-cat="Juices"] .item-cat-badge { background: var(--accent); }
-    .menu-card[data-cat="Shakes"] .item-cat-badge { background: #D24D88; }
-    .menu-card[data-cat="Snacks"] .item-cat-badge { background: #F4A72A; color: #2B2B23; }
-    .menu-card[data-cat="Specials"] .item-cat-badge { background: #7C4D9C; }
+    .menu-card[data-cat="Hot"] .item-cat-badge { background: #A0522D; }
+    .menu-card[data-cat="Cold"] .item-cat-badge { background: #2F7FB8; }
+    .menu-card[data-cat="Fresh Juices"] .item-cat-badge { background: var(--accent); }
+    .menu-card[data-cat="Mojito"] .item-cat-badge { background: #1E9E8A; }
+    .menu-card[data-cat="Milk Shakes"] .item-cat-badge { background: #D24D88; }
+    .menu-card[data-cat="Quick Bites"] .item-cat-badge,
+    .menu-card[data-cat="Fries"] .item-cat-badge,
+    .menu-card[data-cat="Sandwich"] .item-cat-badge { background: #F4A72A; color: #2B2B23; }
+    .menu-card[data-cat="Wraps"] .item-cat-badge,
+    .menu-card[data-cat="Burgers"] .item-cat-badge { background: #C0392B; }
+    .menu-card[data-cat="Fried Snacks"] .item-cat-badge { background: #7C4D9C; }
+    /* Item photo (falls back to emoji when the file is missing) */
+    .menu-card .item-photo {
+      position: relative; z-index: 1; display: block;
+      width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
+      border-radius: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.05);
+    }
     .menu-card.out-of-stock { opacity: .6; }
     .menu-card.out-of-stock.visible { opacity: .6; }
     .out-of-stock-label {
@@ -1213,6 +1226,7 @@
 <script src="firebase-config.js"></script>
 <script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
+<script src="menu-data.js"></script>
 <script src="inventory.js"></script>
 <script src="adminAuth.js"></script>
 <script src="unified-printer-comm.js"></script>
@@ -1226,41 +1240,9 @@ if (!window.firebaseConfig) {
 
 /* ===== MENU DATA ===== */
 // Built-in seed for the Inventory on first run (Req 8.1). Live menu comes from Inventory.
-const DEFAULT_MENU = [
-  // FRESH JUICES
-  { id:1,  name:"Badham Milk",         emoji:"🥛", price:30,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:2,  name:"Rose Milk",           emoji:"🌸", price:30,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:3,  name:"Nannari Sarbath",     emoji:"🌿", price:30,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:4,  name:"Lemon Juice",         emoji:"🍋", price:30,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:5,  name:"Lemon Soda",          emoji:"🍋", price:30,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:6,  name:"Sweet Lemon Soda",    emoji:"🍋", price:40,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:7,  name:"Musk Melon Juice",    emoji:"🍈", price:40,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:8,  name:"Watermelon Juice",    emoji:"🍉", price:40,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:9,  name:"Grape Juice",         emoji:"🍇", price:60,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:10, name:"Fig Juice",           emoji:"🫐", price:60,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:11, name:"Dates Juice",         emoji:"🟤", price:60,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:12, name:"Red Banana Juice",    emoji:"🍌", price:60,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:13, name:"Dragon Fruit Juice",  emoji:"🐉", price:70,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:14, name:"Pineapple Juice",     emoji:"🍍", price:70,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:15, name:"Pomegranate Juice",   emoji:"❤️", price:80,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:16, name:"Avocado Juice",       emoji:"🥑", price:80,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:17, name:"Kiwi Juice",          emoji:"🥝", price:80,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:18, name:"Fig + Dates Juice",   emoji:"🫐", price:80,  cat:"Juices",  specs:["ice","sugar"] },
-  { id:19, name:"Mappilai Juice",      emoji:"💪", price:100, cat:"Juices",  specs:["ice","sugar"] },
-  // MILKSHAKES
-  { id:20, name:"Vanilla Milkshake",   emoji:"🍦", price:60,  cat:"Shakes",  specs:["ice","sugar"] },
-  { id:21, name:"Chocolate Milkshake", emoji:"🍫", price:80,  cat:"Shakes",  specs:["ice","sugar"] },
-  { id:22, name:"Strawberry Milkshake",emoji:"🍓", price:70,  cat:"Shakes",  specs:["ice","sugar"] },
-  { id:23, name:"Oreo Milkshake",      emoji:"🍪", price:90,  cat:"Shakes",  specs:["ice","sugar"] },
-  { id:24, name:"Dairy Milk",          emoji:"🍫", price:100, cat:"Shakes",  specs:["ice","sugar"] },
-  { id:25, name:"Kit Kat Milkshake",   emoji:"🍫", price:100, cat:"Shakes",  specs:["ice","sugar"] },
-  { id:26, name:"Magnum Milkshake",    emoji:"🍦", price:150, cat:"Shakes",  specs:["ice","sugar"] },
-  // SNACKS
-  { id:27, name:"Veg Puffs",           emoji:"🥐", price:25,  cat:"Snacks",  specs:[] },
-  { id:28, name:"Egg Puffs",           emoji:"🥚", price:25,  cat:"Snacks",  specs:[] },
-  { id:29, name:"Mushroom Puffs",      emoji:"🍄", price:30,  cat:"Snacks",  specs:[] },
-  { id:30, name:"Chicken Puffs",       emoji:"🍗", price:30,  cat:"Snacks",  specs:[] },
-];
+// Items, prices, categories and photos live in menu-data.js (shared with order.html).
+const DEFAULT_MENU = (window.BFS_MENU || []).map(i => ({ ...i, specs: i.specs.slice() }));
+const CAT_ICONS = window.BFS_CAT_ICONS || { All: '🍽️' };
 
 /* ===== STATE ===== */
 let billItems   = [];
@@ -2322,7 +2304,7 @@ function initMenuFromInventory() {
 function buildCategoryTabs() {
   const cats = ["All", ...new Set(menuItems.map(i => i.cat))];
   if (!cats.includes(activeMenuCat)) activeMenuCat = "All";
-  const icons = { All: '🍽️', Juices: '🍹', Shakes: '🥤', Snacks: '🍿' };
+  const icons = CAT_ICONS;
   document.getElementById('catTabs').innerHTML = cats.map(c =>
     `<button class="cat-tab ${c===activeMenuCat?'active':''}" data-cat="${escMenu(c)}" onclick="filterCat(this, this.dataset.cat)">${icons[c] ? icons[c] + ' ' : ''}${escMenu(c)}</button>`
   ).join('');
@@ -2340,7 +2322,9 @@ function renderMenuGrid(cat) {
     return `
     <div class="menu-card${out ? ' out-of-stock' : ''}" id="menuCard-${item.id}" data-cat="${escMenu(item.cat)}" onclick="openModal(${item.id})">
       ${out ? '<div class="out-of-stock-label">Out of stock</div>' : ''}
-      <span class="emoji">${escMenu(item.emoji)}</span>
+      ${item.img
+        ? `<img class="item-photo" src="${escMenu(item.img)}" alt="" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji',textContent:this.dataset.emoji}))" data-emoji="${escMenu(item.emoji)}">`
+        : `<span class="emoji">${escMenu(item.emoji)}</span>`}
       <div class="item-name">${escMenu(item.name)}</div>
       <div class="item-price">&#x20B9;${item.price}</div>
       <div class="item-cat-badge">${escMenu(item.cat)}</div>

@@ -4,7 +4,8 @@
 (function (root) {
   'use strict';
 
-  var STORAGE_KEY = 'bfs_inventory_v1';
+  // v2: new BFS menu. Old v1 data is left in storage untouched.
+  var STORAGE_KEY = 'bfs_inventory_v2';
   var MIN_PRICE = 1;
   var MAX_PRICE = 100000;
   var PRICE_ERROR = 'Price must be between 1 and 100000';
@@ -39,6 +40,7 @@
       id: src.id,
       name: String(src.name).trim(),
       emoji: typeof src.emoji === 'string' ? src.emoji : '',
+      img: typeof src.img === 'string' ? src.img : '',
       price: src.price,
       cat: String(src.cat || ''),
       specs: Array.isArray(src.specs) ? src.specs.map(String) : [],
@@ -66,6 +68,7 @@
       if (names[key]) return false;
       if (!validPrice(it.price)) return false;
       if (typeof it.cat !== 'string') return false;
+      if (it.img !== undefined && typeof it.img !== 'string') return false;
       if (it.specs !== undefined && !Array.isArray(it.specs)) return false;
       if (it.stock !== undefined) {
         var s = it.stock;

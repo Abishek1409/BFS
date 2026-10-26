@@ -107,6 +107,7 @@
     }
     .menu-card:active { transform: scale(0.97); transition: transform 0.1s; }
     .menu-card .emoji { font-size: 1.8rem; line-height: 1; }
+    .menu-card .item-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; margin-bottom: 4px; }
     .menu-card .item-name { font-weight: 700; font-size: .85rem; color: var(--text); line-height: 1.2; }
     .menu-card .item-price { font-weight: 800; font-size: .95rem; color: var(--text); margin-top: 2px; }
 
@@ -372,6 +373,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="menu-data.js"></script>
   <script>
     /* ===== STATE ===== */
     let menuData = null;
@@ -381,44 +383,13 @@
     let tableNum = '';
     let ordersRef = null;
 
-    const MENU_CATEGORIES = [
-      { name: 'Juices', items: [
-        { id: 1, name: 'Badham Milk', emoji: '🥛', price: 30 },
-        { id: 2, name: 'Rose Milk', emoji: '🌸', price: 30 },
-        { id: 3, name: 'Nannari Sarbath', emoji: '🌿', price: 30 },
-        { id: 4, name: 'Lemon Juice', emoji: '🍋', price: 30 },
-        { id: 5, name: 'Lemon Soda', emoji: '🍋', price: 30 },
-        { id: 6, name: 'Sweet Lemon Soda', emoji: '🍋', price: 40 },
-        { id: 7, name: 'Musk Melon Juice', emoji: '🍈', price: 40 },
-        { id: 8, name: 'Watermelon Juice', emoji: '🍉', price: 40 },
-        { id: 9, name: 'Grape Juice', emoji: '🍇', price: 60 },
-        { id: 10, name: 'Fig Juice', emoji: '🫐', price: 60 },
-        { id: 11, name: 'Dates Juice', emoji: '🟤', price: 60 },
-        { id: 12, name: 'Red Banana Juice', emoji: '🍌', price: 60 },
-        { id: 13, name: 'Dragon Fruit Juice', emoji: '🐉', price: 70 },
-        { id: 14, name: 'Pineapple Juice', emoji: '🍍', price: 70 },
-        { id: 15, name: 'Pomegranate Juice', emoji: '❤️', price: 80 },
-        { id: 16, name: 'Avocado Juice', emoji: '🥑', price: 80 },
-        { id: 17, name: 'Kiwi Juice', emoji: '🥝', price: 80 },
-        { id: 18, name: 'Fig + Dates Juice', emoji: '🫐', price: 80 },
-        { id: 19, name: 'Mappilai Juice', emoji: '💪', price: 100 }
-      ] },
-      { name: 'Shakes', items: [
-        { id: 20, name: 'Vanilla Milkshake', emoji: '🍦', price: 60 },
-        { id: 21, name: 'Chocolate Milkshake', emoji: '🍫', price: 80 },
-        { id: 22, name: 'Strawberry Milkshake', emoji: '🍓', price: 70 },
-        { id: 23, name: 'Oreo Milkshake', emoji: '🍪', price: 90 },
-        { id: 24, name: 'Dairy Milk', emoji: '🍫', price: 100 },
-        { id: 25, name: 'Kit Kat Milkshake', emoji: '🍫', price: 100 },
-        { id: 26, name: 'Magnum Milkshake', emoji: '🍦', price: 150 }
-      ] },
-      { name: 'Snacks', items: [
-        { id: 27, name: 'Veg Puffs', emoji: '🥐', price: 25 },
-        { id: 28, name: 'Egg Puffs', emoji: '🥚', price: 25 },
-        { id: 29, name: 'Mushroom Puffs', emoji: '🍄', price: 30 },
-        { id: 30, name: 'Chicken Puffs', emoji: '🍗', price: 30 }
-      ] }
-    ];
+    // Shared with the billing page (menu-data.js), grouped by category in menu order.
+    const MENU_CATEGORIES = (window.BFS_MENU || []).reduce((acc, it) => {
+      let c = acc.find(x => x.name === it.cat);
+      if (!c) { c = { name: it.cat, items: [] }; acc.push(c); }
+      c.items.push(it);
+      return acc;
+    }, []);
 
     /* ===== INIT ===== */
     (function init() {
@@ -453,9 +424,9 @@
     /* ===== CATEGORIES ===== */
     function renderCategories() {
       const cats = ['All', ...new Set(menuData.categories.map(c => c.name))];
-      const icons = { All: '🍽️', Juices: '🍹', Shakes: '🥤', Snacks: '🍿', Specials: '⭐' };
+      const icons = window.BFS_CAT_ICONS || {};
       document.getElementById('catScroll').innerHTML = cats.map(c =>
-        `<button class="cat-tab ${c==='All'?'active':''}" onclick="filterCat(this,'${c}')">${icons[c]||''} ${c}</button>`
+        `<button class="cat-tab ${c==='All'?'active':''}" data-cat="${escapeHtml(c)}" onclick="filterCat(this, this.dataset.cat)">${icons[c]||''} ${escapeHtml(c)}</button>`
       ).join('');
     }
 
@@ -490,7 +461,8 @@
         html += `<div class="menu-grid">`;
         grouped[catName].forEach(item => {
           html += `
-            <div class="menu-card" onclick="openItemSheet(${item.id}, '${catName}')">
+            <div class="menu-card" onclick="openItemSheet(${item.id}, this.dataset.cat)" data-cat="${escapeHtml(catName)}">
+              ${item.img ? `<img class="item-photo" src="${escapeHtml(item.img)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
               <div class="item-name">${escapeHtml(item.name)}</div>
               <div class="item-price">&#x20B9;${item.price}</div>
             </div>`;
@@ -529,9 +501,10 @@
       document.getElementById('qtyNum').textContent = '1';
       document.getElementById('itemNote').value = '';
 
+      const specs = item.specs || [];
       const isJuice = /juice/i.test(catName);
-      document.getElementById('iceRow').style.display = isJuice ? '' : 'none';
-      document.getElementById('sugarRow').style.display = isJuice ? '' : 'none';
+      document.getElementById('iceRow').style.display = specs.includes('ice') ? '' : 'none';
+      document.getElementById('sugarRow').style.display = specs.includes('sugar') ? '' : 'none';
       document.getElementById('sizeRow').style.display = isJuice ? '' : 'none';
 
       ['iceGroup','sugarGroup','sizeGroup'].forEach(gid => {
