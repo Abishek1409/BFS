@@ -102,8 +102,9 @@
   // Item slug -> exact file name in assets/ (case-sensitive on Vercel).
   // Slugs not listed use '<slug>.jpg'. Items with no file show their emoji.
   var PHOTO_FILE = {
-    'tea': 'Tea.jpg',
-    'cardamom-tea': 'Tea.jpg', // shares the Tea photo
+    // git stores this file as lowercase tea.jpg; Vercel is case-sensitive.
+    'tea': 'tea.jpg',
+    'cardamom-tea': 'tea.jpg', // shares the Tea photo
     'black-tea': 'Black tea.jpeg',
     'black-coffee': 'black cofee.jpeg',
     'boost': 'boost.jpeg',
