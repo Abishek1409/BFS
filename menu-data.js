@@ -99,8 +99,35 @@
     [77, 'Fried Chicken Burger',    '🍔', 120, 'Burgers', N, 'fried-chicken-burger']
   ];
 
+  // Item slug -> exact file name in assets/ (case-sensitive on Vercel).
+  // Slugs not listed use '<slug>.jpg'. Items with no file show their emoji.
+  var PHOTO_FILE = {
+    'tea': 'Tea.jpg',
+    'cardamom-tea': 'Tea.jpg', // shares the Tea photo
+    'black-tea': 'Black tea.jpeg',
+    'black-coffee': 'black cofee.jpeg',
+    'boost': 'boost.jpeg',
+    'horlicks': 'Horlicks.jpeg',
+    'cold-coffee': 'cold coffee.jpg',
+    'milo': 'Cold milo.jpg',
+    'musk-melon-juice': 'Muskmelon.jpeg',
+    'blue-curacao-mojito': 'blue-curacao-mojito.avif',
+    'blueberry-mojito': 'blueberry-mojito.webp',
+    'veg-roll': 'veg roll.jpeg',
+    'chicken-loaded-fries': 'chicken loaded fries.jpeg',
+    'chicken-popcorn': 'Chicken popcorn.jpeg',
+    'veg-burger': 'Veg burger.jpeg',
+    'lemon-juice': 'lemon juice.jpg',
+    'lime-water': 'lime water.jpg',
+    'strawberry-mojito': 'Strawberry mojito.jpeg'
+  };
+
+  function imgFor(slug) {
+    return 'assets/' + (PHOTO_FILE[slug] || slug + '.jpg');
+  }
+
   var MENU = ROWS.map(function (r) {
-    return { id: r[0], name: r[1], emoji: r[2], price: r[3], cat: r[4], specs: r[5].slice(), img: 'assets/icons/' + r[6] + '.png' };
+    return { id: r[0], name: r[1], emoji: r[2], price: r[3], cat: r[4], specs: r[5].slice(), img: imgFor(r[6]) };
   });
 
   var CAT_ICONS = {

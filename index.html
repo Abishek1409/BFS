@@ -213,12 +213,14 @@
     .menu-card[data-cat="Wraps"] .item-cat-badge,
     .menu-card[data-cat="Burgers"] .item-cat-badge { background: #C0392B; }
     .menu-card[data-cat="Fried Snacks"] .item-cat-badge { background: #7C4D9C; }
-    /* Item icon: transparent PNG, falls back to emoji when the file is missing */
+    /* Item photo (falls back to emoji when the file is missing) */
     .menu-card .item-photo {
       position: relative; z-index: 1; display: block;
-      width: 72px; height: 72px; object-fit: contain; margin: 4px 0 8px;
-      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+      width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
+      border-radius: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.05);
     }
+    /* 3D icon fallback for items without a photo */
+    .menu-card .item-photo.is-icon { object-fit: contain; padding: 18%; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
     .menu-card.out-of-stock { opacity: .6; }
     .menu-card.out-of-stock.visible { opacity: .6; }
     .out-of-stock-label {
@@ -2323,7 +2325,7 @@ function renderMenuGrid(cat) {
     <div class="menu-card${out ? ' out-of-stock' : ''}" id="menuCard-${item.id}" data-cat="${escMenu(item.cat)}" onclick="openModal(${item.id})">
       ${out ? '<div class="out-of-stock-label">Out of stock</div>' : ''}
       ${item.img
-        ? `<img class="item-photo" src="${escMenu(item.img)}" alt="" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji',textContent:this.dataset.emoji}))" data-emoji="${escMenu(item.emoji)}">`
+        ? `<img class="item-photo${item.img.includes('/icons/') ? ' is-icon' : ''}" src="${escMenu(item.img)}" alt="" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji',textContent:this.dataset.emoji}))" data-emoji="${escMenu(item.emoji)}">`
         : `<span class="emoji">${escMenu(item.emoji)}</span>`}
       <div class="item-name">${escMenu(item.name)}</div>
       <div class="item-price">&#x20B9;${item.price}</div>
