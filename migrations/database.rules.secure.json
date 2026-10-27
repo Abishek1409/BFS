@@ -29,6 +29,14 @@
       }
     },
 
+    "menuStock": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",
+      "$itemId": {
+        ".validate": "$itemId.matches(/^[0-9]+$/) && newData.isBoolean() && newData.val() === false"
+      }
+    },
+
     "orderStatus": {
       ".read": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",
       ".write": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",

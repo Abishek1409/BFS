@@ -676,7 +676,9 @@
       border-radius: 6px; padding: 4px 8px; font-size: .75rem; font-weight: 700; cursor: pointer; font-family: inherit;
     }
     .ap-small-btn:hover { background: var(--accent); color: #fff; }
-    .ap-low { background: #b71c1c; color: #fff; border-radius: 99px; padding: 2px 8px; font-size: .7rem; font-weight: 700; }
+    .ap-stock-btn { border: 0; border-radius: 99px; padding: 6px 12px; font-size: .78rem; font-weight: 700; cursor: pointer; background: #1b5e20; color: #fff; min-width: 104px; }
+    .ap-stock-btn.is-out { background: #b71c1c; }
+    .ap-stock-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .ap-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 
     ::-webkit-scrollbar { width: 5px; }
@@ -2254,9 +2256,10 @@ function init() {
   renderQueue();
   if (window.ShopAuth && window.firebaseConfig) {
     setQrConnection('Shop sign-in needed', false);
-    ShopAuth.whenShop(function () { connectOrderServer(); });
+    ShopAuth.whenShop(function () { connectOrderServer(); startMenuStockSync(); });
   } else {
     connectOrderServer();
+    startMenuStockSync();
   }
 }
 
@@ -2321,7 +2324,23 @@ function buildCategoryTabs() {
 }
 
 function isMenuItemOutOfStock(item) {
-  return !!(item.stock && item.stock.tracked && item.stock.qty === 0);
+  return item.inStock === false;
+}
+
+/* Publishes out-of-stock item ids to Firebase (menuStock/{id}: false) so order.html can block them. */
+let menuStockSyncOn = false;
+function publishMenuStock() {
+  if (!menuStockSyncOn || !window.Inventory || !window.firebase || !firebase.apps.length) return;
+  const map = {};
+  Inventory.getAll().forEach(i => { if (i.inStock === false) map[i.id] = false; });
+  firebase.database().ref('menuStock').set(Object.keys(map).length ? map : null)
+    .catch(e => console.warn('Could not sync stock to QR page:', e));
+}
+function startMenuStockSync() {
+  if (menuStockSyncOn || !window.Inventory) return;
+  menuStockSyncOn = true;
+  Inventory.onChange(publishMenuStock);
+  publishMenuStock();
 }
 
 function renderMenuGrid(cat) {
@@ -2672,9 +2691,6 @@ function apEl(tag, props, children) {
   return el;
 }
 
-function apNumInput(value, label, min) {
-  return apEl('input', { type: 'number', className: 'ap-num', value: String(value), min: String(min), step: '1', ariaLabel: label });
-}
 
 function renderAdminPanel() {
   const items = Inventory.getAll();
@@ -2724,46 +2740,23 @@ function apRow(item) {
   ]);
 }
 
-/** Stock tracking, qty, threshold, restock, and low-stock flag (Req 7.1, 7.2, 7.4). */
+/** One-click In stock / Out of stock toggle. Also hides/blocks the item on the QR order page. */
 function apStockCell(item) {
   const err = apEl('div', { className: 'ap-err', role: 'alert' });
-  const show = res => { err.textContent = res.ok ? '' : res.error; return res.ok; };
-  const wrap = apEl('div', { className: 'ap-cell' });
-  const track = apEl('input', { type: 'checkbox', checked: item.stock.tracked, ariaLabel: `Track stock for ${item.name}` });
-  const trackLbl = apEl('label', { className: 'ap-cell' }, [track, 'Track']);
-  wrap.append(trackLbl);
-
-  if (!item.stock.tracked) {
-    track.onchange = () => {
-      track.checked = false;
-      apGuard(() => show(Inventory.setTracking(item.id, true)));
-    };
-    return [wrap, err];
-  }
-
-  track.onchange = () => {
-    track.checked = true;
-    apGuard(() => show(Inventory.setTracking(item.id, false)));
-  };
-
-  const qty = apNumInput(item.stock.qty, `Stock quantity for ${item.name}`, 0);
-  const low = apNumInput(item.stock.lowAt, `Low-stock threshold for ${item.name}`, 0);
-  const setBtn = apEl('button', { type: 'button', className: 'ap-small-btn', textContent: 'Set' });
-  setBtn.onclick = () => apGuard(() => show(Inventory.setTracking(item.id, true, qty.value, low.value)));
-
-  const add = apEl('input', { type: 'number', className: 'ap-num', min: '1', step: '1', placeholder: '+qty', ariaLabel: `Restock amount for ${item.name}` });
-  const addBtn = apEl('button', { type: 'button', className: 'ap-small-btn', textContent: 'Restock' });
-  addBtn.onclick = () => apGuard(() => show(Inventory.restock(item.id, add.value)));
-
-  wrap.append(
-    apEl('label', { className: 'ap-cell' }, ['Qty', qty]),
-    apEl('label', { className: 'ap-cell' }, ['Low at', low]),
-    setBtn, add, addBtn
-  );
-  if (Inventory.isLowStock(item)) {
-    wrap.append(apEl('span', { className: 'ap-low', textContent: item.stock.qty === 0 ? 'Out of stock' : 'Low stock' }));
-  }
-  return [wrap, err];
+  const out = item.inStock === false;
+  const btn = apEl('button', {
+    type: 'button',
+    className: out ? 'ap-stock-btn is-out' : 'ap-stock-btn',
+    textContent: out ? 'Out of stock' : 'In stock',
+    title: out ? 'Click to mark In stock' : 'Click to mark Out of stock',
+    ariaLabel: `${item.name}: ${out ? 'out of stock' : 'in stock'}. Click to change.`
+  });
+  btn.setAttribute('aria-pressed', String(out));
+  btn.onclick = () => apGuard(() => {
+    const res = Inventory.setInStock(item.id, out);
+    err.textContent = res.ok ? '' : res.error;
+  });
+  return [btn, err];
 }
 
 /** New item form (Req 6.1, 6.2, 6.3). */
@@ -3211,13 +3204,10 @@ async function printBill() {
  * @param {string} formatType - Format type ('customer', 'kitchen', 'both')
  */
 function saveBillToHistory(billNo, amount, items, customer, formatType) {
-  // Save the record, then deduct tracked stock (Req 7.3). The saved record is not modified (Req 5.5).
+  // Save the bill record (Req 5.5). Stock is a manual In/Out toggle, so nothing is deducted.
   function saveRecordAndDeduct() {
     if (!window.BillHistory) return;
     window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both')
-      .then(function() {
-        if (window.Inventory) window.Inventory.deductForBill(items);
-      })
       .catch(function(err) { console.error('Bill save failed:', err); });
   }
 

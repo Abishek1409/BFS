@@ -106,6 +106,13 @@
       opacity: 1; filter: blur(0px); transform: translateY(0) rotateX(0deg);
     }
     .menu-card:active { transform: scale(0.97); transition: transform 0.1s; }
+    .menu-card.out-of-stock, .menu-card.out-of-stock.visible { opacity: .5; cursor: not-allowed; filter: grayscale(.6); }
+    .menu-card.out-of-stock:active { transform: none; }
+    .out-of-stock-label {
+      position: absolute; top: 8px; left: 8px; z-index: 2;
+      background: #B3261E; color: #fff; font-size: .72rem; font-weight: 800;
+      border-radius: 12px; padding: 4px 8px;
+    }
     .menu-card .emoji { font-size: 1.8rem; line-height: 1; }
     .menu-card .item-photo { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px; margin-bottom: 4px; }
     .menu-card .item-photo.is-icon { object-fit: contain; padding: 18%; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.35)); }
@@ -385,6 +392,9 @@
     let currentQty = 1;
     let tableNum = '';
     let ordersRef = null;
+    let outOfStock = {}; // item id -> true, live from Firebase menuStock (set by admin)
+    let activeCat = 'All';
+    const isOut = item => !!outOfStock[item.id];
 
     // Shared with the billing page (menu-data.js), grouped by category in menu order.
     const MENU_CATEGORIES = (window.BFS_MENU || []).reduce((acc, it) => {
@@ -407,7 +417,15 @@
           if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
           ordersRef = firebase.database().ref('orders');
           // Invisible anonymous sign-in; secured rules need it to accept orders.
-          if (window.ShopAuth) ShopAuth.signInAnon().catch(e => console.warn('Anonymous sign-in failed:', e));
+          // Live out-of-stock list (needs auth); re-render when the admin flips an item.
+          const watchStock = () => firebase.database().ref('menuStock').on('value', snap => {
+            const val = snap.val() || {};
+            outOfStock = {};
+            Object.keys(val).forEach(id => { if (val[id] === false) outOfStock[id] = true; });
+            if (menuData) { renderMenu(activeCat); animateMenuItems(); }
+          }, e => console.warn('Could not load stock status:', e));
+          if (window.ShopAuth) ShopAuth.signInAnon().then(watchStock).catch(e => console.warn('Anonymous sign-in failed:', e));
+          else watchStock();
         } catch (error) {
           console.error('Could not initialize Firebase orders:', error);
         }
@@ -444,6 +462,7 @@
 
     /* ===== MENU RENDERING ===== */
     function renderMenu(cat) {
+      activeCat = cat;
       const wrap = document.getElementById('menuWrap');
       let items = [];
       if (cat === 'All') {
@@ -465,8 +484,10 @@
         html += `<div class="category-header">${catName}</div>`;
         html += `<div class="menu-grid">`;
         grouped[catName].forEach(item => {
+          const out = isOut(item);
           html += `
-            <div class="menu-card" onclick="openItemSheet(${item.id}, this.dataset.cat)" data-cat="${escapeHtml(catName)}">
+            <div class="menu-card${out ? ' out-of-stock' : ''}" ${out ? 'aria-disabled="true"' : `onclick="openItemSheet(${item.id}, this.dataset.cat)"`} data-cat="${escapeHtml(catName)}">
+              ${out ? '<div class="out-of-stock-label">Out of stock</div>' : ''}
               ${item.img ? `<img class="item-photo${item.img.includes('/icons/') ? ' is-icon' : ''}" src="${escapeHtml(item.img)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
               <div class="item-name">${escapeHtml(item.name)}</div>
               <div class="item-price">&#x20B9;${item.price}</div>
@@ -498,7 +519,7 @@
         const c = menuData.categories.find(x => x.name === catName);
         item = c && c.items.find(x => x.id === itemId);
       }
-      if (!item) return;
+      if (!item || isOut(item)) return;
       currentItem = item;
       currentQty = 1;
       document.getElementById('itemSheetTitle').textContent = item.name;
@@ -565,6 +586,7 @@
 
       cart.push({
         uid: Date.now() + Math.random(),
+        itemId: currentItem.id,
         name: currentItem.name + spec,
         baseName: currentItem.name,
         emoji: currentItem.emoji || '',
@@ -637,6 +659,15 @@
     /* ===== CONFIRM ORDER ===== */
     async function confirmOrder() {
       if (!cart.length) return;
+      // Item may have gone out of stock after it was added to the cart.
+      const gone = cart.filter(l => outOfStock[l.itemId]);
+      if (gone.length) {
+        cart = cart.filter(l => !outOfStock[l.itemId]);
+        updateCartBar();
+        renderCartSheet();
+        alert('Sorry, now out of stock and removed from your cart: ' + [...new Set(gone.map(l => l.baseName))].join(', '));
+        return;
+      }
       if (!ordersRef) {
         alert('Ordering is temporarily unavailable. Please ask staff for help.');
         return;

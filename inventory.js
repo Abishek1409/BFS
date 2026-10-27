@@ -13,8 +13,6 @@
 
   // --- Pure helpers ---
 
-  function isWholeNonNeg(n) { return typeof n === 'number' && Number.isInteger(n) && n >= 0; }
-
   function validPrice(p) {
     return typeof p === 'number' && isFinite(p) && p >= MIN_PRICE && p <= MAX_PRICE;
   }
@@ -24,18 +22,15 @@
     return Number(value);
   }
 
-  function toWhole(value) {
-    var n = Number(value);
-    return Number.isInteger(n) && n >= 0 ? n : null;
-  }
-
   function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
   function normName(name) { return String(name || '').trim().toLowerCase(); }
 
   /** Converts a seed/imported entry into a full Item. */
   function normalizeItem(src) {
-    var stock = src.stock || {};
+    // Old saves used stock.{tracked,qty}; treat tracked + qty 0 as out of stock.
+    var old = src.stock || {};
+    var inStock = typeof src.inStock === 'boolean' ? src.inStock : !(old.tracked === true && old.qty === 0);
     return {
       id: src.id,
       name: String(src.name).trim(),
@@ -45,11 +40,7 @@
       cat: String(src.cat || ''),
       specs: Array.isArray(src.specs) ? src.specs.map(String) : [],
       available: src.available !== false,
-      stock: {
-        tracked: stock.tracked === true,
-        qty: isWholeNonNeg(stock.qty) ? stock.qty : 0,
-        lowAt: isWholeNonNeg(stock.lowAt) ? stock.lowAt : 0
-      }
+      inStock: inStock
     };
   }
 
@@ -70,12 +61,7 @@
       if (typeof it.cat !== 'string') return false;
       if (it.img !== undefined && typeof it.img !== 'string') return false;
       if (it.specs !== undefined && !Array.isArray(it.specs)) return false;
-      if (it.stock !== undefined) {
-        var s = it.stock;
-        if (!s || typeof s !== 'object') return false;
-        if (s.qty !== undefined && !isWholeNonNeg(s.qty)) return false;
-        if (s.lowAt !== undefined && !isWholeNonNeg(s.lowAt)) return false;
-      }
+      if (it.inStock !== undefined && typeof it.inStock !== 'boolean') return false;
       ids[it.id] = true;
       names[key] = true;
     }
@@ -234,65 +220,17 @@
       return ok(item);
     }
 
-    /** Enables/disables stock tracking and optionally sets qty and threshold (Req 7.1). */
-    function setTracking(id, enabled, qty, lowAt) {
+    /** Marks an item In stock (true) or Out of stock (false). */
+    function setInStock(id, inStock) {
       var item = find(id);
       if (!item) return fail('Item not found');
-      var q = qty === undefined ? item.stock.qty : toWhole(qty);
-      var l = lowAt === undefined ? item.stock.lowAt : toWhole(lowAt);
-      if (q === null) return fail('Stock quantity must be a whole number of 0 or more');
-      if (l === null) return fail('Low-stock threshold must be a whole number of 0 or more');
-      item.stock = { tracked: !!enabled, qty: q, lowAt: l };
+      item.inStock = !!inStock;
       commit();
       return ok(item);
-    }
-
-    /** Req 7.2 */
-    function restock(id, amount) {
-      var item = find(id);
-      if (!item) return fail('Item not found');
-      if (!item.stock.tracked) return fail('Stock tracking is off for this item');
-      var a = toWhole(amount);
-      if (a === null || a < 1) return fail('Restock amount must be a whole number of 1 or more');
-      item.stock.qty += a;
-      commit();
-      return ok(item);
-    }
-
-    /** Matches a bill line to an item by id, then baseName, then name. */
-    function findForLine(line) {
-      if (line.id != null) { var byId = find(line.id); if (byId) return byId; }
-      var keys = [line.baseName, line.name].filter(Boolean).map(normName);
-      for (var i = 0; i < keys.length; i++) {
-        for (var j = 0; j < state.items.length; j++) {
-          if (normName(state.items[j].name) === keys[i]) return state.items[j];
-        }
-      }
-      return null;
-    }
-
-    /** Subtracts billed quantities from tracked items, floored at 0 (Req 7.3). */
-    function deductForBill(billItems) {
-      if (!Array.isArray(billItems)) return;
-      var changed = false;
-      billItems.forEach(function (line) {
-        if (!line) return;
-        var item = findForLine(line);
-        if (!item || !item.stock.tracked) return;
-        var q = Math.max(0, Math.floor(Number(line.qty) || 0));
-        if (!q) return;
-        item.stock.qty = Math.max(0, item.stock.qty - q);
-        changed = true;
-      });
-      if (changed) commit();
-    }
-
-    function isLowStock(item) {
-      return !!(item && item.stock.tracked && item.stock.qty <= item.stock.lowAt);
     }
 
     function isOutOfStock(item) {
-      return !!(item && item.stock.tracked && item.stock.qty === 0);
+      return !!(item && item.inStock === false);
     }
 
     /** Req 8.4 */
@@ -321,10 +259,7 @@
       updatePrice: updatePrice,
       addItem: addItem,
       setAvailable: setAvailable,
-      setTracking: setTracking,
-      restock: restock,
-      deductForBill: deductForBill,
-      isLowStock: isLowStock,
+      setInStock: setInStock,
       isOutOfStock: isOutOfStock,
       exportJson: exportJson,
       importJson: importJson,

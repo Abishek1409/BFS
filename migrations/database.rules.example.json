@@ -2,6 +2,11 @@
   "rules": {
     ".read": true,
     ".write": true,
+    "menuStock": {
+      "$itemId": {
+        ".validate": "$itemId.matches(/^[0-9]+$/) && newData.isBoolean() && newData.val() === false"
+      }
+    },
     "liveMap": {
       ".read": true,
       ".write": true,
