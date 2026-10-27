@@ -78,6 +78,11 @@ function onView(v: ViewMode): void {
 async function open(view?: ViewMode): Promise<void> {
   try {
     if (app && host) return;                          // already open
+    // Secured rules: the map needs the shop account. Ask for it instead of opening with errors.
+    const fb = (globalThis as { firebase?: { apps?: unknown[]; auth?: () => { currentUser: { isAnonymous: boolean } | null } } }).firebase;
+    const shop = (window as { ShopAuth?: { showLogin(): void } }).ShopAuth;
+    const user = fb?.apps?.length && fb.auth ? fb.auth().currentUser : null;
+    if (shop && getDb() && (!user || user.isAnonymous)) { shop.showLogin(); return; }
     const saved = readViewMode();
     const mode: ViewMode = view ?? (saved === 'closed' ? 'balanced' : saved);
     const token = ++opening;
@@ -124,7 +129,12 @@ declare global {
 
 try {
   const db = getDb();
-  if (db) startRecorder(db);
+  if (db) {
+    // Secured rules only allow the shop account, so wait for its sign-in when ShopAuth is present.
+    const shop = (window as { ShopAuth?: { whenShop(cb: () => void): void } }).ShopAuth;
+    const start = () => { try { startRecorder(db); } catch (err) { log('recorder start failed', err); } };
+    if (shop) shop.whenShop(start); else start();
+  }
 } catch (err) {
   log('recorder start failed', err);
 }

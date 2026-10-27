@@ -373,7 +373,9 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="shopAuth.js"></script>
   <script src="menu-data.js"></script>
   <script>
     /* ===== STATE ===== */
@@ -404,6 +406,8 @@
         try {
           if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
           ordersRef = firebase.database().ref('orders');
+          // Invisible anonymous sign-in; secured rules need it to accept orders.
+          if (window.ShopAuth) ShopAuth.signInAnon().catch(e => console.warn('Anonymous sign-in failed:', e));
         } catch (error) {
           console.error('Could not initialize Firebase orders:', error);
         }
@@ -641,6 +645,17 @@
       btn.disabled = true;
       btn.textContent = 'Sending…';
 
+      let uid;
+      try {
+        uid = await ShopAuth.signInAnon();
+      } catch (e) {
+        console.error('Anonymous sign-in failed:', e);
+        alert('Could not connect to place your order. Please ask staff for help.');
+        btn.disabled = false;
+        btn.textContent = 'Confirm Order';
+        return;
+      }
+
       const orderRef = ordersRef.push();
       const orderNo = 'QR-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 5).toUpperCase();
       const total = cart.reduce((sum, item) => sum + item.total, 0);
@@ -651,6 +666,7 @@
         total: total,
         createdAt: Date.now(),
         status: 'pending',
+        uid: uid,
         items: cart.map(i => ({
           name: i.name,
           baseName: i.baseName,

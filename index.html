@@ -938,7 +938,7 @@
         </div>
         <div class="oq-head-actions">
           <span class="oq-connection" id="oqConnection">QR offline</span>
-          <button class="oq-connect-btn" onclick="connectOrderServer()">Reconnect QR</button>
+          <button class="oq-connect-btn" onclick="reconnectQr()">Reconnect QR</button>
         </div>
       </div>
       <div class="oq-list" id="oqList">
@@ -1225,7 +1225,9 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="shopAuth.js"></script>
 <script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
 <script src="menu-data.js"></script>
@@ -1238,6 +1240,7 @@ if (!window.firebaseConfig) {
   console.error('Missing firebase-config.js; Firebase order syncing is disabled.');
 } else {
   firebase.initializeApp(window.firebaseConfig);
+  if (window.ShopAuth) ShopAuth.initShop(); // QR queue and live map wait for the shop sign-in
 }
 
 /* ===== MENU DATA ===== */
@@ -2249,7 +2252,12 @@ function init() {
   initMenuFromInventory();
   initAdminAuthUI();
   renderQueue();
-  connectOrderServer();
+  if (window.ShopAuth && window.firebaseConfig) {
+    setQrConnection('Shop sign-in needed', false);
+    ShopAuth.whenShop(function () { connectOrderServer(); });
+  } else {
+    connectOrderServer();
+  }
 }
 
 /**
@@ -3514,6 +3522,13 @@ function setQrConnection(message, connected) {
   if (!el) return;
   el.textContent = message;
   el.classList.toggle('connected', !!connected);
+}
+
+// Shows the shop sign-in when not signed in, otherwise reconnects.
+function reconnectQr() {
+  var user = window.firebase && firebase.auth && firebase.apps.length ? firebase.auth().currentUser : null;
+  if (window.ShopAuth && (!user || user.isAnonymous)) { ShopAuth.showLogin(); return; }
+  connectOrderServer();
 }
 
 function configureOrderServer() {
