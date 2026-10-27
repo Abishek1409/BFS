@@ -1207,7 +1207,8 @@
       <h4>➕ New item</h4>
       <form class="ap-form" id="apNewForm" onsubmit="apAddItem(event)">
         <label>Name <input type="text" id="apNewName" maxlength="60" required /></label>
-        <label>Emoji <input type="text" id="apNewEmoji" maxlength="8" style="width:60px" /></label>
+        <label>Image <input type="file" id="apNewImg" accept="image/*" onchange="apPickNewImage(this)" /></label>
+        <img id="apNewImgPreview" alt="New item photo preview" hidden style="width:56px;height:56px;object-fit:cover;border-radius:8px" />
         <label>Price <input type="number" id="apNewPrice" class="ap-num" min="1" max="100000" step="any" required /></label>
         <label>Category <input type="text" id="apNewCat" list="apCatList" maxlength="30" required style="width:110px" /></label>
         <datalist id="apCatList"></datalist>
@@ -2341,6 +2342,35 @@ function startMenuStockSync() {
   menuStockSyncOn = true;
   Inventory.onChange(publishMenuStock);
   publishMenuStock();
+  startMenuSync();
+}
+
+/* Shares the whole menu (items, prices, images, availability) through Firebase `menu/items`,
+   so every billing laptop and the QR site show the same items. Last save wins. */
+let menuSyncReady = false;
+function uploadMenu() {
+  if (!menuSyncReady) return;
+  const items = {};
+  Inventory.getAll().forEach(i => {
+    items[i.id] = { id: i.id, name: i.name, price: i.price, cat: i.cat, img: i.img || '', emoji: i.emoji || '',
+      specs: i.specs || [], available: i.available !== false, inStock: i.inStock !== false };
+  });
+  firebase.database().ref('menu').set({ items, updatedAt: firebase.database.ServerValue.TIMESTAMP })
+    .catch(e => {
+      console.warn('Could not save menu to Firebase:', e);
+      showToast({ type: 'error', title: 'Menu not shared', message: 'Saved on this laptop only. Check internet / shop sign-in.' });
+    });
+}
+function startMenuSync() {
+  if (!window.firebase || !firebase.apps.length) return;
+  Inventory.onCommit(uploadMenu); // local edits -> Firebase
+  firebase.database().ref('menu/items').on('value', snap => {
+    const val = snap.val();
+    menuSyncReady = true;
+    if (!val) { uploadMenu(); return; } // first laptop to connect seeds the shared menu
+    const res = Inventory.applyRemote(Object.values(val));
+    if (res.kept) uploadMenu(); // items added on this laptop while offline
+  }, e => console.warn('Could not load shared menu:', e));
 }
 
 function renderMenuGrid(cat) {
@@ -2379,7 +2409,7 @@ function openModal(id) {
   // Lookup from live Inventory so new prices apply to new bills (Req 5.4)
   currentItem = menuItems.find(i => i.id === id);
   if (!currentItem) return;
-  document.getElementById('modalItemName').textContent  = currentItem.emoji + ' ' + currentItem.name;
+  document.getElementById('modalItemName').textContent  = ((currentItem.emoji || '') + ' ' + currentItem.name).trim();
   document.getElementById('modalItemPrice').textContent = '&#x20B9;' + currentItem.price + ' each';
   document.getElementById('modalItemPrice').innerHTML   = '&#x20B9;' + currentItem.price + ' each';
   document.getElementById('modalQty').value  = 1;
@@ -2767,15 +2797,50 @@ function apAddItem(e) {
   const specs = [];
   if (document.getElementById('apNewIce').checked) specs.push('ice');
   if (document.getElementById('apNewSugar').checked) specs.push('sugar');
-  const fields = { name: val('apNewName'), emoji: val('apNewEmoji').trim(), price: val('apNewPrice'), cat: val('apNewCat'), specs };
+  const fields = { name: val('apNewName'), img: apNewImg, price: val('apNewPrice'), cat: val('apNewCat'), specs };
 
   apGuard(() => {
     const res = Inventory.addItem(fields);
     err.classList.toggle('ap-ok', res.ok);
     if (!res.ok) { err.textContent = res.error; return; }
     err.textContent = `Added "${res.item.name}" to ${res.item.cat}`;
-    ['apNewName', 'apNewEmoji', 'apNewPrice'].forEach(id => { document.getElementById(id).value = ''; });
+    ['apNewName', 'apNewPrice'].forEach(id => { document.getElementById(id).value = ''; });
+    apClearNewImage();
   });
+}
+
+/* New item photo: shrunk to max 480px JPEG and stored as a data URL so it syncs with the menu. */
+let apNewImg = '';
+function apPickNewImage(input) {
+  const err = document.getElementById('apNewErr');
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (!/^image\//.test(file.type)) { err.textContent = 'Please choose an image file'; input.value = ''; return; }
+  if (file.size > 15 * 1024 * 1024) { err.textContent = 'Image is too large (max 15 MB)'; input.value = ''; return; }
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(1, 480 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * scale);
+    c.height = Math.round(img.height * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    apNewImg = c.toDataURL('image/jpeg', 0.8);
+    const prev = document.getElementById('apNewImgPreview');
+    prev.src = apNewImg;
+    prev.hidden = false;
+    err.textContent = '';
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); err.textContent = 'Could not read that image'; input.value = ''; };
+  img.src = url;
+}
+function apClearNewImage() {
+  apNewImg = '';
+  document.getElementById('apNewImg').value = '';
+  const prev = document.getElementById('apNewImgPreview');
+  prev.hidden = true;
+  prev.removeAttribute('src');
 }
 
 /** Downloads the Inventory as JSON (Req 8.4). */

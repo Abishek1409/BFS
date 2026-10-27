@@ -2,6 +2,13 @@
   "rules": {
     ".read": true,
     ".write": true,
+    "menu": {
+      "items": {
+        "$itemId": {
+          ".validate": "$itemId.matches(/^[0-9]+$/) && newData.hasChildren(['id', 'name', 'price', 'cat'])"
+        }
+      }
+    },
     "menuStock": {
       "$itemId": {
         ".validate": "$itemId.matches(/^[0-9]+$/) && newData.isBoolean() && newData.val() === false"

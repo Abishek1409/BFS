@@ -29,6 +29,28 @@
       }
     },
 
+    "menu": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",
+      "updatedAt": { ".validate": "newData.isNumber()" },
+      "items": {
+        "$itemId": {
+          ".validate": "$itemId.matches(/^[0-9]+$/) && newData.hasChildren(['id', 'name', 'price', 'cat'])",
+          "id": { ".validate": "newData.isNumber() && newData.val() >= 1" },
+          "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60" },
+          "price": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100000" },
+          "cat": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30" },
+          "img": { ".validate": "newData.isString() && newData.val().length <= 300000 && (newData.val() === '' || newData.val().matches(/^(assets\\/|\\/assets\\/|data:image\\/(jpeg|png|webp);base64,)/))" },
+          "emoji": { ".validate": "newData.isString() && newData.val().length <= 8" },
+          "specs": { "$i": { ".validate": "newData.isString() && newData.val().length <= 20" } },
+          "available": { ".validate": "newData.isBoolean()" },
+          "inStock": { ".validate": "newData.isBoolean()" },
+          "$other": { ".validate": false }
+        }
+      },
+      "$other": { ".validate": false }
+    },
+
     "menuStock": {
       ".read": "auth != null",
       ".write": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",

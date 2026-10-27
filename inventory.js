@@ -103,6 +103,7 @@
     var store = storage || defaultStorage();
     var state = { version: 1, nextId: 1, items: [] };
     var listeners = [];
+    var commitListeners = [];
 
     function persist() {
       store.setItem(STORAGE_KEY, JSON.stringify(state)); // Req 8.3
@@ -115,7 +116,13 @@
       });
     }
 
-    function commit() { persist(); emit(); }
+    function commit() {
+      persist();
+      emit();
+      commitListeners.slice().forEach(function (fn) {
+        try { fn(); } catch (e) { console.error('Inventory commit listener error:', e); }
+      });
+    }
 
     function find(id) {
       var n = Number(id);
@@ -200,6 +207,7 @@
         id: state.nextId,
         name: name,
         emoji: f.emoji ? String(f.emoji) : '',
+        img: typeof f.img === 'string' ? f.img : '',
         price: p,
         cat: cat,
         specs: Array.isArray(f.specs) ? f.specs : [],
@@ -233,6 +241,44 @@
       return !!(item && item.inStock === false);
     }
 
+    /**
+     * Replaces the menu with the shared copy from Firebase (other laptops' changes).
+     * Local items whose name is not in the shared copy are kept (re-numbered if their id is taken)
+     * so nothing added offline is lost. Does not fire onCommit, so it never echoes back.
+     * @param {Array} remoteItems
+     * @returns {{ok:boolean, kept:number}} kept = local-only items that still need uploading
+     */
+    function applyRemote(remoteItems) {
+      var list = (Array.isArray(remoteItems) ? remoteItems : []).filter(function (it) {
+        return it && Number.isInteger(it.id) && it.id >= 1 && typeof it.name === 'string' && it.name.trim() && validPrice(it.price);
+      }).map(normalizeItem);
+      if (!list.length) return { ok: false, kept: 0 };
+      var names = {}, ids = {};
+      list.forEach(function (it) { names[normName(it.name)] = true; ids[it.id] = true; });
+      var next = maxId(list) + 1;
+      var kept = 0;
+      state.items.forEach(function (local) {
+        if (names[normName(local.name)]) return;
+        var copy = clone(local);
+        if (ids[copy.id]) copy.id = next;
+        next = Math.max(next, copy.id + 1);
+        ids[copy.id] = true;
+        names[normName(copy.name)] = true;
+        list.push(copy);
+        kept++;
+      });
+      list.sort(function (a, b) { return a.id - b.id; });
+      state = { version: 1, nextId: Math.max(next, maxId(list) + 1), items: list };
+      persist();
+      emit();
+      return { ok: true, kept: kept };
+    }
+
+    /** Listener for changes made on this device (not ones received via applyRemote). */
+    function onCommit(listener) {
+      if (typeof listener === 'function') commitListeners.push(listener);
+    }
+
     /** Req 8.4 */
     function exportJson() { return JSON.stringify(state, null, 2); }
 
@@ -261,6 +307,8 @@
       setAvailable: setAvailable,
       setInStock: setInStock,
       isOutOfStock: isOutOfStock,
+      applyRemote: applyRemote,
+      onCommit: onCommit,
       exportJson: exportJson,
       importJson: importJson,
       onChange: onChange
