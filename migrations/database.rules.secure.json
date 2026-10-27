@@ -7,8 +7,10 @@
       ".read": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",
       ".indexOn": ["createdAt"],
       "$orderId": {
+        ".read": "auth != null && data.child('uid').val() === auth.uid",
         ".write": "auth != null && (auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2' || (!data.exists() && newData.exists() && newData.child('uid').val() === auth.uid))",
-        ".validate": "!newData.exists() || newData.hasChildren(['items', 'createdAt', 'status', 'uid'])",
+        ".validate": "!newData.exists() || (newData.hasChildren(['items', 'status', 'uid']) && (newData.hasChild('createdAt') || newData.hasChild('timestamp')))",
+        "timestamp": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
         "uid": { ".validate": "newData.isString()" },
         "orderNo": { ".validate": "newData.isString() && newData.val().length <= 40" },
         "table": { ".validate": "newData.isString() && newData.val().length <= 20" },
@@ -29,7 +31,10 @@
 
     "orderStatus": {
       ".read": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",
-      ".write": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'"
+      ".write": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",
+      "$orderId": {
+        ".read": "auth != null"
+      }
     },
 
     "liveMap": {
