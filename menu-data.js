@@ -136,6 +136,26 @@
     'Quick Bites': '🥐', 'Fries': '🍟', 'Wraps': '🌯', 'Sandwich': '🥪', 'Fried Snacks': '🍗', 'Burgers': '🍔'
   };
 
-  if (typeof module !== 'undefined' && module.exports) module.exports = { MENU: MENU, CAT_ICONS: CAT_ICONS };
-  if (root) { root.BFS_MENU = MENU; root.BFS_CAT_ICONS = CAT_ICONS; }
+  /**
+   * Menu display order: categories keep the order they first appear in, and items
+   * inside each category go from lowest to highest price. Equal prices keep their
+   * existing order. Used by both the billing page and the QR page, so newly added
+   * items land in their price position automatically.
+   */
+  function sortMenu(items) {
+    var catRank = {};
+    (items || []).forEach(function (it) {
+      if (!(it.cat in catRank)) catRank[it.cat] = Object.keys(catRank).length;
+    });
+    return (items || []).map(function (it, i) { return { it: it, i: i }; })
+      .sort(function (a, b) {
+        return (catRank[a.it.cat] - catRank[b.it.cat]) ||
+          ((Number(a.it.price) || 0) - (Number(b.it.price) || 0)) ||
+          (a.i - b.i);
+      })
+      .map(function (x) { return x.it; });
+  }
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = { MENU: MENU, CAT_ICONS: CAT_ICONS, sortMenu: sortMenu };
+  if (root) { root.BFS_MENU = MENU; root.BFS_CAT_ICONS = CAT_ICONS; root.BFS_sortMenu = sortMenu; }
 })(typeof window !== 'undefined' ? window : null);

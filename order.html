@@ -210,6 +210,15 @@
       background: none; border: none; color: var(--muted); font-size: .8rem;
       cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: all .15s;
     }
+    .cart-qty { display: inline-flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .cart-qty button {
+      width: 34px; height: 34px; border-radius: 9px; border: 1.5px solid var(--border);
+      background: var(--bg); color: var(--text); font-size: 1.1rem; font-weight: 700; line-height: 1;
+      cursor: pointer; font-family: inherit; touch-action: manipulation;
+    }
+    .cart-qty button:active:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .cart-qty button:disabled { opacity: .35; cursor: default; }
+    .cart-qty-num { min-width: 22px; text-align: center; font-weight: 800; }
     .cart-line-remove:hover { color: var(--danger); background: rgba(236,112,99,.1); }
     .cart-totals { padding: 14px 0 8px; border-top: 2px solid var(--border); margin-top: 8px; }
     .cart-total-row { display: flex; justify-content: space-between; font-size: .85rem; margin-bottom: 4px; color: var(--muted); }
@@ -394,15 +403,40 @@
     let ordersRef = null;
     let outOfStock = {}; // item id -> true, live from Firebase menuStock (set by admin)
     let activeCat = 'All';
-    const isOut = item => !!outOfStock[item.id];
+    const isOut = item => !!outOfStock[item.id] || item.inStock === false;
 
-    // Shared with the billing page (menu-data.js), grouped by category in menu order.
-    const MENU_CATEGORIES = (window.BFS_MENU || []).reduce((acc, it) => {
-      let c = acc.find(x => x.name === it.cat);
-      if (!c) { c = { name: it.cat, items: [] }; acc.push(c); }
-      c.items.push(it);
-      return acc;
-    }, []);
+    // Group by category (category order kept), items lowest to highest price.
+    function groupMenu(items) {
+      const sorted = window.BFS_sortMenu ? window.BFS_sortMenu(items) : items;
+      return sorted.reduce((acc, it) => {
+        let c = acc.find(x => x.name === it.cat);
+        if (!c) { c = { name: it.cat, items: [] }; acc.push(c); }
+        c.items.push(it);
+        return acc;
+      }, []);
+    }
+    // Built-in menu (menu-data.js) shows first; replaced by the live shared menu below.
+    const MENU_CATEGORIES = groupMenu(window.BFS_MENU || []);
+
+    // Live menu saved by the billing page (Firebase menu/items), so new items and
+    // price changes show here too, in price order.
+    function applyLiveMenu(val) {
+      const items = Object.values(val || {})
+        .filter(it => it && it.name && it.cat && it.available !== false)
+        .map(it => ({
+          ...it,
+          id: Number(it.id),
+          price: Number(it.price) || 0,
+          specs: Array.isArray(it.specs) ? it.specs : Object.values(it.specs || {})
+        }))
+        .sort((a, b) => a.id - b.id); // same base order as the billing page
+      if (!items.length) return;
+      menuData = { categories: groupMenu(items) };
+      if (activeCat !== 'All' && !menuData.categories.some(c => c.name === activeCat)) activeCat = 'All';
+      renderCategories();
+      renderMenu(activeCat);
+      animateMenuItems();
+    }
 
     /* ===== INIT ===== */
     (function init() {
@@ -424,8 +458,12 @@
             Object.keys(val).forEach(id => { if (val[id] === false) outOfStock[id] = true; });
             if (menuData) { renderMenu(activeCat); animateMenuItems(); }
           }, e => console.warn('Could not load stock status:', e));
-          if (window.ShopAuth) ShopAuth.signInAnon().then(watchStock).catch(e => console.warn('Anonymous sign-in failed:', e));
-          else watchStock();
+          const watchMenu = () => firebase.database().ref('menu/items').on('value',
+            snap => { if (menuData) applyLiveMenu(snap.val()); },
+            e => console.warn('Could not load live menu:', e));
+          const startWatching = () => { watchStock(); watchMenu(); };
+          if (window.ShopAuth) ShopAuth.signInAnon().then(startWatching).catch(e => console.warn('Anonymous sign-in failed:', e));
+          else startWatching();
         } catch (error) {
           console.error('Could not initialize Firebase orders:', error);
         }
@@ -449,7 +487,7 @@
       const cats = ['All', ...new Set(menuData.categories.map(c => c.name))];
       const icons = window.BFS_CAT_ICONS || {};
       document.getElementById('catScroll').innerHTML = cats.map(c =>
-        `<button class="cat-tab ${c==='All'?'active':''}" data-cat="${escapeHtml(c)}" onclick="filterCat(this, this.dataset.cat)">${icons[c]||''} ${escapeHtml(c)}</button>`
+        `<button class="cat-tab ${c===activeCat?'active':''}" data-cat="${escapeHtml(c)}" onclick="filterCat(this, this.dataset.cat)">${icons[c]||''} ${escapeHtml(c)}</button>`
       ).join('');
     }
 
@@ -635,7 +673,12 @@
         <div class="cart-line">
           <div class="cart-line-info">
             <div class="cart-line-name">${escapeHtml(line.name)}</div>
-            <div class="cart-line-sub">&#x20B9;${line.price} × ${line.qty}</div>
+            <div class="cart-line-sub">&#x20B9;${line.price} each</div>
+            <div class="cart-qty">
+              <button type="button" onclick="changeLineQty(${idx}, -1)" ${line.qty <= 1 ? 'disabled' : ''} aria-label="Decrease ${escapeHtml(line.baseName || line.name)}">&minus;</button>
+              <span class="cart-qty-num">${line.qty}</span>
+              <button type="button" onclick="changeLineQty(${idx}, 1)" aria-label="Increase ${escapeHtml(line.baseName || line.name)}">+</button>
+            </div>
           </div>
           <div class="cart-line-meta">
             <div class="cart-line-total">&#x20B9;${line.total.toFixed(0)}</div>
@@ -652,6 +695,16 @@
 
     function removeLine(idx) {
       cart.splice(idx, 1);
+      updateCartBar();
+      renderCartSheet();
+    }
+
+    // + / − on a cart line. Minimum is 1; use Remove to delete the line.
+    function changeLineQty(idx, delta) {
+      const line = cart[idx];
+      if (!line) return;
+      line.qty = Math.max(1, line.qty + delta);
+      line.total = line.price * line.qty;
       updateCartBar();
       renderCartSheet();
     }
