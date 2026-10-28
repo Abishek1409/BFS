@@ -104,9 +104,12 @@
     var state = { version: 1, nextId: 1, items: [] };
     var listeners = [];
     var commitListeners = [];
+    var pending = {};   // normalized names added on this device and not yet uploaded
+    var synced = false; // true once this device has merged the shared menu at least once
 
     function persist() {
-      store.setItem(STORAGE_KEY, JSON.stringify(state)); // Req 8.3
+      var out = { version: state.version, nextId: state.nextId, items: state.items, pending: pending, synced: synced };
+      store.setItem(STORAGE_KEY, JSON.stringify(out)); // Req 8.3
     }
 
     function emit() {
@@ -149,6 +152,8 @@
 
       if (validateInventoryFile(parsed) && parsed.items.length) {
         var items = parsed.items.map(normalizeItem);
+        pending = parsed.pending && typeof parsed.pending === 'object' ? parsed.pending : {};
+        synced = parsed.synced === true;
         // Keep artwork paths current with the built-in menu; prices and stock stay as saved.
         var seedImg = {};
         (Array.isArray(seedMenu) ? seedMenu : []).forEach(function (s) {
@@ -215,6 +220,7 @@
       });
       state.nextId += 1;
       state.items.push(item);
+      pending[normName(name)] = true; // not on the shared menu yet
       commit();
       return ok(item);
     }
@@ -257,8 +263,15 @@
       list.forEach(function (it) { names[normName(it.name)] = true; ids[it.id] = true; });
       var next = maxId(list) + 1;
       var kept = 0;
+      // First sync on this device keeps every local-only item (added before sync existed).
+      // After that, only items added here and not yet uploaded are kept, so removals elsewhere stick.
+      var firstSync = !synced;
+      Object.keys(pending).forEach(function (k) { if (names[k]) delete pending[k]; });
       state.items.forEach(function (local) {
-        if (names[normName(local.name)]) return;
+        var key = normName(local.name);
+        if (names[key]) return;
+        if (!firstSync && !pending[key]) return;
+        pending[key] = true;
         var copy = clone(local);
         if (ids[copy.id]) copy.id = next;
         next = Math.max(next, copy.id + 1);
@@ -269,9 +282,27 @@
       });
       list.sort(function (a, b) { return a.id - b.id; });
       state = { version: 1, nextId: Math.max(next, maxId(list) + 1), items: list };
+      synced = true;
       persist();
       emit();
       return { ok: true, kept: kept };
+    }
+
+    /** Call after the shared copy saved successfully; local additions are now on the server. */
+    function markUploaded() {
+      pending = {};
+      synced = true;
+      persist();
+    }
+
+    /** Permanently removes an item from the menu and inventory. Past bills are not changed. */
+    function removeItem(id) {
+      var item = find(id);
+      if (!item) return fail('Item not found');
+      state.items = state.items.filter(function (it) { return it !== item; });
+      delete pending[normName(item.name)];
+      commit();
+      return ok(item);
     }
 
     /** Listener for changes made on this device (not ones received via applyRemote). */
@@ -308,6 +339,8 @@
       setInStock: setInStock,
       isOutOfStock: isOutOfStock,
       applyRemote: applyRemote,
+      markUploaded: markUploaded,
+      removeItem: removeItem,
       onCommit: onCommit,
       exportJson: exportJson,
       importJson: importJson,

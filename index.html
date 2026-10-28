@@ -678,6 +678,10 @@
     .ap-small-btn:hover { background: var(--accent); color: #fff; }
     .ap-stock-btn { border: 0; border-radius: 99px; padding: 6px 12px; font-size: .78rem; font-weight: 700; cursor: pointer; background: #1b5e20; color: #fff; min-width: 104px; }
     .ap-stock-btn.is-out { background: #b71c1c; }
+    .ap-remove-btn { border: 1px solid #b71c1c; background: transparent; color: #ff8a80; border-radius: 99px; padding: 5px 10px; font-size: .75rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .ap-remove-btn:hover, .ap-remove-btn.confirm { background: #b71c1c; color: #fff; }
+    .ap-remove-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     .ap-stock-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .ap-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 
@@ -1220,7 +1224,7 @@
     </div>
 
     <table class="hist-table">
-      <thead><tr><th>Item</th><th>Category</th><th>Price (₹)</th><th>Available</th><th>Stock</th></tr></thead>
+      <thead><tr><th>Item</th><th>Category</th><th>Price (₹)</th><th>Available</th><th>Stock</th><th><span class="sr-only">Remove</span></th></tr></thead>
       <tbody id="apTableBody"></tbody>
     </table>
   </div>
@@ -2356,6 +2360,7 @@ function uploadMenu() {
       specs: i.specs || [], available: i.available !== false, inStock: i.inStock !== false };
   });
   firebase.database().ref('menu').set({ items, updatedAt: firebase.database.ServerValue.TIMESTAMP })
+    .then(() => Inventory.markUploaded())
     .catch(e => {
       console.warn('Could not save menu to Firebase:', e);
       showToast({ type: 'error', title: 'Menu not shared', message: 'Saved on this laptop only. Check internet / shop sign-in.' });
@@ -2732,7 +2737,7 @@ function renderAdminPanel() {
   document.getElementById('apCatList').replaceChildren(...cats.map(c => apEl('option', { value: c })));
 
   if (!items.length) {
-    body.append(apEl('tr', {}, [apEl('td', { colSpan: 5, className: 'hist-empty', textContent: 'No items' })]));
+    body.append(apEl('tr', {}, [apEl('td', { colSpan: 6, className: 'hist-empty', textContent: 'No items' })]));
     return;
   }
   items.forEach(item => body.append(apRow(item)));
@@ -2766,8 +2771,35 @@ function apRow(item) {
     apEl('td', { textContent: item.cat }),
     priceCell,
     apEl('td', {}, [avail]),
-    apEl('td', {}, apStockCell(item))
+    apEl('td', {}, apStockCell(item)),
+    apEl('td', {}, [apRemoveBtn(item, show)])
   ]);
+}
+
+/** Two-step remove: first click asks "Sure?", second click within 4s deletes everywhere. */
+function apRemoveBtn(item, show) {
+  const btn = apEl('button', { type: 'button', className: 'ap-remove-btn', textContent: 'Remove', ariaLabel: `Remove ${item.name} from the menu` });
+  let timer = null;
+  btn.onclick = () => {
+    if (!btn.classList.contains('confirm')) {
+      btn.classList.add('confirm');
+      btn.textContent = 'Sure? Remove';
+      btn.setAttribute('aria-label', `Click again to permanently remove ${item.name}`);
+      timer = setTimeout(() => {
+        btn.classList.remove('confirm');
+        btn.textContent = 'Remove';
+        btn.setAttribute('aria-label', `Remove ${item.name} from the menu`);
+      }, 4000);
+      return;
+    }
+    clearTimeout(timer);
+    apGuard(() => {
+      if (show(Inventory.removeItem(item.id))) {
+        showToast({ type: 'success', title: 'Item removed', message: `${item.name} removed from menu and QR page` });
+      }
+    });
+  };
+  return btn;
 }
 
 /** One-click In stock / Out of stock toggle. Also hides/blocks the item on the QR order page. */
@@ -3601,15 +3633,54 @@ function connectOrderServer() {
   firebaseConnectionRef.on('value', function(snapshot) {
     setQrConnection(snapshot.val() === true ? 'QR live' : 'QR offline', snapshot.val() === true);
   }, handleOrderSyncError);
+  // child_added replays every existing order first; only chime for orders that arrive after that.
+  var qrInitialLoad = true;
+  ordersRef.once('value').then(function() { qrInitialLoad = false; }, function() { qrInitialLoad = false; });
   ordersRef.on('child_added', function(snapshot) {
     var order = snapshot.val();
+    var isNew = order && order.status === 'pending' && !orderQueue.some(function(o) { return o.serverId === snapshot.key; });
     if (order && order.status !== 'served') addQrOrder(order, snapshot.key);
     renderQueue();
+    if (isNew && !qrInitialLoad) playOrderChime();
   }, handleOrderSyncError);
   ordersRef.on('child_changed', function(snapshot) {
     updateQrOrder(snapshot.key, snapshot.val());
   }, handleOrderSyncError);
 }
+
+/* Soft two-note chime for new QR orders (generated, no sound file). */
+var orderChimeCtx = null;
+function playOrderChime() {
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    orderChimeCtx = orderChimeCtx || new AC();
+    var ctx = orderChimeCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    var t = ctx.currentTime + 0.02;
+    [[880, 0], [1318.5, 0.16]].forEach(function(n) { // A5 then E6
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = n[0];
+      gain.gain.setValueAtTime(0.0001, t + n[1]);
+      gain.gain.exponentialRampToValueAtTime(0.12, t + n[1] + 0.02); // gentle volume
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + 0.6);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t + n[1]);
+      osc.stop(t + n[1] + 0.65);
+    });
+  } catch (e) { console.warn('Order chime failed:', e); }
+}
+// Browsers block audio until the page is clicked once; unlock on the first interaction.
+['click', 'keydown', 'touchstart'].forEach(function(ev) {
+  document.addEventListener(ev, function unlock() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC && !orderChimeCtx) orderChimeCtx = new AC();
+    if (orderChimeCtx && orderChimeCtx.state === 'suspended') orderChimeCtx.resume();
+    document.removeEventListener(ev, unlock);
+  });
+});
 
 function handleOrderSyncError(error) {
   console.error('QR order connection failed:', error);
