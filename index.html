@@ -3641,22 +3641,76 @@ function connectOrderServer() {
     var isNew = order && order.status === 'pending' && !orderQueue.some(function(o) { return o.serverId === snapshot.key; });
     if (order && order.status !== 'served') addQrOrder(order, snapshot.key);
     renderQueue();
-    if (isNew && !qrInitialLoad) playOrderChime();
+    if (isNew && !qrInitialLoad) notifyNewQrOrder(order, snapshot.key);
   }, handleOrderSyncError);
   ordersRef.on('child_changed', function(snapshot) {
     updateQrOrder(snapshot.key, snapshot.val());
   }, handleOrderSyncError);
 }
 
-/* Soft two-note chime for new QR orders (generated, no sound file). */
+/* ===== NEW QR ORDER ALERT (toast + soft chime + system notification) ===== */
 var orderChimeCtx = null;
+var orderChimePending = false; // an order arrived before sound was unlocked
+var orderTitleTimer = null;
+var baseDocTitle = document.title;
+
+function notifyNewQrOrder(order, serverId) {
+  var table = order && order.table != null ? order.table : '?';
+  var items = (order && order.items) || [];
+  var summary = items.slice(0, 3).map(function(it) {
+    return escapeQueueText((it.name || 'Item') + ' x' + (Number(it.qty) || 1));
+  }).join(', ') + (items.length > 3 ? ' +' + (items.length - 3) + ' more' : '');
+  var total = Number(order && (order.total || order.amount || order.grandTotal)) || 0;
+  var soundLocked = !orderChimeCtx || orderChimeCtx.state !== 'running';
+
+  showToast({
+    type: 'info',
+    title: '🔔 New order · Table ' + escapeQueueText(table),
+    message: summary + (total ? ' · ₹' + total.toFixed(2) : '') +
+      (soundLocked ? '<br><small>Click anywhere on the page once to enable the alert sound.</small>' : ''),
+    duration: 0, // stays until the cashier acts on it
+    actions: [
+      { label: 'Load & Print', primary: true, onClick: function() { loadQrOrder(serverId); } },
+      { label: 'Later', onClick: function() {} }
+    ]
+  });
+
+  playOrderChime();
+  flashTitle('🔔 New order · Table ' + table);
+
+  // System notification is useful when the billing tab is in the background
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    try {
+      var n = new Notification('New order · Table ' + table, { body: items.map(function(it) { return it.name + ' x' + (it.qty || 1); }).join(', '), tag: 'qr-order-' + serverId });
+      n.onclick = function() { window.focus(); n.close(); };
+    } catch (e) { /* notifications unsupported in this context */ }
+  }
+}
+
+function flashTitle(text) {
+  clearInterval(orderTitleTimer);
+  var on = false;
+  orderTitleTimer = setInterval(function() {
+    document.title = (on = !on) ? text : baseDocTitle;
+  }, 1000);
+}
+function stopFlashTitle() {
+  clearInterval(orderTitleTimer);
+  orderTitleTimer = null;
+  document.title = baseDocTitle;
+}
+document.addEventListener('visibilitychange', function() { if (!document.hidden) setTimeout(stopFlashTitle, 3000); });
+
+/* Soft two-note chime (generated, no sound file). Browsers only allow audio after
+   a user gesture, so the AudioContext is created in the unlock handler below. */
 function playOrderChime() {
   try {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    orderChimeCtx = orderChimeCtx || new AC();
     var ctx = orderChimeCtx;
-    if (ctx.state === 'suspended') ctx.resume();
+    if (!ctx || ctx.state !== 'running') {
+      orderChimePending = true; // play on the next click/tap
+      return;
+    }
+    orderChimePending = false;
     var t = ctx.currentTime + 0.02;
     [[880, 0], [1318.5, 0.16]].forEach(function(n) { // A5 then E6
       var osc = ctx.createOscillator();
@@ -3672,14 +3726,27 @@ function playOrderChime() {
     });
   } catch (e) { console.warn('Order chime failed:', e); }
 }
-// Browsers block audio until the page is clicked once; unlock on the first interaction.
+// Browsers block audio until the page is clicked once; unlock on user interaction.
+function unlockOrderAlerts() {
+  stopFlashTitle();
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  if (!orderChimeCtx) orderChimeCtx = new AC();
+  var ready = orderChimeCtx.state === 'running' ? Promise.resolve() : orderChimeCtx.resume();
+  ready.then(function() {
+    if (orderChimeCtx.state !== 'running') return;
+    ['click', 'keydown', 'touchstart'].forEach(function(ev) {
+      document.removeEventListener(ev, unlockOrderAlerts, true);
+    });
+    if (orderChimePending) playOrderChime();
+  }).catch(function() { /* try again on the next gesture */ });
+  // Ask once for system notifications (needs a gesture in most browsers)
+  if ('Notification' in window && Notification.permission === 'default') {
+    try { Notification.requestPermission(); } catch (e) { /* ignore */ }
+  }
+}
 ['click', 'keydown', 'touchstart'].forEach(function(ev) {
-  document.addEventListener(ev, function unlock() {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (AC && !orderChimeCtx) orderChimeCtx = new AC();
-    if (orderChimeCtx && orderChimeCtx.state === 'suspended') orderChimeCtx.resume();
-    document.removeEventListener(ev, unlock);
-  });
+  document.addEventListener(ev, unlockOrderAlerts, true);
 });
 
 function handleOrderSyncError(error) {

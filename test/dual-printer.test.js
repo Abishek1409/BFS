@@ -278,16 +278,17 @@ test('direct printer IP is relayed through the print server, so no HTTP headers 
   assert.equal(warnings.length, 0);
 });
 
-test('direct fallback treats a timeout as delivered so the bill clears', async () => {
+test('print server down: fails without sending HTTP directly to the printer', async () => {
+  const urls = [];
   const context = createCommContext([], async url => {
-    if (url.includes('/print-to')) throw new TypeError('Failed to fetch');
-    const err = new Error('signal timed out');
-    err.name = 'TimeoutError';
-    throw err;
+    urls.push(url);
+    throw new TypeError('Failed to fetch');
   });
   vm.runInContext("printerConnections.printer1.type = 'wifi'; printerConnections.printer1.ip = '192.168.1.8'; printerConnections.printer1.port = 9100;", context);
   const result = await vm.runInContext("sendToPosiflow('printer1', new Uint8Array([1]))", context);
-  assert.equal(result.success, true);
+  assert.equal(result.success, false);
+  assert.match(result.error, /Print server not running/);
+  assert.ok(urls.every(url => url.startsWith('http://localhost:3000/')), 'no request may go straight to the printer');
 });
 
 test('print server reports a real printer failure', async () => {

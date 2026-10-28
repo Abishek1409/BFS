@@ -532,22 +532,14 @@ async function sendToPosiflow(printerId, data) {
         }
       }
 
-      // Method 3: Print server not running, fall back to direct HTTP
+      // Print server not running. A browser can only reach port 9100 over HTTP,
+      // and the printer prints those HTTP headers (IP, host, user agent) on the
+      // receipt, so there is no direct fallback: report the failure instead.
       warnDirectPrinter(printer);
-      try {
-        await fetch(`http://${printer.ip}:${printer.port}`, {
-          method: 'POST',
-          body: data,
-          mode: 'no-cors',
-          signal: AbortSignal.timeout(5000)
-        });
-      } catch (directError) {
-        // Raw printers accept the bytes but never send an HTTP reply, so a
-        // timeout means the job was delivered. Anything else is a real failure.
-        if (!isTimeoutError(directError)) throw directError;
-      }
-      console.log(`Sent ${data.length} bytes directly to ${printer.name}`);
-      return { success: true };
+      return {
+        success: false,
+        error: 'Print server not running. Start it on this computer (start-print-server.bat or "npm start"), then retry.'
+      };
     }
     
   } catch (error) {
@@ -622,8 +614,8 @@ function warnDirectPrinter(printer) {
   }
   directWarnedPrinters.add(printer.name);
 
-  const title = 'Direct printer connection';
-  const message = `Print server not running, so ${printer.name} will print network details on the receipt. Start it with "npm start" on this computer.`;
+  const title = 'Print server not running';
+  const message = `${printer.name} needs the local print server. Start it with start-print-server.bat or "npm start" on this computer.`;
 
   if (typeof showWarningToast === 'function') {
     showWarningToast(title, message);
@@ -759,7 +751,7 @@ async function testPrinterConnection(printerId) {
     const testData = new Uint8Array([0x1B, 0x40]); // ESC @ - Initialize printer
     const result = printer.type === 'usb' 
       ? await sendToUSBPrinter(printerId, testData)
-      : await sendToWiFiPrinter(printerId, testData);
+      : await sendToPosiflow(printerId, testData); // via print server, never raw HTTP to 9100
     
     printer.connected = result.success;
     return result.success;
