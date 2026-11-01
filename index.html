@@ -8,7 +8,6 @@
   <meta http-equiv="Expires" content="0" />
   <link rel="icon" href="34908.jpg" type="image/jpeg" />
   <title>BFS &ndash; Billing System | Best Fruits Stall</title>
-  <link rel="stylesheet" href="FloatingLines.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     .gradient-waves-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
@@ -890,6 +889,158 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    /* =====================================================================
+       THEME + PERFORMANCE LAYER (overrides the rules above)
+       Flat surfaces in tone steps, one accent (amber) for the main action,
+       champagne ink, mocha surfaces, near-black ground. No gradients,
+       glows, glass or blur: these were costly to paint on every frame.
+       ===================================================================== */
+    :root {
+      color-scheme: dark;
+      --ground:   #0b0806;   /* black, faint mocha tint */
+      --surface:  #16100c;   /* panels */
+      --raised:   #211812;   /* inputs, rows, chips */
+      --line:     #33261d;   /* structural lines */
+      --control:  #4a3829;   /* control borders, a step stronger */
+      --ink:      #f7e7ce;   /* champagne: main text */
+      --ink-2:    #c9b58e;   /* champagne gold, muted: secondary text (~8:1 on --surface) */
+      --gold:     #e8d3a2;   /* champagne gold: headings, prices */
+      --amber:    #ffb000;   /* burst amber: primary action + active state only */
+      --amber-ink:#0b0806;
+
+      --bg: var(--ground); --card: var(--surface); --card2: var(--raised);
+      --text: var(--ink); --muted: var(--ink-2);
+      --border: var(--line); --border-subtle: #241a14;
+      --input-bg: var(--raised); --accent: var(--amber); --accent-light: #ffc23d;
+      --gradient: var(--surface); --shadow: none;
+    }
+    body { background: var(--ground); -webkit-font-smoothing: antialiased; }
+    .gradient-waves-bg { background: var(--ground); }
+
+    /* No blur anywhere */
+    .modal, .toast, .panel, .menu-card, .panel-head, .cat-tab,
+    .bill-no-input, .customer-row input { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+    /* Header: flat champagne gold bar, mocha ink */
+    .app-header {
+      background: var(--gold); border-bottom: 1px solid #c9b07a; box-shadow: none;
+      padding: 12px 24px; color: var(--mocha-deep);
+    }
+    .site-logo { width: 52px; height: 52px; border-radius: 10px; box-shadow: none; background: transparent; }
+    .app-header h1 { font-size: 1.35rem; font-weight: 700; color: var(--mocha-deep); }
+    .app-header small { color: var(--mocha); font-weight: 500; opacity: 1; }
+    .bill-badge { background: var(--mocha-deep); border: 0; color: var(--gold); font-variant-numeric: tabular-nums; }
+    .hamburger-btn { background: transparent; border: 1px solid rgba(36, 25, 19, .35); }
+    .hamburger-btn:hover { background: rgba(36, 25, 19, .08); }
+    .hamburger-btn span { background: var(--mocha-deep); }
+
+    /* Panels: one tone step from the ground, one hairline */
+    .workspace { gap: 16px; padding: 16px 24px; }
+    .panel, .oq-list { background: var(--surface); border: 1px solid var(--line); box-shadow: none; }
+    .panel-head {
+      background: var(--surface); color: var(--gold); border-bottom: 1px solid var(--line);
+      font-size: .95rem; font-weight: 600; letter-spacing: 0;
+    }
+    .oq-title { color: var(--gold); font-size: 1rem; font-weight: 600; }
+    .oq-badge { background: var(--raised); color: var(--gold); }
+
+    /* Search + category tabs */
+    .menu-search input { background: var(--raised); border: 1px solid var(--control); border-radius: 10px; }
+    .menu-search input::placeholder { color: var(--ink-2); }
+    .cat-tabs { border-bottom: 1px solid var(--line); }
+    .cat-tab { background: transparent; border: 1px solid var(--line); box-shadow: none; color: var(--ink-2); }
+    .cat-tab:hover { background: var(--raised); color: var(--ink); border-color: var(--control); transform: none; box-shadow: none; }
+    .cat-tab.active { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); transform: none; box-shadow: none; }
+
+    /* Menu cards: flat, visible immediately, cheap hover */
+    .menu-card {
+      background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+      box-shadow: none; opacity: 1; transform: none;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    .menu-card::before { display: none; }
+    .menu-card:hover { border-color: var(--gold); box-shadow: none; transform: translateY(-2px); }
+    .menu-card .item-photo { border-radius: 8px; background: var(--surface); }
+    .menu-card .item-photo.is-icon { filter: none; }
+    .menu-card .item-name { font-weight: 600; color: var(--ink); }
+    .menu-card .item-price { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+    /* One neutral chip for every category (no rainbow) */
+    .menu-card .item-cat-badge,
+    .menu-card[data-cat] .item-cat-badge {
+      background: rgba(11, 8, 6, .82); color: var(--gold); font-weight: 600; font-size: .68rem;
+      border-radius: 6px; padding: 3px 7px;
+    }
+    .menu-card.just-added { border-color: var(--amber); box-shadow: none; transform: none; }
+    .added-badge { background: var(--amber); color: var(--amber-ink); box-shadow: none; }
+    .menu-grid { contain: content; }
+
+    /* Bill */
+    .bill-number-row, .customer-row { border-bottom: 1px solid var(--line); }
+    .bill-no-input, .customer-row input {
+      background: var(--raised); border: 1px solid var(--control); box-shadow: none; color: var(--ink);
+    }
+    .bill-no-input:focus, .customer-row input:focus { background: var(--raised); border-color: var(--gold); }
+    .customer-row input::placeholder { color: var(--ink-2); }
+    .bill-items-list { background: transparent; border-bottom: 1px solid var(--line); }
+    .bill-item:hover, .oq-row:hover { background: var(--raised); }
+    .bill-item + .bill-item { border-top: 1px solid var(--border-subtle); }
+    .bill-item-total, .hist-amount, .oq-row-amount { color: var(--gold); font-variant-numeric: tabular-nums; }
+    .total-row.grand { border-top: 1px solid var(--line); color: var(--ink); }
+    .total-row.grand span:last-child { color: var(--amber); font-variant-numeric: tabular-nums; }
+    .wifi-printer-status { background: var(--raised); border: 1px solid var(--line); }
+    .printer-status-item { background: transparent; }
+
+    /* Buttons: one filled primary (amber), secondaries outlined */
+    .btn-print { box-shadow: none; }
+    .btn-print:hover { transform: none; box-shadow: none; }
+    .btn-print-alt, .btn-configure-printers, .btn-connect-printer, .oq-connect-btn, .ap-small-btn,
+    .oq-row-pay-btn, .rpt-mode-btn, .btn-secondary {
+      background: transparent; color: var(--ink); border: 1px solid var(--control);
+    }
+    .btn-print-alt:hover, .btn-configure-printers:hover, .btn-connect-printer:hover, .oq-connect-btn:hover,
+    .ap-small-btn:hover, .oq-row-pay-btn:hover, .rpt-mode-btn:hover:not(.active), .btn-secondary:hover {
+      background: var(--raised); color: var(--ink); border-color: var(--gold);
+    }
+    .hist-dl-btn { background: var(--gold); color: var(--mocha-deep); }
+    .hist-dl-btn:hover { background: var(--ink); }
+    .btn-clear { border-color: #5a2a1f; }
+    .toggle-btn { background: var(--raised); border: 1px solid var(--control); }
+    .oq-row-pay-btn.selected-cash, .oq-row-pay-btn.selected-gpay, .rpt-mode-btn.active {
+      background: var(--gold); color: var(--mocha-deep); border-color: var(--gold);
+    }
+    .oq-row-done.ready { background: var(--gold); color: var(--mocha-deep); }
+    .oq-row-done.ready:hover { background: var(--amber); color: var(--amber-ink); transform: none; }
+
+    /* Drawers, modals, toasts: opaque, slide with transform (GPU), not `right` (layout) */
+    .hist-drawer {
+      right: 0; transform: translateX(105%); background: var(--surface); border-left: 1px solid var(--line);
+      transition: transform .22s cubic-bezier(.2, .8, .2, 1); will-change: transform;
+    }
+    .hist-drawer.open, .hist-drawer.admin-drawer.open { right: 0; transform: none; }
+    .hist-drawer.admin-drawer { right: 0; }
+    .hist-head, .nav-panel .hist-head { background: var(--surface); color: var(--gold); border-bottom: 1px solid var(--line); }
+    .hist-close { color: var(--ink); }
+    .hist-close:hover { background: var(--raised); }
+    .hist-table th { background: var(--surface); color: var(--ink-2); font-weight: 500; }
+    .hist-table td { border-bottom: 1px solid var(--border-subtle); }
+    .hist-table tr:hover td { background: var(--raised); }
+    .nav-panel { background: var(--surface); border-left: 1px solid var(--line); transition-duration: .22s; }
+    .nav-item:hover, .nav-item:focus-visible { background: var(--raised); color: var(--gold); }
+    .modal { background: var(--surface); border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(0,0,0,.5); }
+    .toast { background: var(--surface); }
+    .rpt-card, .rpt-stat { background: var(--surface); border: 1px solid var(--line); box-shadow: none; }
+    .rpt-card-title { text-transform: none; letter-spacing: 0; }
+    .rpt-stat-val, .rpt-title { color: var(--gold); }
+    .ap-body input[type="text"], .ap-body input[type="number"], .ap-cat-select { background: var(--raised); border: 1px solid var(--control); }
+    .ap-cat-chip { background: var(--raised); border-color: var(--line); }
+
+    .hamburger-btn:focus-visible, .nav-item:focus-visible, .cat-tab:focus-visible, .menu-card:focus-visible,
+    button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
 <body>
@@ -1370,7 +1521,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="shopAuth.js"></script>
-<script src="floating-lines.bundle.js" defer></script>
 <script src="billHistory.js"></script>
 <script src="menu-data.js"></script>
 <script src="inventory.js"></script>
