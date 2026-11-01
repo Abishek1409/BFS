@@ -4,8 +4,8 @@ const root = document.getElementById('gradient-waves-root');
 if (root) {
   mountGradientWaves(root, {
     horizonColor: '#000000',
-    waveColor: '#1a1002',
-    crestColor: '#3d2e05',
+    waveColor: '#241913', // mocha deep
+    crestColor: '#6f4e37', // mocha
     speed: 0.35,
     amplitude: 2.5,
     waveScale: 0.6,

@@ -25119,7 +25119,7 @@ void main() {
           mixBlendMode: "normal",
           maxDpr: 1,
           frameRate: 20,
-          linesGradient: ["#b88935", "#8d641f", "#5e4216", "#c1933b", "#e4c36b"]
+          linesGradient: ["#ffb000", "#6f4e37", "#3b2a20", "#e8d3a2", "#f7e7ce"]
         });
       }
     }
