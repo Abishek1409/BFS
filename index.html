@@ -614,25 +614,36 @@
     .nav-menu { position: relative; }
     .hamburger-btn {
       width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
-      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.85); border: 1px solid rgba(0,0,0,0.35);
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
       transition: background .18s;
     }
-    .hamburger-btn:hover { background: rgba(255,255,255,0.22); }
-    .hamburger-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-    .hamburger-btn span { display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: transform .2s, opacity .2s; }
-    .hamburger-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .hamburger-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-    .hamburger-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .nav-dropdown {
-      position: absolute; right: 0; top: calc(100% + 8px); min-width: 210px; z-index: 1050;
-      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-      box-shadow: 0 12px 32px rgba(0,0,0,.5); padding: 6px; display: flex; flex-direction: column;
+    .hamburger-btn:hover { background: #fff; }
+    .hamburger-btn:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
+    .hamburger-btn span { display: block; width: 22px; height: 3px; background: #000; border-radius: 2px; }
+
+    /* Slide-in side panel from the right */
+    .nav-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1098;
+      opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s;
     }
-    .nav-dropdown[hidden], .nav-item[hidden] { display: none; }
+    .nav-backdrop.open { opacity: 1; visibility: visible; }
+    .nav-panel {
+      position: fixed; top: 0; right: 0; height: 100vh; width: 300px; max-width: 85vw; z-index: 1099;
+      background: var(--card); border-left: 1px solid var(--border);
+      box-shadow: -8px 0 32px rgba(0,0,0,.5); display: flex; flex-direction: column;
+      transform: translateX(100%); visibility: hidden;
+      transition: transform .28s ease, visibility .28s;
+    }
+    .nav-panel.open { transform: translateX(0); visibility: visible; }
+    .nav-panel-body { padding: 10px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+    .nav-item[hidden] { display: none; }
     .nav-item {
       background: none; border: none; color: var(--text); text-align: left; cursor: pointer;
-      padding: 10px 12px; border-radius: 8px; font-size: .9rem; font-weight: 600; font-family: inherit;
+      padding: 14px 14px; border-radius: 10px; font-size: 1rem; font-weight: 600; font-family: inherit;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nav-panel, .nav-backdrop { transition: none; }
     }
     .nav-item:hover, .nav-item:focus-visible { background: var(--card2); color: var(--accent); outline: none; }
 
@@ -889,21 +900,30 @@
     <div class="bill-badge" id="headerBillNo">Bill #001</div>
     <!-- Hamburger menu: 3D map, History, Reports, Inventory, Admin login/logout -->
     <div class="nav-menu">
-      <button type="button" class="hamburger-btn" id="navMenuBtn" aria-label="Open menu" aria-haspopup="true" aria-expanded="false" aria-controls="navMenu" onclick="toggleNavMenu()">
+      <button type="button" class="hamburger-btn" id="navMenuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu" onclick="toggleNavMenu(true)">
         <span></span><span></span><span></span>
       </button>
-      <div class="nav-dropdown" id="navMenu" role="menu" aria-labelledby="navMenuBtn" hidden>
-        <button type="button" role="menuitem" class="nav-item" onclick="navGo(function () { window.BFSLiveMap && window.BFSLiveMap.open(); })">🗺️ 3D Live Map</button>
-        <!-- Protected controls stay hidden until the stored JWT is validated (Req 1.3, 3.1) -->
-        <button type="button" role="menuitem" class="nav-item" id="histBtn" data-admin-only hidden onclick="navGo(openHistDrawer)">&#x1F4DC; History</button>
-        <button type="button" role="menuitem" class="nav-item" id="rptBtn" data-admin-only hidden onclick="navGo(openRptDrawer)">📊 Reports</button>
-        <button type="button" role="menuitem" class="nav-item" id="adminPanelBtn" data-admin-only hidden onclick="navGo(openAdminPanel)">📦 Inventory</button>
-        <button type="button" role="menuitem" class="nav-item" id="adminLogoutBtn" data-admin-only hidden onclick="navGo(adminLogout)">🚪 Logout</button>
-        <button type="button" role="menuitem" class="nav-item" id="adminLoginBtn" onclick="navGo(showAdminLogin)">🔐 Admin Login</button>
-      </div>
     </div>
   </div>
 </header>
+
+<!-- SIDE MENU (slides in from the right) -->
+<div class="nav-backdrop" id="navBackdrop" onclick="toggleNavMenu(false)"></div>
+<nav class="nav-panel" id="navMenu" aria-label="Main menu" aria-hidden="true">
+  <div class="hist-head">
+    <span>☰ Menu</span>
+    <button type="button" class="hist-close" onclick="toggleNavMenu(false)" aria-label="Close menu">&#x2715;</button>
+  </div>
+  <div class="nav-panel-body">
+    <button type="button" class="nav-item" onclick="navGo(function () { window.BFSLiveMap && window.BFSLiveMap.open(); })">🗺️ 3D Live Map</button>
+    <!-- Protected controls stay hidden until the stored JWT is validated (Req 1.3, 3.1) -->
+    <button type="button" class="nav-item" id="histBtn" data-admin-only hidden onclick="navGo(openHistDrawer)">&#x1F4DC; History</button>
+    <button type="button" class="nav-item" id="rptBtn" data-admin-only hidden onclick="navGo(openRptDrawer)">📊 Reports</button>
+    <button type="button" class="nav-item" id="adminPanelBtn" data-admin-only hidden onclick="navGo(openAdminPanel)">📦 Inventory</button>
+    <button type="button" class="nav-item" id="adminLogoutBtn" data-admin-only hidden onclick="navGo(adminLogout)">🚪 Logout</button>
+    <button type="button" class="nav-item" id="adminLoginBtn" onclick="navGo(showAdminLogin)">🔐 Admin Login</button>
+  </div>
+</nav>
 
 <!-- ADMIN LOGIN MODAL (Req 2.1, 2.4, 2.5) -->
 <div class="overlay" id="adminLoginOverlay" onclick="if (event.target === this) closeAdminLogin()">
@@ -2815,16 +2835,26 @@ function openAdminPanel() {
 }
 
 /* ===== HEADER HAMBURGER MENU ===== */
+function isNavMenuOpen() {
+  const menu = document.getElementById('navMenu');
+  return !!menu && menu.classList.contains('open');
+}
+
+/** Opens/closes the right-side menu panel. */
 function toggleNavMenu(force) {
   const menu = document.getElementById('navMenu');
   const btn = document.getElementById('navMenuBtn');
-  const open = typeof force === 'boolean' ? force : menu.hidden;
-  menu.hidden = !open;
+  const open = typeof force === 'boolean' ? force : !isNavMenuOpen();
+  const wasOpen = isNavMenuOpen();
+  menu.classList.toggle('open', open);
+  document.getElementById('navBackdrop').classList.toggle('open', open);
+  menu.setAttribute('aria-hidden', String(!open));
   btn.setAttribute('aria-expanded', String(open));
-  btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
   if (open) {
     const first = menu.querySelector('.nav-item:not([hidden])');
     if (first) first.focus();
+  } else if (wasOpen && menu.contains(document.activeElement)) {
+    btn.focus(); // return focus to the hamburger when the panel closes
   }
 }
 
@@ -2834,16 +2864,8 @@ function navGo(fn) {
   if (typeof fn === 'function') fn();
 }
 
-document.addEventListener('click', e => {
-  const wrap = document.querySelector('.nav-menu');
-  if (wrap && !wrap.contains(e.target)) toggleNavMenu(false);
-});
 document.addEventListener('keydown', e => {
-  const menu = document.getElementById('navMenu');
-  if (e.key === 'Escape' && menu && !menu.hidden) {
-    toggleNavMenu(false);
-    document.getElementById('navMenuBtn').focus();
-  }
+  if (e.key === 'Escape' && isNavMenuOpen()) toggleNavMenu(false);
 });
 
 /* ===== ADMIN PANEL DRAWER ===== */
