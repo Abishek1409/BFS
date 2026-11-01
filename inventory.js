@@ -6,6 +6,8 @@
 
   // v2: new BFS menu. Old v1 data is left in storage untouched.
   var STORAGE_KEY = 'bfs_inventory_v2';
+  var CATEGORY_KEY = 'bfs_inventory_categories_v1'; // admin-added categories (may have no items yet)
+  var MAX_CAT_LEN = 30;
   var MIN_PRICE = 1;
   var MAX_PRICE = 100000;
   var PRICE_ERROR = 'Price must be between 1 and 100000';
@@ -305,6 +307,52 @@
       return ok(item);
     }
 
+    // --- Categories ---
+
+    function readCustomCats() {
+      try {
+        var list = JSON.parse(store.getItem(CATEGORY_KEY));
+        return Array.isArray(list) ? list.filter(function (c) { return typeof c === 'string' && c.trim(); }) : [];
+      } catch (e) { return []; }
+    }
+
+    /** All categories: ones used by items first (menu order), then admin-added empty ones. */
+    function getCategories() {
+      var seen = {};
+      var out = [];
+      state.items.map(function (it) { return it.cat; }).concat(readCustomCats()).forEach(function (c) {
+        var key = normName(c);
+        if (c && !seen[key]) { seen[key] = true; out.push(c); }
+      });
+      return out;
+    }
+
+    /** Adds a new category so admins can put items in it. */
+    function addCategory(name) {
+      var cat = String(name == null ? '' : name).trim().replace(/\s+/g, ' ');
+      if (!cat) return fail('Category name is required');
+      if (cat.length > MAX_CAT_LEN) return fail('Category name must be ' + MAX_CAT_LEN + ' characters or less');
+      var exists = getCategories().some(function (c) { return normName(c) === normName(cat); });
+      if (exists) return fail('Category "' + cat + '" already exists');
+      var list = readCustomCats();
+      list.push(cat);
+      store.setItem(CATEGORY_KEY, JSON.stringify(list));
+      emit();
+      return { ok: true, category: cat };
+    }
+
+    /** Moves an item to another category. */
+    function updateCategory(id, cat) {
+      var item = find(id);
+      if (!item) return fail('Item not found');
+      var c = String(cat == null ? '' : cat).trim();
+      if (!c) return fail('Category is required');
+      if (c.length > MAX_CAT_LEN) return fail('Category name must be ' + MAX_CAT_LEN + ' characters or less');
+      item.cat = c;
+      commit();
+      return ok(item);
+    }
+
     /** Listener for changes made on this device (not ones received via applyRemote). */
     function onCommit(listener) {
       if (typeof listener === 'function') commitListeners.push(listener);
@@ -341,6 +389,9 @@
       applyRemote: applyRemote,
       markUploaded: markUploaded,
       removeItem: removeItem,
+      getCategories: getCategories,
+      addCategory: addCategory,
+      updateCategory: updateCategory,
       onCommit: onCommit,
       exportJson: exportJson,
       importJson: importJson,

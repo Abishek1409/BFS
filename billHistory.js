@@ -118,10 +118,12 @@
       date: date,
       time: _formatTime(now),
       items: Array.isArray(items) ? items : [],
-      printMethod: (typeof printMethod === 'string' && (printMethod === 'browser' || printMethod === 'thermal')) 
-        ? printMethod 
+      // 'manual' = entered by hand without printing; 'wifi-thermal' is the thermal print path
+      printMethod: printMethod === 'manual' ? 'manual'
+        : (printMethod === 'thermal' || printMethod === 'wifi-thermal') ? 'thermal'
         : 'browser',
-      formatType: (typeof formatType === 'string' && (formatType === 'customer' || formatType === 'kitchen' || formatType === 'both'))
+      // 'none' = saved to history without printing any bill/ticket
+      formatType: (typeof formatType === 'string' && ['customer', 'kitchen', 'both', 'none'].indexOf(formatType) !== -1)
         ? formatType
         : 'both'
     };

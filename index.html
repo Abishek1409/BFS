@@ -609,6 +609,59 @@
     }
     .hist-btn:hover { background: var(--card2); transform: translateY(-1px); }
 
+    /* === Header hamburger menu === */
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .nav-menu { position: relative; }
+    .hamburger-btn {
+      width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+      transition: background .18s;
+    }
+    .hamburger-btn:hover { background: rgba(255,255,255,0.22); }
+    .hamburger-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .hamburger-btn span { display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: transform .2s, opacity .2s; }
+    .hamburger-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .nav-dropdown {
+      position: absolute; right: 0; top: calc(100% + 8px); min-width: 210px; z-index: 1050;
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.5); padding: 6px; display: flex; flex-direction: column;
+    }
+    .nav-dropdown[hidden], .nav-item[hidden] { display: none; }
+    .nav-item {
+      background: none; border: none; color: var(--text); text-align: left; cursor: pointer;
+      padding: 10px 12px; border-radius: 8px; font-size: .9rem; font-weight: 600; font-family: inherit;
+    }
+    .nav-item:hover, .nav-item:focus-visible { background: var(--card2); color: var(--accent); outline: none; }
+
+    /* === Menu search === */
+    .menu-search { padding: 12px 16px 0; }
+    .menu-search input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 50px; padding: 9px 16px;
+      font-size: .9rem; font-family: inherit; color: var(--text); background: rgba(255,255,255,0.04); outline: none;
+    }
+    .menu-search input:focus { border-color: var(--accent); }
+    .menu-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 32px 16px; font-size: .9rem; }
+
+    /* === Bill print options === */
+    .bill-print-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-print-alt {
+      background: var(--card2); color: var(--accent); border: 1.5px solid var(--border);
+      padding: 9px; border-radius: 8px; font-size: .82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-print-alt:hover { border-color: var(--accent); }
+    .btn-print-alt.full { grid-column: 1 / -1; }
+
+    /* === Admin categories === */
+    .ap-cat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .ap-cat-chip { background: var(--card2); border: 1px solid var(--border); border-radius: 99px; padding: 4px 10px; font-size: .75rem; color: var(--text); }
+    .ap-cat-select {
+      border: 1.5px solid var(--border); border-radius: 8px; padding: 5px 6px;
+      font-size: .8rem; font-family: inherit; color: var(--text); background: var(--bg);
+    }
+
     .hist-drawer {
       position: fixed; top: 0; right: -520px; width: 500px; max-width: 98vw;
       height: 100vh; background: var(--card); z-index: 1100;
@@ -832,14 +885,24 @@
       <small>BFS Billing System &mdash; 100% Offline &amp; Frontend Only</small>
     </div>
   </div>
-  <div class="bill-badge" id="headerBillNo">Bill #001</div>
-  <button class="hist-btn" onclick="window.BFSLiveMap && window.BFSLiveMap.open()">🗺️ Live Map</button>
-  <!-- Protected controls stay hidden until the stored JWT is validated (Req 1.3, 3.1) -->
-  <button class="hist-btn" id="histBtn" data-admin-only hidden onclick="openHistDrawer()">&#x1F4DC; History</button>
-  <button class="hist-btn" id="rptBtn" data-admin-only hidden onclick="openRptDrawer()">📊 Reports</button>
-  <button class="hist-btn" id="adminPanelBtn" data-admin-only hidden onclick="openAdminPanel()">🛠️ Admin Panel</button>
-  <button class="hist-btn" id="adminLogoutBtn" data-admin-only hidden onclick="adminLogout()">🚪 Logout</button>
-  <button class="hist-btn" id="adminLoginBtn" onclick="showAdminLogin()">🔐 Admin</button>
+  <div class="header-right">
+    <div class="bill-badge" id="headerBillNo">Bill #001</div>
+    <!-- Hamburger menu: 3D map, History, Reports, Inventory, Admin login/logout -->
+    <div class="nav-menu">
+      <button type="button" class="hamburger-btn" id="navMenuBtn" aria-label="Open menu" aria-haspopup="true" aria-expanded="false" aria-controls="navMenu" onclick="toggleNavMenu()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-dropdown" id="navMenu" role="menu" aria-labelledby="navMenuBtn" hidden>
+        <button type="button" role="menuitem" class="nav-item" onclick="navGo(function () { window.BFSLiveMap && window.BFSLiveMap.open(); })">🗺️ 3D Live Map</button>
+        <!-- Protected controls stay hidden until the stored JWT is validated (Req 1.3, 3.1) -->
+        <button type="button" role="menuitem" class="nav-item" id="histBtn" data-admin-only hidden onclick="navGo(openHistDrawer)">&#x1F4DC; History</button>
+        <button type="button" role="menuitem" class="nav-item" id="rptBtn" data-admin-only hidden onclick="navGo(openRptDrawer)">📊 Reports</button>
+        <button type="button" role="menuitem" class="nav-item" id="adminPanelBtn" data-admin-only hidden onclick="navGo(openAdminPanel)">📦 Inventory</button>
+        <button type="button" role="menuitem" class="nav-item" id="adminLogoutBtn" data-admin-only hidden onclick="navGo(adminLogout)">🚪 Logout</button>
+        <button type="button" role="menuitem" class="nav-item" id="adminLoginBtn" onclick="navGo(showAdminLogin)">🔐 Admin Login</button>
+      </div>
+    </div>
+  </div>
 </header>
 
 <!-- ADMIN LOGIN MODAL (Req 2.1, 2.4, 2.5) -->
@@ -946,8 +1009,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
       Menu &mdash; Select items to add to bill
     </div>
+    <div class="menu-search" role="search">
+      <label for="menuSearch" class="sr-only">Search menu items</label>
+      <input type="search" id="menuSearch" placeholder="🔍 Search items or categories…" autocomplete="off" oninput="renderMenuGrid(activeMenuCat)" />
+    </div>
     <div class="cat-tabs" id="catTabs"></div>
-    <div class="menu-grid" id="menuGrid"></div>
+    <div class="menu-grid" id="menuGrid" aria-live="polite"></div>
   </div>
 
   <!-- RIGHT COLUMN: Orders Queue + Bill -->
@@ -1024,6 +1091,12 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         <span id="printBtnLabel">Print Receipt</span>
       </button>
+      <!-- Print only one copy, or record the sale without printing anything -->
+      <div class="bill-print-options">
+        <button type="button" class="btn-print-alt" onclick="printBill('customer')" title="Print only the customer bill (Printer 1)">🧾 Customer Bill</button>
+        <button type="button" class="btn-print-alt" onclick="printBill('kitchen')" title="Print only the kitchen ticket (Printer 2)">👨‍🍳 Kitchen Ticket</button>
+        <button type="button" class="btn-print-alt full" onclick="saveBillWithoutPrint()" title="Customer ate without asking for a bill: save the sale to history without printing">📝 Save to History (No Print)</button>
+      </div>
       <button class="btn-clear" onclick="clearBill()">&#x1F5D1; Clear &amp; New Bill</button>
     </div>
   </div>
@@ -1211,7 +1284,7 @@
 <div class="hist-backdrop" id="adminBackdrop" onclick="closeAdminPanel()"></div>
 <div class="hist-drawer admin-drawer" id="adminDrawer" role="dialog" aria-modal="true" aria-labelledby="adminPanelTitle">
   <div class="hist-head">
-    <span id="adminPanelTitle">🛠️ Admin Panel</span>
+    <span id="adminPanelTitle">📦 Inventory</span>
     <button class="hist-close" onclick="closeAdminPanel()" aria-label="Close admin panel">&#x2715;</button>
   </div>
   <div class="ap-body">
@@ -1223,6 +1296,16 @@
              onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">&#x2B06; Import inventory</label>
       <input type="file" id="apImportFile" class="ap-file" accept="application/json,.json" onchange="apImport(this)" />
       <span class="ap-err" id="apFileMsg" role="status" aria-live="polite"></span>
+    </div>
+
+    <div class="ap-section">
+      <h4>🗂️ Categories</h4>
+      <form class="ap-form" id="apCatForm" onsubmit="apAddCategory(event)">
+        <label>New category <input type="text" id="apNewCatName" maxlength="30" required style="width:180px" /></label>
+        <button type="submit" class="hist-dl-btn">Add category</button>
+      </form>
+      <p class="ap-err" id="apCatErr" role="alert" aria-live="assertive"></p>
+      <div class="ap-cat-chips" id="apCatChips"></div>
     </div>
 
     <div class="ap-section">
@@ -2400,7 +2483,15 @@ function startMenuSync() {
 
 function renderMenuGrid(cat) {
   activeMenuCat = cat;
-  const items = cat === "All" ? menuItems : menuItems.filter(i => i.cat === cat);
+  const searchEl = document.getElementById('menuSearch');
+  const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  // While searching, look through every category so items are never hidden by the active tab
+  let items = (cat === "All" || q) ? menuItems : menuItems.filter(i => i.cat === cat);
+  if (q) items = items.filter(i => i.name.toLowerCase().includes(q) || String(i.cat).toLowerCase().includes(q));
+  if (!items.length) {
+    document.getElementById('menuGrid').innerHTML = `<div class="menu-empty">${q ? `No items match "${escMenu(q)}"` : 'No items in this category yet.'}</div>`;
+    return;
+  }
   document.getElementById('menuGrid').innerHTML = items.map(item => {
     const out = isMenuItemOutOfStock(item); // Req 7.5
     return `
@@ -2723,6 +2814,38 @@ function openAdminPanel() {
   withAdmin(showAdminPanelDrawer);
 }
 
+/* ===== HEADER HAMBURGER MENU ===== */
+function toggleNavMenu(force) {
+  const menu = document.getElementById('navMenu');
+  const btn = document.getElementById('navMenuBtn');
+  const open = typeof force === 'boolean' ? force : menu.hidden;
+  menu.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+  btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  if (open) {
+    const first = menu.querySelector('.nav-item:not([hidden])');
+    if (first) first.focus();
+  }
+}
+
+/** Closes the menu, then runs the chosen action. */
+function navGo(fn) {
+  toggleNavMenu(false);
+  if (typeof fn === 'function') fn();
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.nav-menu');
+  if (wrap && !wrap.contains(e.target)) toggleNavMenu(false);
+});
+document.addEventListener('keydown', e => {
+  const menu = document.getElementById('navMenu');
+  if (e.key === 'Escape' && menu && !menu.hidden) {
+    toggleNavMenu(false);
+    document.getElementById('navMenuBtn').focus();
+  }
+});
+
 /* ===== ADMIN PANEL DRAWER ===== */
 let apListenerBound = false;
 
@@ -2772,9 +2895,14 @@ function renderAdminPanel() {
   const body = document.getElementById('apTableBody');
   body.replaceChildren();
 
-  // Category suggestions for the new item form
-  const cats = [...new Set(items.map(i => i.cat).filter(Boolean))];
+  // Category suggestions for the new item form + category list (includes admin-added empty ones)
+  const cats = Inventory.getCategories ? Inventory.getCategories() : [...new Set(items.map(i => i.cat).filter(Boolean))];
   document.getElementById('apCatList').replaceChildren(...cats.map(c => apEl('option', { value: c })));
+  document.getElementById('apCatChips').replaceChildren(...cats.map(c => {
+    const n = items.filter(i => i.cat === c).length;
+    return apEl('span', { className: 'ap-cat-chip', textContent: `${c} (${n})` });
+  }));
+  apCats = cats;
 
   if (!items.length) {
     body.append(apEl('tr', {}, [apEl('td', { colSpan: 6, className: 'hist-empty', textContent: 'No items' })]));
@@ -2806,9 +2934,18 @@ function apRow(item) {
     apGuard(() => show(Inventory.setAvailable(item.id, want)));
   };
 
+  // Category: move an item to any existing category
+  const catSel = apEl('select', { className: 'ap-cat-select', ariaLabel: `Category for ${item.name}` },
+    (apCats.includes(item.cat) ? apCats : [item.cat, ...apCats]).map(c => apEl('option', { value: c, textContent: c, selected: c === item.cat })));
+  catSel.onchange = () => {
+    const want = catSel.value;
+    catSel.value = item.cat; // revert until the save succeeds
+    apGuard(() => show(Inventory.updateCategory(item.id, want)));
+  };
+
   return apEl('tr', {}, [
     nameCell,
-    apEl('td', { textContent: item.cat }),
+    apEl('td', {}, [catSel]),
     priceCell,
     apEl('td', {}, [avail]),
     apEl('td', {}, apStockCell(item)),
@@ -2859,6 +2996,24 @@ function apStockCell(item) {
     err.textContent = res.ok ? '' : res.error;
   });
   return [btn, err];
+}
+
+let apCats = [];
+
+/** Adds a new (empty) category; items can then be added to it or moved into it. */
+function apAddCategory(e) {
+  e.preventDefault();
+  const err = document.getElementById('apCatErr');
+  const input = document.getElementById('apNewCatName');
+  apGuard(() => {
+    const res = Inventory.addCategory(input.value);
+    err.classList.toggle('ap-ok', res.ok);
+    if (!res.ok) { err.textContent = res.error; return; }
+    err.textContent = `Added category "${res.category}". Add an item to it to show it on the menu.`;
+    input.value = '';
+    document.getElementById('apNewCat').value = res.category;
+    renderAdminPanel();
+  });
 }
 
 /** New item form (Req 6.1, 6.2, 6.3). */
@@ -3038,6 +3193,10 @@ function renderHistoryTable(records) {
       methodIcon = '🖨️';
       methodText = 'Thermal';
       methodColor = '#d9a83e';
+    } else if (printMethod === 'manual') {
+      methodIcon = '✍️';
+      methodText = 'Manual';
+      methodColor = '#7dd3fc';
     } else {
       methodIcon = '🌐';
       methodText = 'Browser';
@@ -3061,6 +3220,9 @@ function renderHistoryTable(records) {
     } else if (formatType === 'kitchen') {
       formatIcon = '👨‍🍳';
       formatText = 'Kitchen';
+    } else if (formatType === 'none') {
+      formatIcon = '📝';
+      formatText = 'No Print';
     } else {
       formatIcon = '📋';
       formatText = 'Both';
@@ -3123,7 +3285,7 @@ function downloadHistory() {
       
       // Print method for export
       const printMethod = r.printMethod || 'browser';
-      const methodText = printMethod === 'thermal' ? '🖨️ Thermal' : '🌐 Browser';
+      const methodText = printMethod === 'thermal' ? '🖨️ Thermal' : printMethod === 'manual' ? '✍️ Manual' : '🌐 Browser';
       
       // Format type for export - with backward compatibility
       const formatType = r.formatType || 'both';
@@ -3132,6 +3294,8 @@ function downloadHistory() {
         formatText = '🧾 Customer';
       } else if (formatType === 'kitchen') {
         formatText = '👨‍🍳 Kitchen';
+      } else if (formatType === 'none') {
+        formatText = '📝 No Print';
       } else {
         formatText = '📋 Both';
       }
@@ -3182,13 +3346,18 @@ function downloadHistory() {
 /**
  * Main print bill function - prints to unified thermal printers (USB or WiFi)
  */
-async function printBill() {
+async function printBill(mode) {
   if (billItems.length === 0) { 
     showWarningToast('Empty Bill', 'Add at least one item before printing');
     return; 
   }
 
   const status = getPrintersStatus();
+
+  // Single-copy print: customer bill only (Printer 1) or kitchen ticket only (Printer 2)
+  if (mode === 'customer' || mode === 'kitchen') {
+    return printSingleFormat(mode, status);
+  }
   
   // Check if at least one printer is configured
   if (!status.printer1.configured && !status.printer2.configured) {
@@ -3330,6 +3499,102 @@ async function printBill() {
   }
 }
 
+/** Builds the bill snapshot used for printing and history. */
+function collectBillData() {
+  ensureTodayBillCounter(); // page left open past midnight: restart at 100
+  const billNo = document.getElementById('billNoInput').value;
+  const customer = document.getElementById('customerName').value.trim();
+  const grandTotal = billItems.reduce((s, i) => s + i.total, 0);
+  const items = billItems.map(function(it) {
+    var parts = [];
+    if (it.ice) parts.push(it.ice);
+    if (it.sugar && it.sugar !== 'Normal Sugar') parts.push(it.sugar);
+    if (it.size  && it.size  !== 'Regular')      parts.push(it.size);
+    if (it.note) parts.push(it.note);
+    return {
+      name: it.name, baseName: it.baseName || it.name, emoji: it.emoji,
+      qty: it.qty, price: it.price, total: it.total,
+      ice: it.ice, sugar: it.sugar, size: it.size, note: it.note,
+      orderType: it.orderType || 'Dine In',
+      spec: parts.join(', ') || 'Standard'
+    };
+  });
+  return { billNo, customerName: customer, items, subtotal: grandTotal, grandTotal, date: new Date() };
+}
+
+/**
+ * Prints only one format: 'customer' -> Printer 1, 'kitchen' -> Printer 2.
+ * The sale is saved to history with that format.
+ */
+async function printSingleFormat(mode, status) {
+  const printerId = mode === 'customer' ? 'printer1' : 'printer2';
+  const label = mode === 'customer' ? 'Customer bill' : 'Kitchen ticket';
+  if (!status[printerId].configured) {
+    showErrorToast(`${status[printerId].name} not configured`, `Configure it to print the ${label.toLowerCase()}.`,
+      [{ label: 'Configure Printers', onClick: () => showPrinterConfig(), primary: true }]);
+    return;
+  }
+  try {
+    setPrintLoading(true, `Printing ${label.toLowerCase()}...`);
+    const billData = collectBillData();
+    const data = mode === 'customer' ? generateCustomerReceipt(billData) : generateKitchenTicket(billData);
+    await printToUnifiedPrinter(printerId, data);
+    setPrintLoading(false);
+    showSuccessToast(`${label} printed`, `Sent to ${status[printerId].name}`);
+    saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName, mode);
+    clearCurrentBill();
+  } catch (error) {
+    setPrintLoading(false);
+    showErrorToast(`${label} failed`, error.message || 'Print failed', [
+      { label: 'Retry', onClick: () => printBill(mode), primary: true },
+      { label: 'Save without printing', onClick: () => saveBillWithoutPrint(), primary: false }
+    ]);
+  }
+}
+
+/**
+ * Records the sale in history without printing anything.
+ * For customers who ate and paid without asking for a bill, or orders taken directly in the kitchen.
+ */
+function saveBillWithoutPrint() {
+  if (billItems.length === 0) {
+    showWarningToast('Empty Bill', 'Add the items the customer had before saving');
+    return;
+  }
+  const billData = collectBillData();
+  if (!confirm(`Save Bill #${billData.billNo} (₹${billData.grandTotal.toFixed(2)}) to history without printing?`)) return;
+  if (!window.BillHistory) { showErrorToast('History unavailable', 'billHistory.js not loaded'); return; }
+  // Save first so the history entry exists before the bill is cleared
+  window.BillHistory.saveBillRecord(billData.billNo, billData.grandTotal, billData.items, 'manual', 'none')
+    .then(function() {
+      showSuccessToast('Saved to history', `Bill #${billData.billNo} recorded without printing`);
+      finishBill(billData);
+      clearCurrentBill();
+    })
+    .catch(function(err) {
+      console.error('Manual bill save failed:', err);
+      showErrorToast('Save failed', err.message || 'Could not save to history');
+    });
+}
+
+/** QR order bookkeeping after a bill is recorded (shared with saveBillToHistory). */
+function finishBill(billData) {
+  if (activeQrOrderId) {
+    var qrId = activeQrOrderId;
+    var qrOrder = orderQueue.find(function(o) { return o.serverId === qrId; });
+    if (window.firebaseConfig && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+      firebase.database().ref('orderStatus/' + qrId).set({ billNo: billData.billNo, status: 'billed' })
+        .then(function() { return firebase.database().ref('orders/' + qrId).remove(); })
+        .catch(function(error) { console.error('Could not save or remove QR order in Firebase:', error); });
+    }
+    if (qrOrder) qrOrder.status = 'printed';
+    activeQrOrderId = null;
+    renderQueue();
+  } else {
+    addToQueue(billData.billNo, billData.customerName, billData.grandTotal, billData.items);
+  }
+}
+
 /* ===== REMOVED: Browser Print and Old Serial Thermal Print (WiFi Only) ===== */
 
 /**
@@ -3348,30 +3613,9 @@ function saveBillToHistory(billNo, amount, items, customer, formatType) {
       .catch(function(err) { console.error('Bill save failed:', err); });
   }
 
-  if (activeQrOrderId) {
-    var printedQrOrderId = activeQrOrderId;
-    var printedQrOrder = orderQueue.find(function(o) { return o.serverId === printedQrOrderId; });
-
-    if (window.firebaseConfig && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-      firebase.database().ref('orderStatus/' + printedQrOrderId).set({ billNo: billNo, status: 'billed' })
-        .then(function() {
-          return firebase.database().ref('orders/' + printedQrOrderId).remove();
-        })
-        .catch(function(error) {
-          console.error('Could not save or remove printed QR order in Firebase:', error);
-        });
-    }
-
-    saveRecordAndDeduct();
-
-    if (printedQrOrder) printedQrOrder.status = 'printed';
-    activeQrOrderId = null;
-    renderQueue();
-  } else {
-    saveRecordAndDeduct();
-    // Add manually printed bills to the local orders queue.
-    addToQueue(billNo, customer, amount, items);
-  }
+  saveRecordAndDeduct();
+  // Marks a loaded QR order as billed, or adds manual bills to the local orders queue.
+  finishBill({ billNo: billNo, customerName: customer, grandTotal: amount, items: items });
 }
 
 /**
