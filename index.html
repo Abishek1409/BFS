@@ -984,9 +984,9 @@
     .added-badge { animation: badgeIn .25s ease both; }
     @keyframes badgeIn { from { opacity: 0; transform: translateY(-4px) scale(.9); } }
 
-    /* Animated background canvas (bg-lines.js): low-res, upscaled, fades in after load */
-    .bg-lines-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .8s ease; }
-    .bg-lines-canvas.ready { opacity: 1; }
+    /* Prism background (prism-bg.js, port of React Bits <Prism />): low-res, upscaled, fades in itself */
+    .prism { position: relative; width: 100%; height: 100%; overflow: hidden; }
+    .prism-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
     .menu-card .item-photo { border-radius: 8px; background: var(--surface); }
     .menu-card .item-photo.is-icon { filter: none; }
     .menu-card .item-name { font-weight: 600; color: var(--ink); }
@@ -1547,7 +1547,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="shopAuth.js"></script>
-<script src="bg-lines.js" defer></script>
+<script src="prism-bg.js" defer></script>
 <script src="billHistory.js"></script>
 <script src="menu-data.js"></script>
 <script src="inventory.js"></script>
