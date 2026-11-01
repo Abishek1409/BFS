@@ -49,9 +49,10 @@
     body { font-family: 'Trebuchet MS', 'Arial', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
     .app-header {
-      background: linear-gradient(90deg, var(--black) 0%, var(--mocha-dark) 55%, var(--mocha) 100%);
+      /* Champagne gold header */
+      background: linear-gradient(90deg, #f7e7ce 0%, #e8d3a2 55%, #d4b97f 100%);
       border-bottom: 2px solid var(--amber);
-      color: var(--champagne); padding: 18px 32px;
+      color: var(--mocha-deep); padding: 18px 32px;
       display: flex; align-items: center; justify-content: space-between;
       box-shadow: 0 4px 18px rgba(0,0,0,.3);
     }
@@ -65,14 +66,14 @@
     }
     .app-header h1 {
       font-family: 'Trebuchet MS', 'Arial', sans-serif; font-size: 1.7rem; letter-spacing: 0;
-      color: var(--champagne-2);
+      color: var(--mocha-deep);
       background: none;
       -webkit-text-fill-color: currentColor;
     }
-    .app-header small { font-size: .8rem; opacity: .75; display: block; }
+    .app-header small { font-size: .8rem; color: var(--mocha); font-weight: 600; display: block; }
     .bill-badge {
-      background: var(--amber); border: 1px solid var(--amber-light);
-      color: var(--black); border-radius: 50px; padding: 6px 18px; font-size: .85rem; font-weight: 600;
+      background: var(--mocha-dark); border: 1px solid var(--amber);
+      color: var(--amber-light); border-radius: 50px; padding: 6px 18px; font-size: .85rem; font-weight: 600;
     }
 
     .workspace {
@@ -627,13 +628,13 @@
     .nav-menu { position: relative; }
     .hamburger-btn {
       width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
-      background: var(--champagne-2); border: 1px solid var(--amber);
+      background: var(--champagne); border: 1px solid var(--mocha);
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
       transition: background .18s;
     }
     .hamburger-btn:hover { background: var(--amber); }
     .hamburger-btn:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
-    .hamburger-btn span { display: block; width: 22px; height: 3px; background: #000; border-radius: 2px; }
+    .hamburger-btn span { display: block; width: 22px; height: 3px; background: var(--black); border-radius: 2px; }
 
     /* Slide-in side panel from the right */
     .nav-backdrop {
