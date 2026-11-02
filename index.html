@@ -7,6 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <link rel="icon" href="34908.jpg" type="image/jpeg" />
+  <!-- Project font: Nofex (assets/fonts/Nofex.otf), defined in fonts.css -->
   <title>BFS &ndash; Billing System | Best Fruits Stall</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,7 +46,7 @@
       --shadow:        0 8px 32px rgba(0, 0, 0, 0.62);
       --gradient:      linear-gradient(135deg, var(--mocha) 0%, var(--mocha-dark) 100%);
     }
-    body { font-family: 'Trebuchet MS', 'Arial', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body { font-family: 'Nofex', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
     .app-header {
       /* Champagne gold header */
@@ -64,7 +65,7 @@
       display: block;
     }
     .app-header h1 {
-      font-family: 'Trebuchet MS', 'Arial', sans-serif; font-size: 1.7rem; letter-spacing: 0;
+      font-family: 'Nofex', 'Segoe UI', sans-serif; font-size: 1.7rem; letter-spacing: 0;
       color: var(--mocha-deep);
       background: none;
       -webkit-text-fill-color: currentColor;
@@ -1116,10 +1117,78 @@
       .panel, .oq-list { background: rgba(16, 11, 8, .72); }
     }
 
+    /* =====================================================================
+       TYPOGRAPHY: Nofex (font face in fonts.css)
+       Scale 12 / 14 / 16 / 20 / 24, weights 400 / 500 / 600 / 700,
+       tabular figures on every price and total so digits line up.
+       ===================================================================== */
+    /* Font face (Nofex) is defined in fonts.css, shared by every page */
+    :root {
+      --fs-xs: 12px; --fs-sm: 13px; --fs-body: 14px; --fs-md: 16px; --fs-lg: 20px; --fs-xl: 24px;
+    }
+    html, body, button, input, select, textarea { font-family: var(--font); }
+    body { font-size: var(--fs-body); line-height: 1.45; letter-spacing: -0.005em; text-rendering: optimizeLegibility; }
+
+    /* Header */
+    .app-header h1 { font-family: var(--font); font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+    .app-header small { font-size: var(--fs-xs); font-weight: 500; letter-spacing: 0; }
+    .bill-badge { font-size: var(--fs-sm); font-weight: 600; }
+
+    /* Section titles */
+    .panel-head, .oq-title, .hist-head { font-size: var(--fs-md); font-weight: 600; letter-spacing: -0.01em; }
+    .rpt-title { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -0.015em; }
+    .modal h3 { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -0.015em; }
+    .ap-section h4 { font-size: var(--fs-body); font-weight: 600; }
+
+    /* Menu */
+    .menu-search input { font-size: var(--fs-body); }
+    .cat-tab { font-size: var(--fs-sm); font-weight: 600; }
+    .menu-card .item-name { font-size: var(--fs-body); font-weight: 600; line-height: 1.3; letter-spacing: -0.005em; }
+    .menu-card .item-price { font-size: var(--fs-md); font-weight: 700; margin-top: 4px; }
+    .menu-card .item-cat-badge, .out-of-stock-label, .added-badge { font-size: 11px; font-weight: 600; letter-spacing: 0; }
+    .menu-empty { font-size: var(--fs-body); }
+
+    /* Bill */
+    .bill-number-row label, .customer-row label, .form-row label { font-size: var(--fs-sm); font-weight: 500; }
+    .bill-no-input { font-size: var(--fs-body); font-weight: 600; }
+    .customer-row input { font-size: var(--fs-body); }
+    .bill-item-name { font-size: var(--fs-body); font-weight: 600; }
+    .bill-item-spec, .bill-item-unit { font-size: var(--fs-xs); }
+    .bill-item-total { font-size: var(--fs-body); font-weight: 700; }
+    .total-row { font-size: var(--fs-sm); }
+    .total-row.grand { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -0.015em; }
+    .empty-bill, .oq-empty { font-size: var(--fs-sm); }
+
+    /* Buttons and controls */
+    .btn, .btn-print { font-size: var(--fs-body); font-weight: 700; }
+    .btn-print-alt, .btn-clear, .btn-configure-printers, .hist-dl-btn, .rpt-mode-btn, .toggle-btn { font-size: var(--fs-sm); font-weight: 600; }
+    .btn-connect-printer, .oq-connect-btn, .oq-row-pay-btn, .ap-small-btn { font-size: var(--fs-xs); font-weight: 600; }
+    .nav-item { font-size: var(--fs-md); font-weight: 500; }
+
+    /* Orders queue, history, reports */
+    .oq-row-bill { font-size: var(--fs-body); font-weight: 700; }
+    .oq-row-items, .oq-row-time, .oq-connection, .printer-ip { font-size: var(--fs-xs); }
+    .oq-row-amount, .hist-amount { font-size: var(--fs-body); font-weight: 700; }
+    .printer-info { font-size: var(--fs-sm); font-weight: 500; }
+    .hist-table { font-size: var(--fs-sm); }
+    .hist-table th { font-size: var(--fs-xs); font-weight: 500; }
+    .rpt-stat-val { font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em; }
+    .rpt-stat-lbl, .rpt-card-title { font-size: var(--fs-xs); font-weight: 500; }
+    .toast-title { font-size: var(--fs-body); font-weight: 600; }
+    .toast-message { font-size: var(--fs-sm); }
+
+    /* Every changing number: equal-width digits so totals don't jitter */
+    .item-price, .bill-item-total, .bill-item-unit, .total-row, .bill-badge, .bill-no-input,
+    .oq-row-amount, .oq-badge, .hist-amount, .hist-table td, .rpt-stat-val, .modal-price, .qty-val {
+      font-variant-numeric: tabular-nums;
+    }
+    .printer-ip { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
   </style>
+  <link rel="stylesheet" href="fonts.css" />
 </head>
 <body>
 
@@ -3590,7 +3659,7 @@ function downloadHistory() {
     const html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>' +
       '<title>Bill History — Best Fruits Stall</title>' +
       '<style>' +
-        'body{font-family:Inter,sans-serif;background:#121212;color:#f5f5f5;padding:24px;margin:0}' +
+        'body{font-family:Nofex,"Segoe UI",sans-serif;background:#121212;color:#f5f5f5;padding:24px;margin:0}' +
         'h2{font-size:1.3rem;margin-bottom:4px}' +
         '.meta{color:#a3a3a3;font-size:.85rem;margin-bottom:16px}' +
         'table{width:100%;border-collapse:collapse;font-size:.88rem}' +

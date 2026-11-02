@@ -1,0 +1,34 @@
+/* Project-wide font: Nofex (assets/fonts/Nofex.otf). One file, one weight (Regular).
+
+   Nofex is a letters-only display font: it has A-Z, a-z and basic punctuation, but NO digits (0-9),
+   NO rupee sign (₹) and NO '#'. Browsers fill missing characters from the next font in the list,
+   so all prices, totals and bill numbers are drawn in the fallback below. That is automatic.
+
+   Bold: Nofex has no separate bold file, so `font-synthesis: none` stops the browser from
+   smearing a fake bold over it. Headings and buttons keep their weight in the fallback digits. */
+
+@font-face {
+  font-family: 'Nofex';
+  font-style: normal;
+  font-weight: 100 900;   /* the single file serves every weight */
+  font-display: swap;
+  src: local('Nofex'), local('Nofex Regular'), local('Nofex-Regular'),
+       url('assets/fonts/Nofex.otf') format('opentype');
+}
+
+:root {
+  /* Nofex for letters; Segoe UI (Windows) / system sans for digits, ₹ and # */
+  --font: 'Nofex', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Apply everywhere: page text, form controls, and the Live Map overlay */
+html, body, button, input, select, textarea, optgroup,
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font) !important;
+  font-synthesis: none;
+}
+
+/* Typed text and numbers in inputs read better in the plain sans (bill no., qty, price, password) */
+input, textarea, select {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+}
