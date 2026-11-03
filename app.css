@@ -1175,3 +1175,65 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
+
+    /* =====================================================================
+       BILLING LAYOUT: fill the screen. Menu grid stretches to the bottom,
+       right column scrolls on its own, bill sits right under a compact queue.
+       ===================================================================== */
+    body[data-page="billing"] { height: 100vh; overflow: hidden; }
+    body[data-page="billing"] .app-ui { height: 100vh; min-height: 0; display: flex; flex-direction: column; }
+    body[data-page="billing"] .app-header { flex-shrink: 0; }
+    body[data-page="billing"] .workspace {
+      flex: 1; min-height: 0; max-width: none; width: 100%;
+      grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px 20px;
+    }
+    /* Menu panel: header, search and tabs stay put, cards fill the rest */
+    body[data-page="billing"] .workspace > .panel { display: flex; flex-direction: column; min-height: 0; }
+    body[data-page="billing"] .menu-grid { flex: 1; min-height: 0; max-height: none; align-content: start; }
+    /* Right column: scrolls inside itself instead of pushing the bill down the page */
+    body[data-page="billing"] .right-col { min-height: 0; overflow-y: auto; gap: 12px; padding-right: 2px; }
+    body[data-page="billing"] .right-col > .panel { flex: 0 0 auto; }
+    /* Compact orders queue */
+    body[data-page="billing"] .oq-head { margin-bottom: 8px; }
+    body[data-page="billing"] .oq-list { max-height: 160px; }
+    body[data-page="billing"] .oq-empty { padding: 12px 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    body[data-page="billing"] .oq-empty .icon { font-size: 1.1rem; display: inline; margin: 0; }
+    /* Tighter bill: smaller rows so the print buttons stay on screen */
+    body[data-page="billing"] .bill-number-row, body[data-page="billing"] .customer-row { padding: 6px 14px; }
+    body[data-page="billing"] .bill-items-list { max-height: 30vh; padding: 8px 10px; }
+    body[data-page="billing"] .bill-actions { padding: 8px 12px; gap: 6px; }
+    body[data-page="billing"] .wifi-printer-status { padding: 6px; gap: 4px; }
+    body[data-page="billing"] .printer-status-item { padding: 3px 6px; }
+    body[data-page="billing"] .btn-configure-printers { padding: 5px 10px; }
+    body[data-page="billing"] .btn-print { padding: 10px; }
+    body[data-page="billing"] .btn-print-alt { padding: 7px; }
+    body[data-page="billing"] .btn-clear { padding: 7px; }
+    body[data-page="billing"] .panel-head { padding: 10px 16px; }
+    /* Tighter empty cart */
+    body[data-page="billing"] .empty-bill { padding: 16px; }
+    body[data-page="billing"] .empty-bill .icon { font-size: 1.5rem; margin-bottom: 4px; }
+
+    /* Narrow screens: stack and let the page scroll as before */
+    @media (max-width: 900px) {
+      body[data-page="billing"] { height: auto; overflow: auto; }
+      body[data-page="billing"] .app-ui { height: auto; min-height: 100vh; }
+      body[data-page="billing"] .workspace { grid-template-columns: 1fr; }
+      body[data-page="billing"] .menu-grid { max-height: 60vh; }
+      body[data-page="billing"] .right-col { overflow: visible; }
+    }
+
+    /* Printer status: one line with a settings gear */
+    .printer-strip { display: flex; align-items: center; gap: 8px; }
+    .printer-chip {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px;
+      border: 1px solid var(--border); font-size: var(--fs-xs); color: var(--muted); white-space: nowrap;
+    }
+    .printer-chip .printer-status-dot { flex-shrink: 0; }
+    .printer-gear {
+      margin-left: auto; width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+      background: transparent; color: var(--gold); border: 1px solid var(--border); transition: border-color .15s, color .15s;
+    }
+    .printer-gear:hover { border-color: var(--gold); color: var(--accent); }
+    .printer-gear svg { transition: transform .4s ease; }
+    .printer-gear:hover svg { transform: rotate(60deg); }
