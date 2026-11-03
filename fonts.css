@@ -49,3 +49,28 @@ button, .btn, .btn-gold, .btn-print, .btn-print-alt, .btn-clear, .hist-dl-btn, .
 input, textarea, select {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
 }
+
+/* ---------- Bigger type (about +15%) ----------
+   app.css sizes most text through these variables; fonts.css loads last, so these win. */
+:root {
+  --fs-xs: 14px; --fs-sm: 15px; --fs-body: 16px; --fs-md: 19px; --fs-lg: 23px; --fs-xl: 28px;
+}
+body { font-size: var(--fs-body); }
+
+/* Sizes that were fixed in px (sidebar pages, theme.css) */
+.page-title { font-size: 34px; }
+.side-panel h2 { font-size: 28px; }
+.brand { font-size: 24px; }
+.brand small { font-size: 12px; }
+.nv { font-size: 16px; }
+.sub { font-size: 15px; }
+.label, .hist-table th { font-size: 13px; }
+.hist-table td, .hist-summary { font-size: 15px; }
+.tag, .printer-chip { font-size: 14px; }
+.btn-gold { font-size: 17px; }
+.rpt-stat-val { font-size: 30px; }
+.menu-card .item-name { font-size: 17px; }
+.menu-card .item-price { font-size: 20px; }
+.menu-card .item-cat-badge, .out-of-stock-label, .added-badge { font-size: 12px; }
+.modal h3 { font-size: 26px; }
+.form-row input, .form-row textarea, .menu-search input, .bill-no-input, .customer-row input { font-size: 16px; }
