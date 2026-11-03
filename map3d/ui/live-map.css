@@ -14,7 +14,7 @@
   z-index: 900;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Nofex', 'Segoe UI', sans-serif;
+  font-family: var(--font, 'Eternalo', Georgia, serif);
   font-size: 14px;
   line-height: 1.35;
 }
@@ -240,7 +240,7 @@
   border: 1px solid var(--border);
   border-bottom: 2px solid var(--lm-c);
   color: var(--gold);
-  font-family: 'Nofex', 'Segoe UI', sans-serif;
+  font-family: var(--font, 'Eternalo', Georgia, serif);
   font-size: 13px;
   font-weight: 700;
   user-select: none;

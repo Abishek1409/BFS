@@ -34,7 +34,7 @@
       --shadow:        0 8px 32px rgba(0, 0, 0, 0.62);
       --gradient:      linear-gradient(135deg, var(--mocha) 0%, var(--mocha-dark) 100%);
     }
-    body { font-family: 'Nofex', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body { font-family: var(--font, 'Eternalo', Georgia, serif); background: var(--bg); color: var(--text); min-height: 100vh; }
 
     .app-header {
       /* Champagne gold header */
@@ -53,7 +53,7 @@
       display: block;
     }
     .app-header h1 {
-      font-family: 'Nofex', 'Segoe UI', sans-serif; font-size: 1.7rem; letter-spacing: 0;
+      font-family: var(--font, 'Eternalo', Georgia, serif); font-size: 1.7rem; letter-spacing: 0;
       color: var(--mocha-deep);
       background: none;
       -webkit-text-fill-color: currentColor;
@@ -1106,11 +1106,11 @@
     }
 
     /* =====================================================================
-       TYPOGRAPHY: Nofex (font face in fonts.css)
+       TYPOGRAPHY: Lumiare + Eternalo (font faces in fonts.css)
        Scale 12 / 14 / 16 / 20 / 24, weights 400 / 500 / 600 / 700,
        tabular figures on every price and total so digits line up.
        ===================================================================== */
-    /* Font face (Nofex) is defined in fonts.css, shared by every page */
+    /* Font faces (Lumiare, Eternalo) are defined in fonts.css, shared by every page */
     :root {
       --fs-xs: 12px; --fs-sm: 13px; --fs-body: 14px; --fs-md: 16px; --fs-lg: 20px; --fs-xl: 24px;
     }
@@ -1189,7 +1189,9 @@
     }
     /* Menu panel: header, search and tabs stay put, cards fill the rest */
     body[data-page="billing"] .workspace > .panel { display: flex; flex-direction: column; min-height: 0; }
-    body[data-page="billing"] .menu-grid { flex: 1; min-height: 0; max-height: none; align-content: start; }
+    /* grid-auto-rows: max-content keeps each card its full height. Without it, a fixed-height grid
+       shrinks auto rows to fit (cards have overflow:hidden, so their minimum size is 0) and squashes them. */
+    body[data-page="billing"] .menu-grid { flex: 1; min-height: 0; max-height: none; align-content: start; grid-auto-rows: max-content; overflow-y: auto; }
     /* Right column: scrolls inside itself instead of pushing the bill down the page */
     body[data-page="billing"] .right-col { min-height: 0; overflow-y: auto; gap: 12px; padding-right: 2px; }
     body[data-page="billing"] .right-col > .panel { flex: 0 0 auto; }

@@ -6757,7 +6757,7 @@
       "format": "esm"
     },
     "map3d/ui/live-map.css": {
-      "bytes": 12685,
+      "bytes": 12701,
       "imports": []
     },
     "map3d/app.tsx": {
@@ -7251,19 +7251,19 @@
       "imports": [],
       "inputs": {
         "map3d/ui/live-map.css": {
-          "bytesInOutput": 9621
+          "bytesInOutput": 9649
         }
       },
-      "bytes": 9622
+      "bytes": 9650
     },
     "dist/live-map/app.css": {
       "imports": [],
       "inputs": {
         "map3d/ui/live-map.css": {
-          "bytesInOutput": 9621
+          "bytesInOutput": 9649
         }
       },
-      "bytes": 9622
+      "bytes": 9650
     }
   }
 }

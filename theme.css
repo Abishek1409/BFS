@@ -1,6 +1,6 @@
 /* Your Cafe POS: Gold & Black theme (from the Miro board "Cafe Billing Website: UI Design").
    Shared by billing, live-map, history, reports and inventory pages.
-   Loaded after app.css (component styles) and before fonts.css, so the Nofex font is unchanged.
+   Loaded after app.css (component styles) and before fonts.css, so the Lumiare + Eternalo fonts apply.
    No background animation. Kept: gold text shine, button light sweep, card hover lift. */
 
 :root {

@@ -2012,7 +2012,7 @@ function downloadHistory() {
     const html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>' +
       '<title>Bill History — Best Fruits Stall</title>' +
       '<style>' +
-        'body{font-family:Nofex,"Segoe UI",sans-serif;background:#121212;color:#f5f5f5;padding:24px;margin:0}' +
+        'body{font-family:Eternalo,Georgia,"Segoe UI",serif;background:#121212;color:#f5f5f5;padding:24px;margin:0}' +
         'h2{font-size:1.3rem;margin-bottom:4px}' +
         '.meta{color:#a3a3a3;font-size:.85rem;margin-bottom:16px}' +
         'table{width:100%;border-collapse:collapse;font-size:.88rem}' +

@@ -1,34 +1,51 @@
-/* Project-wide font: Nofex (assets/fonts/Nofex.otf). One file, one weight (Regular).
-
-   Nofex is a letters-only display font: it has A-Z, a-z and basic punctuation, but NO digits (0-9),
-   NO rupee sign (₹) and NO '#'. Browsers fill missing characters from the next font in the list,
-   so all prices, totals and bill numbers are drawn in the fallback below. That is automatic.
-
-   Bold: Nofex has no separate bold file, so `font-synthesis: none` stops the browser from
-   smearing a fake bold over it. Headings and buttons keep their weight in the fallback digits. */
+/* Project fonts: a pairing like the "Golden HOUR" reference.
+     Lumiare  (assets/fonts/Lumiare.otf)  - bold display caps: titles, buttons, tabs, labels, prices ("HOUR")
+     Eternalo (assets/fonts/Eternalo.ttf) - elegant serif: item names, body text, inputs ("Golden")
+   Both have A-Z, a-z, 0-9 and punctuation, but NOT the rupee sign. The next font in each
+   stack (Segoe UI / system sans) draws only the missing ₹, automatically.
+   Each file is a single weight, so `font-synthesis: none` stops fake bold/italic smearing. */
 
 @font-face {
-  font-family: 'Nofex';
+  font-family: 'Lumiare';
   font-style: normal;
   font-weight: 100 900;   /* the single file serves every weight */
   font-display: swap;
-  src: local('Nofex'), local('Nofex Regular'), local('Nofex-Regular'),
-       url('assets/fonts/Nofex.otf') format('opentype');
+  src: local('Lumiare'), local('Lumiare Regular'), url('assets/fonts/Lumiare.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Eternalo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Eternalo'), local('Eternalo Regular'), url('assets/fonts/Eternalo.ttf') format('truetype');
 }
 
 :root {
-  /* Nofex for letters; Segoe UI (Windows) / system sans for digits, ₹ and # */
-  --font: 'Nofex', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Lumiare', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-serif:   'Eternalo', Georgia, 'Segoe UI', serif;
+  /* --font is used across app.css; body text is the serif */
+  --font: var(--font-serif);
 }
 
-/* Apply everywhere: page text, form controls, and the Live Map overlay */
-html, body, button, input, select, textarea, optgroup,
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font) !important;
+/* Base: Eternalo everywhere */
+html, body, button, input, select, textarea, optgroup {
+  font-family: var(--font-serif) !important;
   font-synthesis: none;
 }
 
-/* Typed text and numbers in inputs read better in the plain sans (bill no., qty, price, password) */
+/* Display: Lumiare for headings, nav, buttons, tabs, badges, labels and prices */
+h1, h2, h3, h4, h5, h6,
+.app-header h1, .page-title, .brand, .panel-head, .oq-title, .hist-head, .rpt-title, .rpt-card-title,
+.nav-item, .nv, .cat-tab, .rpt-mode-btn, .chip, .tag, .label, .badge,
+button, .btn, .btn-gold, .btn-print, .btn-print-alt, .btn-clear, .hist-dl-btn, .toggle-btn, .ghost,
+.bill-badge, .oq-badge, .item-cat-badge, .added-badge, .out-of-stock-label, .printer-chip,
+.item-price, .bill-item-total, .total-row.grand, .rpt-stat-val, .hist-amount, .oq-row-amount, .modal-price,
+.hist-table th, .form-row label, .bill-number-row label, .customer-row label, .rpt-stat-lbl,
+.lm-root h1, .lm-root h2, .lm-root h3, .lm-btn {
+  font-family: var(--font-display) !important;
+}
+
+/* Typed values (bill no., qty, price, password) stay in the plain sans for clarity */
 input, textarea, select {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
 }
