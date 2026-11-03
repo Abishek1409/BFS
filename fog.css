@@ -1,0 +1,53 @@
+/* Fog background: banks of soft mist drifting at three depths over a still glow near the floor.
+   Vanilla port of the shadcn Fog component. Used on every page except billing.
+   Markup: <div class="fog-layer" aria-hidden="true"><div class="fog-glow"></div>
+           <div class="fog-bank fog-bank-1"></div><div class="fog-bank fog-bank-2"></div><div class="fog-bank fog-bank-3"></div></div>
+   Each bank is a strip of wisps: a stitched SVG noise tile (drawn once) masking a band of the fog color,
+   repeated sideways and slid by exactly one tile per loop. Only `transform` animates: no blur, no script.
+   Tune with --fog-color (any CSS color) and --fog-speed (multiplier). */
+
+/* The layer sits behind the page (z-index:-1), so the body must not paint over it; the html keeps the surface. */
+html { background: var(--black, var(--bg, #0a0a0b)); }
+body { background: transparent; }
+
+.fog-layer {
+  --fog-color: var(--text, #f3ead3);
+  --fog-speed: 1;
+  position: fixed; inset: 0; z-index: -1;
+  overflow: hidden; pointer-events: none;
+  opacity: .5; /* "medium" intensity on a dark surface */
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 40%, transparent);
+          mask-image: radial-gradient(ellipse at center, #000 40%, transparent);
+}
+
+/* Still glow near the floor */
+.fog-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 90% 55% at 50% 100%, color-mix(in oklab, var(--fog-color) 30%, transparent), transparent 70%);
+}
+
+.fog-bank {
+  --tile: 100%;   /* one tile's width, relative to the layer */
+  --band: 50%;    /* vertical centre of the mist band */
+  --dur: 180s;
+  position: absolute; left: 0;
+  width: calc(var(--tile) * 2);
+  background: linear-gradient(to bottom, transparent, var(--fog-color) var(--band), transparent);
+  -webkit-mask-image: var(--fog-noise); mask-image: var(--fog-noise);
+  -webkit-mask-size: 50% 100%; mask-size: 50% 100%;
+  -webkit-mask-repeat: repeat-x; mask-repeat: repeat-x;
+  will-change: transform;
+  animation: fog-drift calc(var(--dur) / var(--fog-speed)) linear infinite;
+  --fog-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='300' preserveAspectRatio='none'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005 0.03' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 2.2 0 0 0 -0.75'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+
+/* Far to near: each bank larger, lower and faster than the last */
+.fog-bank-1 { --tile: 100%; --dur: 180s; top: 10%; height: 60%; opacity: .55; }
+.fog-bank-2 { --tile: 140%; --dur: 130s; top: 30%; height: 65%; opacity: .75; animation-direction: reverse; }
+.fog-bank-3 { --tile: 180%; --dur: 90s;  top: 45%; height: 70%; opacity: .9; }
+
+@keyframes fog-drift { to { transform: translate3d(-50%, 0, 0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fog-bank { animation-play-state: paused; }
+}
