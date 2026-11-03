@@ -2930,6 +2930,8 @@ function setRptMode(mode) {
   rptMode = mode;
   document.getElementById('rptBtnDay').classList.toggle('active', mode === 'day');
   document.getElementById('rptBtnMonth').classList.toggle('active', mode === 'month');
+  var allBtn = document.getElementById('rptBtnAll');
+  if (allBtn) allBtn.classList.toggle('active', mode === 'all');
   document.getElementById('rptDatePicker').style.display  = mode === 'day'   ? '' : 'none';
   document.getElementById('rptMonthPicker').style.display = mode === 'month' ? '' : 'none';
   loadReports();
@@ -2938,7 +2940,9 @@ function setRptMode(mode) {
 function loadReports() {
   if (!window.BillHistory) return;
   var promise;
-  if (rptMode === 'day') {
+  if (rptMode === 'all') {
+    promise = window.BillHistory.getAllBillRecords();
+  } else if (rptMode === 'day') {
     var val = document.getElementById('rptDatePicker').value;
     if (!val) { renderReports([]); return; }
     var parts = val.split('-');
@@ -2957,7 +2961,39 @@ function loadReports() {
   promise.then(renderReports).catch(function(e) { console.error('Reports error:', e); });
 }
 
+/* Day-by-day totals for the selected period (newest first). Clicking a row opens that day. */
+function renderReportDays(records) {
+  var body = document.getElementById('rptDaysBody');
+  if (!body) return;
+  var days = {};
+  records.forEach(function(r) {
+    var d = days[r.date] || (days[r.date] = { date: r.date, bills: 0, items: 0, revenue: 0 });
+    d.bills += 1;
+    d.revenue += Number(r.amount) || 0;
+    (r.items || []).forEach(function(it) { d.items += (it.qty || 1); });
+  });
+  var list = Object.values(days).sort(function(a, b) {
+    return window.BillHistory._dateKey(b.date) - window.BillHistory._dateKey(a.date);
+  });
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="5" class="hist-empty">No bills saved on this device for this period.</td></tr>';
+    return;
+  }
+  body.innerHTML = list.map(function(d) {
+    var p = d.date.split('-'); // DD-MM-YYYY
+    return '<tr><td>' + d.date + '</td><td>' + d.bills + '</td><td>' + d.items + '</td>' +
+      '<td class="hist-amount">₹' + d.revenue.toFixed(2) + '</td>' +
+      '<td><button type="button" class="ap-small-btn" onclick="openReportDay(\'' + p[2] + '-' + p[1] + '-' + p[0] + '\')">View day</button></td></tr>';
+  }).join('');
+}
+
+function openReportDay(isoDate) {
+  document.getElementById('rptDatePicker').value = isoDate;
+  setRptMode('day');
+}
+
 function renderReports(records) {
+  renderReportDays(records);
   // Aggregate item quantities and revenue
   var itemMap = {};
   records.forEach(function(r) {
@@ -3187,7 +3223,7 @@ function showPageAdminView() {
   if (!['history', 'reports', 'inventory'].includes(page)) return;
   setAdminControls(true); // unhide first so charts measure their real width
   if (page === 'history') showHistDrawer();
-  else if (page === 'reports') showRptDrawer();
+  else if (page === 'reports') setRptMode('all'); // open on every saved day; pick Day/Month to narrow
   else showAdminPanelDrawer();
 }
 

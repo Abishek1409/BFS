@@ -38,6 +38,7 @@
       <div class="rpt-controls" style="padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <button class="rpt-mode-btn active" id="rptBtnDay" onclick="setRptMode('day')">📅 Day</button>
           <button class="rpt-mode-btn" id="rptBtnMonth" onclick="setRptMode('month')">🗓 Month</button>
+          <button class="rpt-mode-btn" id="rptBtnAll" onclick="setRptMode('all')">📆 All days</button>
           <input type="date" id="rptDatePicker" class="rpt-date-input" onchange="loadReports()" />
           <input type="month" id="rptMonthPicker" class="rpt-date-input" style="display:none" onchange="loadReports()" />
         </div>
@@ -53,6 +54,13 @@
               <div class="rpt-card-title">Items Sold — Quantity (Bar)</div>
               <div class="rpt-canvas-wrap"><canvas id="rptBarCanvas" height="260"></canvas></div>
             </div>
+          </div>
+          <div class="rpt-card" style="margin-top:20px">
+            <div class="rpt-card-title">Day by day</div>
+            <table class="hist-table">
+              <thead><tr><th>Date</th><th>Bills</th><th>Items</th><th>Revenue</th><th><span class="sr-only">Open</span></th></tr></thead>
+              <tbody id="rptDaysBody"></tbody>
+            </table>
           </div>
         </div>
     </div>
