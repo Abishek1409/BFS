@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <link rel="icon" href="34908.jpg" type="image/jpeg" />
+  <title>Reports | Best Fruits Stall</title>
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="theme.css" />
+  <!-- Project font: Nofex, loaded last so it applies everywhere -->
+  <link rel="stylesheet" href="fonts.css" />
+</head>
+<body data-page="reports" class="page-reports">
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app no-panel">
+  <aside class="side" aria-label="Main menu">
+    <div class="brand"><img src="34908.jpg" alt="" /><div><span class="gold">Best Fruits Stall</span><small>BFS BILLING</small></div></div>
+    <a class="nv" href="billing.html">Billing</a>
+    <a class="nv" href="live-map.html">3D Live Map</a>
+    <a class="nv" href="history.html">History</a>
+    <a class="nv on" href="reports.html" aria-current="page">Reports</a>
+    <a class="nv" href="inventory.html">Inventory</a>
+    <div class="grow"></div>
+    <button type="button" class="nv" id="adminLoginBtn" onclick="pageAdminLogin()">Admin Login</button>
+    <button type="button" class="nv logout" data-admin-only hidden onclick="adminLogout()">Logout</button>
+  </aside>
+
+  <main class="main">
+    <div class="top"><div><h1 class="page-title">Sales <span class="gold">Reports</span></h1><div class="sub">Day and month performance</div></div></div>
+    <div class="card locked" data-admin-locked>
+      <p>Reports is for the admin only.</p>
+      <button type="button" class="btn-gold" onclick="pageAdminLogin()">Admin Login</button>
+    </div>
+    <div class="page-body" data-admin-only hidden>
+      <div class="rpt-controls" style="padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="rpt-mode-btn active" id="rptBtnDay" onclick="setRptMode('day')">📅 Day</button>
+          <button class="rpt-mode-btn" id="rptBtnMonth" onclick="setRptMode('month')">🗓 Month</button>
+          <input type="date" id="rptDatePicker" class="rpt-date-input" onchange="loadReports()" />
+          <input type="month" id="rptMonthPicker" class="rpt-date-input" style="display:none" onchange="loadReports()" />
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:16px;">
+          <div class="rpt-summary-grid" id="rptStats"></div>
+          <div class="rpt-grid">
+            <div class="rpt-card">
+              <div class="rpt-card-title">Items Sold — Quantity (Pie)</div>
+              <div class="rpt-canvas-wrap"><canvas id="rptPieCanvas" height="260"></canvas></div>
+              <div class="rpt-legend" id="rptPieLegend"></div>
+            </div>
+            <div class="rpt-card">
+              <div class="rpt-card-title">Items Sold — Quantity (Bar)</div>
+              <div class="rpt-canvas-wrap"><canvas id="rptBarCanvas" height="260"></canvas></div>
+            </div>
+          </div>
+        </div>
+    </div>
+  </main>
+</div>
+
+<!-- ADMIN LOGIN MODAL (Req 2.1, 2.4, 2.5) -->
+<div class="overlay" id="adminLoginOverlay" onclick="if (event.target === this) closeAdminLogin()">
+  <form class="modal" id="adminLoginForm" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle" onsubmit="submitAdminLogin(event)">
+    <h3 id="adminLoginTitle">🔐 Admin Login</h3>
+    <div class="form-row">
+      <label for="adminPassword">Password</label>
+      <input type="password" id="adminPassword" autocomplete="current-password" required />
+    </div>
+    <p class="admin-login-error" id="adminLoginError" role="alert" aria-live="assertive"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeAdminLogin()">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="adminLoginSubmit">Login</button>
+    </div>
+  </form>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="shopAuth.js"></script>
+<script src="billHistory.js"></script>
+<script src="menu-data.js"></script>
+<script src="inventory.js"></script>
+<script src="adminAuth.js"></script>
+<script src="unified-printer-comm.js"></script>
+<script src="escpos-receipt.js"></script>
+<script src="app.js"></script>
+<!-- Live Map boot (progress recorder + loader). app.css for the map is injected on first open. -->
+<script type="module" src="dist/live-map/boot.js"></script>
+</body>
+</html>

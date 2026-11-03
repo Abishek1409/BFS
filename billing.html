@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <link rel="icon" href="34908.jpg" type="image/jpeg" />
+  <title>Billing | Best Fruits Stall</title>
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="theme.css" />
+  <!-- Project font: Nofex, loaded last so it applies everywhere -->
+  <link rel="stylesheet" href="fonts.css" />
+</head>
+<body data-page="billing" class="page-billing">
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app">
+  <aside class="side" aria-label="Main menu">
+    <div class="brand"><img src="34908.jpg" alt="" /><div><span class="gold">Best Fruits Stall</span><small>BFS BILLING</small></div></div>
+    <a class="nv on" href="billing.html" aria-current="page">Billing</a>
+    <a class="nv" href="live-map.html">3D Live Map</a>
+    <a class="nv" href="history.html">History</a>
+    <a class="nv" href="reports.html">Reports</a>
+    <a class="nv" href="inventory.html">Inventory</a>
+    <div class="grow"></div>
+    <button type="button" class="nv" id="adminLoginBtn" onclick="pageAdminLogin()">Admin Login</button>
+    <button type="button" class="nv logout" data-admin-only hidden onclick="adminLogout()">Logout</button>
+  </aside>
+
+  <main class="main">
+    <div class="top"><h1 class="page-title">Billing <span class="gold">Counter</span></h1><span class="tag" id="headerBillNo">Bill #001</span></div>
+  <!-- MENU -->
+    <div class="panel">
+      <div class="panel-head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Menu &mdash; Select items to add to bill
+      </div>
+      <div class="menu-search" role="search">
+        <label for="menuSearch" class="sr-only">Search menu items</label>
+        <input type="search" id="menuSearch" placeholder="🔍 Search items or categories…" autocomplete="off" oninput="renderMenuGrid(activeMenuCat)" />
+      </div>
+      <div class="cat-tabs" id="catTabs"></div>
+      <div class="menu-grid" id="menuGrid" aria-live="polite"></div>
+    </div>
+<!-- ORDERS QUEUE (moved above bill) -->
+    <div class="oq-section" style="padding: 0; max-width: none; margin: 0;">
+      <div class="oq-head">
+        <div class="oq-title">
+          🍱 Orders Queue
+          <span class="oq-badge" id="oqCount">0</span>
+        </div>
+        <div class="oq-head-actions">
+          <span class="oq-connection" id="oqConnection">QR offline</span>
+          <button class="oq-connect-btn" onclick="reconnectQr()">Reconnect QR</button>
+        </div>
+      </div>
+      <div class="oq-list" id="oqList">
+        <div class="oq-empty"><span class="icon">✅</span>No pending orders.</div>
+      </div>
+    </div>
+  </main>
+
+  <section class="side-panel" aria-label="Current bill">
+<!-- BILL -->
+    <div class="panel bill-panel">
+    <div class="panel-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+      Current Bill
+    </div>
+    <div class="bill-number-row">
+      <label for="billNoInput">Bill No.</label>
+      <input type="text" id="billNoInput" class="bill-no-input" value="100" oninput="updateHeaderBill(this.value)" />
+    </div>
+    <div class="customer-row">
+      <label for="customerName">Customer</label>
+      <input type="text" id="customerName" placeholder="Customer name (optional)" />
+    </div>
+    <div class="bill-items-list" id="billItemsList">
+      <div class="empty-bill">
+        <span class="icon">&#x1F6D2;</span>
+        No items yet. Tap any menu item to add.
+      </div>
+    </div>
+    <div class="bill-totals" id="billTotals" style="display:none;">
+      <div class="total-row"><span>Subtotal</span><span id="subtotalVal">&#x20B9;0.00</span></div>
+      <div class="total-row grand"><span>TOTAL</span><span id="grandTotal">&#x20B9;0.00</span></div>
+    </div>
+    <div class="bill-actions">
+      <!-- Printer Status -->
+      <div class="wifi-printer-status">
+        <div class="printer-status-item">
+          <div class="printer-info">
+            <span class="printer-status-dot" id="printer1Dot"></span>
+            <span id="printer1Name">Printer 1 (Customer Receipts)</span>
+          </div>
+          <span class="printer-ip" id="printer1Status">Not configured</span>
+        </div>
+        <div class="printer-status-item">
+          <div class="printer-info">
+            <span class="printer-status-dot" id="printer2Dot"></span>
+            <span id="printer2Name">Printer 2 (Kitchen Tickets)</span>
+          </div>
+          <span class="printer-ip" id="printer2Status">Not configured</span>
+        </div>
+        <button class="btn-configure-printers" onclick="showPrinterConfig()">⚙️ Configure Printers</button>
+      </div>
+      
+      <!-- Print Loading Indicator -->
+      <div class="print-loading" id="printLoading">
+        <div class="print-spinner"></div>
+        <span id="printLoadingText">Generating receipt...</span>
+      </div>
+      
+      <button class="btn-print" id="printBtn" onclick="printBill()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span id="printBtnLabel">Print Receipt</span>
+      </button>
+      <!-- Print only one copy, or record the sale without printing anything -->
+      <div class="bill-print-options">
+        <button type="button" class="btn-print-alt" onclick="printBill('customer')" title="Print only the customer bill (Printer 1)">🧾 Customer Bill</button>
+        <button type="button" class="btn-print-alt" onclick="printBill('kitchen')" title="Print only the kitchen ticket (Printer 2)">👨‍🍳 Kitchen Ticket</button>
+        <button type="button" class="btn-print-alt full" onclick="saveBillWithoutPrint()" title="Customer ate without asking for a bill: save the sale to history without printing">📝 Save to History (No Print)</button>
+      </div>
+      <button class="btn-clear" onclick="clearBill()">&#x1F5D1; Clear &amp; New Bill</button>
+    </div>
+  </div>
+  </section>
+</div>
+
+<!-- ADMIN LOGIN MODAL (Req 2.1, 2.4, 2.5) -->
+<div class="overlay" id="adminLoginOverlay" onclick="if (event.target === this) closeAdminLogin()">
+  <form class="modal" id="adminLoginForm" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle" onsubmit="submitAdminLogin(event)">
+    <h3 id="adminLoginTitle">🔐 Admin Login</h3>
+    <div class="form-row">
+      <label for="adminPassword">Password</label>
+      <input type="password" id="adminPassword" autocomplete="current-password" required />
+    </div>
+    <p class="admin-login-error" id="adminLoginError" role="alert" aria-live="assertive"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeAdminLogin()">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="adminLoginSubmit">Login</button>
+    </div>
+  </form>
+</div>
+<!-- ITEM MODAL -->
+<div class="overlay" id="itemOverlay">
+  <div class="modal">
+    <h3 id="modalItemName">Item</h3>
+    <div class="modal-price" id="modalItemPrice">&#x20B9;0</div>
+    <div class="form-row">
+      <label>Quantity</label>
+      <div class="qty-stepper lg">
+        <button type="button" onclick="stepModalQty(-1)" aria-label="Decrease quantity">&minus;</button>
+        <input type="number" id="modalQty" min="1" value="1" aria-label="Quantity" />
+        <button type="button" onclick="stepModalQty(1)" aria-label="Increase quantity">+</button>
+      </div>
+    </div>
+    <div class="form-row" id="orderTypeRow">
+      <label>&#x1F37D;&#xFE0F; Dine In or Take Away</label>
+      <div class="toggle-group">
+        <button class="toggle-btn selected" data-val="Dine In"   onclick="selectToggle(this,'orderTypeRow')">Dine In</button>
+        <button class="toggle-btn"          data-val="Take Away" onclick="selectToggle(this,'orderTypeRow')">Take Away</button>
+      </div>
+    </div>
+    <div class="form-row" id="iceRow">
+      <label>&#x1F9CA; Ice Preference</label>
+      <div class="toggle-group">
+        <button class="toggle-btn selected" data-val="With Ice"    onclick="selectToggle(this,'iceRow')">With Ice</button>
+        <button class="toggle-btn"          data-val="Without Ice" onclick="selectToggle(this,'iceRow')">Without Ice</button>
+      </div>
+    </div>
+    <div class="form-row" id="sugarRow">
+      <label>&#x1F36C; Sugar Level</label>
+      <div class="toggle-group">
+        <button class="toggle-btn selected" data-val="Normal Sugar" onclick="selectToggle(this,'sugarRow')">Normal</button>
+        <button class="toggle-btn"          data-val="Less Sugar"   onclick="selectToggle(this,'sugarRow')">Less Sugar</button>
+        <button class="toggle-btn"          data-val="No Sugar"     onclick="selectToggle(this,'sugarRow')">No Sugar</button>
+      </div>
+    </div>
+    <div class="form-row" id="sizeRow">
+      <label>&#x1F4CF; Size</label>
+      <div class="toggle-group">
+        <button class="toggle-btn selected" data-val="Regular" onclick="selectToggle(this,'sizeRow')">Regular</button>
+        <button class="toggle-btn"          data-val="Large"   onclick="selectToggle(this,'sizeRow')">Large (+&#x20B9;10)</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>&#x1F4DD; Special Note (optional)</label>
+      <textarea id="modalNote" rows="2" placeholder="e.g. extra sweet, no straw, extra lemon&#x2026;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary"   onclick="addToBill()">&#x2795; Add to Bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- Printer Configuration Modal -->
+<div class="overlay" id="printerConfigOverlay" onclick="closePrinterConfigIfClickedOutside(event)">
+  <div class="modal" style="width: 600px; max-width: 95vw; max-height: 90vh; overflow-y: auto; position: relative;">
+    <!-- Close Button -->
+    <button onclick="closePrinterConfig()" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; color: var(--muted); cursor: pointer; z-index: 10;" title="Close">
+      ✕
+    </button>
+    
+    <h3 style="margin-right: 30px;">🖨️ Configure Thermal Printers</h3>
+    <p style="font-size: .85rem; color: var(--muted); margin-bottom: 12px;">
+      Connect via USB cable or WiFi network - mix and match both types!
+    </p>
+    
+    <!-- Printer 1 Config -->
+    <div style="background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+      <h4 style="color: var(--accent); margin-bottom: 12px;">🖨️ Printer 1 (Customer Receipts)</h4>
+      <p style="font-size: .75rem; color: var(--muted); margin-bottom: 12px; padding: 8px; background: rgba(217, 168, 62, 0.08); border-radius: 6px;">
+        📄 Prints detailed receipts with itemized line items, quantities, prices, and totals for customers.
+      </p>
+      
+      <div class="form-row">
+        <label>Printer Name</label>
+        <input type="text" id="configPrinter1Name" placeholder="e.g., Counter Printer" value="Printer 1" />
+      </div>
+      
+      <div class="form-row">
+        <label>Connection Type</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" data-val="usb" onclick="selectPrinterType('printer1', 'usb')">
+            🔌 USB Cable
+          </button>
+          <button class="toggle-btn" data-val="wifi" onclick="selectPrinterType('printer1', 'wifi')">
+            📡 WiFi Network
+          </button>
+        </div>
+      </div>
+      
+      <!-- USB Section -->
+      <div id="printer1UsbSection" style="display: none;">
+        <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 10px; margin: 10px 0;">
+          <p style="font-size: .78rem; color: var(--muted);">
+            ✅ Connect printer with USB cable<br/>
+            ✅ Click the button below to select your USB printer
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="connectUSBPrinterUI('printer1')" style="width: 100%;">
+          🔌 Connect USB Printer
+        </button>
+      </div>
+      
+      <!-- WiFi Section -->
+      <div id="printer1WifiSection" style="display: none;">
+        <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 10px; margin: 10px 0;">
+          <button class="btn btn-secondary" onclick="discoverAndFillPrinter('printer1')" style="width: 100%; margin-bottom: 8px;">
+            🔍 Auto-Discover WiFi Printer
+          </button>
+          <p style="font-size: .7rem; color: var(--muted); text-align: center;">— OR enter manually —</p>
+        </div>
+        
+        <div class="form-row">
+          <label>
+            Network Address (IP)
+            <span style="font-size: .7rem; color: var(--muted); display: block;">e.g., 192.168.1.100</span>
+          </label>
+          <input type="text" id="configPrinter1IP" placeholder="192.168.1.100" />
+        </div>
+        <div class="form-row">
+          <label>Port <span style="font-size: .7rem; color: var(--muted);">(usually 9100)</span></label>
+          <input type="number" id="configPrinter1Port" value="9100" min="1" max="65535" />
+        </div>
+        <button class="btn btn-secondary" onclick="testWiFiPrinterUI('printer1')" style="width: 100%;">
+          Test WiFi Connection
+        </button>
+      </div>
+    </div>
+    
+    <!-- Printer 2 Config -->
+    <div style="background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+      <h4 style="color: var(--accent); margin-bottom: 12px;">🖨️ Printer 2 (Kitchen Tickets)</h4>
+      <p style="font-size: .75rem; color: var(--muted); margin-bottom: 12px; padding: 8px; background: rgba(217, 168, 62, 0.08); border-radius: 6px;">
+        🍳 Prints simplified order tickets with item names and preference symbols (no prices) for kitchen staff.
+      </p>
+      
+      <div class="form-row">
+        <label>Printer Name</label>
+        <input type="text" id="configPrinter2Name" placeholder="e.g., Kitchen Printer" value="Printer 2" />
+      </div>
+      
+      <div class="form-row">
+        <label>Connection Type</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" data-val="usb" onclick="selectPrinterType('printer2', 'usb')">
+            🔌 USB Cable
+          </button>
+          <button class="toggle-btn" data-val="wifi" onclick="selectPrinterType('printer2', 'wifi')">
+            📡 WiFi Network
+          </button>
+        </div>
+      </div>
+      
+      <!-- USB Section -->
+      <div id="printer2UsbSection" style="display: none;">
+        <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 10px; margin: 10px 0;">
+          <p style="font-size: .78rem; color: var(--muted);">
+            ✅ Connect printer with USB cable<br/>
+            ✅ Click the button below to select your USB printer
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="connectUSBPrinterUI('printer2')" style="width: 100%;">
+          🔌 Connect USB Printer
+        </button>
+      </div>
+      
+      <!-- WiFi Section -->
+      <div id="printer2WifiSection" style="display: none;">
+        <div style="background: rgba(217, 168, 62, 0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 10px; margin: 10px 0;">
+          <button class="btn btn-secondary" onclick="discoverAndFillPrinter('printer2')" style="width: 100%; margin-bottom: 8px;">
+            🔍 Auto-Discover WiFi Printer
+          </button>
+          <p style="font-size: .7rem; color: var(--muted); text-align: center;">— OR enter manually —</p>
+        </div>
+        
+        <div class="form-row">
+          <label>
+            Network Address (IP)
+            <span style="font-size: .7rem; color: var(--muted); display: block;">e.g., 192.168.1.101</span>
+          </label>
+          <input type="text" id="configPrinter2IP" placeholder="192.168.1.101" />
+        </div>
+        <div class="form-row">
+          <label>Port <span style="font-size: .7rem; color: var(--muted);">(usually 9100)</span></label>
+          <input type="number" id="configPrinter2Port" value="9100" min="1" max="65535" />
+        </div>
+        <button class="btn btn-secondary" onclick="testWiFiPrinterUI('printer2')" style="width: 100%;">
+          Test WiFi Connection
+        </button>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closePrinterConfig()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePrinterConfiguration()">Save Configuration</button>
+    </div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="shopAuth.js"></script>
+<script src="billHistory.js"></script>
+<script src="menu-data.js"></script>
+<script src="inventory.js"></script>
+<script src="adminAuth.js"></script>
+<script src="unified-printer-comm.js"></script>
+<script src="escpos-receipt.js"></script>
+<script src="app.js"></script>
+<!-- Live Map boot (progress recorder + loader). app.css for the map is injected on first open. -->
+<script type="module" src="dist/live-map/boot.js"></script>
+</body>
+</html>
