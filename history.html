@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <link rel="icon" href="34908.jpg" type="image/jpeg" />
+  <title>History | Best Fruits Stall</title>
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="theme.css" />
+  <!-- Project fonts: Lumiare + Eternalo, loaded last so they apply everywhere -->
+  <link rel="stylesheet" href="fonts.css" />
+  <link rel="stylesheet" href="fog.css" />
+</head>
+<body data-page="history" class="page-history">
+<div class="fog-layer" aria-hidden="true"><div class="fog-glow"></div><div class="fog-bank fog-bank-1"></div><div class="fog-bank fog-bank-2"></div><div class="fog-bank fog-bank-3"></div></div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app no-panel">
+  <aside class="side" aria-label="Main menu">
+    <div class="brand"><img src="34908.jpg" alt="" /><div><span class="gold">Best Fruits Stall</span><small>BFS BILLING</small></div></div>
+    <a class="nv" href="billing.html">Billing</a>
+    <a class="nv" href="live-map.html">3D Live Map</a>
+    <a class="nv on" href="history.html" aria-current="page">History</a>
+    <a class="nv" href="reports.html">Reports</a>
+    <a class="nv" href="inventory.html">Inventory</a>
+    <div class="grow"></div>
+    <button type="button" class="nv" id="adminLoginBtn" onclick="pageAdminLogin()">Admin Login</button>
+    <button type="button" class="nv logout" data-admin-only hidden onclick="adminLogout()">Logout</button>
+  </aside>
+
+  <main class="main">
+    <div class="top"><div><h1 class="page-title">Bill <span class="gold">History</span></h1><div class="sub">Find, download or check any past bill</div></div></div>
+    <div class="card locked" data-admin-locked>
+      <p>Bill history is for the admin only.</p>
+      <button type="button" class="btn-gold" onclick="pageAdminLogin()">Admin Login</button>
+    </div>
+    <div class="page-body" data-admin-only hidden>
+      <div class="hist-filters">
+          <select id="histFilterMode" onchange="onHistFilterChange()">
+            <option value="all">All Records</option>
+            <option value="day">By Day</option>
+            <option value="month">By Month</option>
+          </select>
+          <input type="date" id="histDateInput" style="display:none" onchange="loadHistory()" />
+          <input type="month" id="histMonthInput" style="display:none" onchange="loadHistory()" />
+          <button class="hist-dl-btn" onclick="downloadHistory()">&#x2B07; Download</button>
+        </div>
+        <div class="hist-summary" id="histSummary"></div>
+        <div class="hist-table-wrap">
+          <table class="hist-table">
+            <thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Method</th><th>Format</th><th>Items</th><th>Amount</th></tr></thead>
+            <tbody id="histTableBody"><tr><td colspan="8" class="hist-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+    </div>
+  </main>
+</div>
+
+<!-- ADMIN LOGIN MODAL (Req 2.1, 2.4, 2.5) -->
+<div class="overlay" id="adminLoginOverlay" onclick="if (event.target === this) closeAdminLogin()">
+  <form class="modal" id="adminLoginForm" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle" onsubmit="submitAdminLogin(event)">
+    <h3 id="adminLoginTitle">🔐 Admin Login</h3>
+    <div class="form-row">
+      <label for="adminPassword">Password</label>
+      <input type="password" id="adminPassword" autocomplete="current-password" required />
+    </div>
+    <p class="admin-login-error" id="adminLoginError" role="alert" aria-live="assertive"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeAdminLogin()">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="adminLoginSubmit">Login</button>
+    </div>
+  </form>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="shopAuth.js"></script>
+<script src="billHistory.js"></script>
+<script src="menu-data.js"></script>
+<script src="inventory.js"></script>
+<script src="adminAuth.js"></script>
+<script src="unified-printer-comm.js"></script>
+<script src="escpos-receipt.js"></script>
+<script src="app.js"></script>
+<!-- Live Map boot (progress recorder + loader). app.css for the map is injected on first open. -->
+<script type="module" src="dist/live-map/boot.js"></script>
+</body>
+</html>
