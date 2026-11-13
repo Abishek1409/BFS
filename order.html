@@ -7,6 +7,14 @@
   <link rel="stylesheet" href="fonts.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button:active:not(:disabled) { animation: button-press .16s ease-out; }
+    @keyframes button-press {
+      0%, 100% { scale: 1; }
+      45% { scale: .94; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      button:active:not(:disabled) { animation-duration: .01ms; }
+    }
     :root {
       --bg:            #010101;
       --accent:        #d9a83e;
