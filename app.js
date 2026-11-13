@@ -2331,7 +2331,7 @@ function saveBillWithoutPrint() {
   window.BillHistory.saveBillRecord(billData.billNo, billData.grandTotal, billData.items, 'manual', 'none', billData.customerName)
     .then(function() {
       showSuccessToast('Saved to history', `Bill #${billData.billNo} recorded without printing`);
-      finishBill(billData);
+      finishBill(billData, false);
       clearCurrentBill();
     })
     .catch(function(err) {
@@ -2341,20 +2341,28 @@ function saveBillWithoutPrint() {
 }
 
 /** QR order bookkeeping after a bill is recorded (shared with saveBillToHistory). */
-function finishBill(billData) {
+function finishBill(billData, wasPrinted) {
   if (activeQrOrderId) {
     var qrId = activeQrOrderId;
     var qrOrder = orderQueue.find(function(o) { return o.serverId === qrId; });
+    var printedAt = wasPrinted ? Date.now() : null;
     if (window.firebaseConfig && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-      firebase.database().ref('orderStatus/' + qrId).set({ billNo: billData.billNo, status: 'billed' })
+      var orderStatus = { billNo: billData.billNo, status: 'billed' };
+      if (printedAt) orderStatus.printedAt = printedAt;
+      firebase.database().ref('orderStatus/' + qrId).set(orderStatus)
         .then(function() { return firebase.database().ref('orders/' + qrId).remove(); })
         .catch(function(error) { console.error('Could not save or remove QR order in Firebase:', error); });
     }
-    if (qrOrder) qrOrder.status = 'printed';
+    if (qrOrder) {
+      qrOrder.status = wasPrinted ? 'printed' : 'billed';
+      qrOrder.billNo = billData.billNo;
+      if (printedAt) qrOrder.printedAt = printedAt;
+    }
     activeQrOrderId = null;
     renderQueue();
   } else {
-    addToQueue(billData.billNo, billData.customerName, billData.grandTotal, billData.items);
+    addToQueue(billData.billNo, billData.customerName, billData.grandTotal, billData.items,
+      wasPrinted ? Date.now() : null);
   }
 }
 
@@ -2368,7 +2376,7 @@ function finishBill(billData) {
  * @param {string} customer - Customer name
  * @param {string} formatType - Format type ('customer', 'kitchen', 'both')
  */
-function saveBillToHistory(billNo, amount, items, customer, formatType) {
+function saveBillToHistory(billNo, amount, items, customer, formatType, wasPrinted) {
   // Save the bill record (Req 5.5). Stock is a manual In/Out toggle, so nothing is deducted.
   function saveRecordAndDeduct() {
     if (!window.BillHistory) return;
@@ -2378,7 +2386,8 @@ function saveBillToHistory(billNo, amount, items, customer, formatType) {
 
   saveRecordAndDeduct();
   // Marks a loaded QR order as billed, or adds manual bills to the local orders queue.
-  finishBill({ billNo: billNo, customerName: customer, grandTotal: amount, items: items });
+  finishBill({ billNo: billNo, customerName: customer, grandTotal: amount, items: items },
+    wasPrinted !== false);
 }
 
 /**
@@ -2518,7 +2527,7 @@ async function retryPrint(printerTarget, billData) {
             {
               label: 'Continue Without',
               onClick: () => {
-                saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName);
+                saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName, undefined, false);
                 clearCurrentBill();
               },
               primary: false
@@ -2550,7 +2559,7 @@ async function retryPrint(printerTarget, billData) {
             {
               label: 'Continue Without',
               onClick: () => {
-                saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName);
+                saveBillToHistory(billData.billNo, billData.grandTotal, billData.items, billData.customerName, undefined, false);
                 clearCurrentBill();
               },
               primary: false
@@ -2873,6 +2882,8 @@ function addQrOrder(order, orderId) {
     source: 'qr',
     table: order.table,
     status: order.status || 'pending',
+    placedAt: Number(order.createdAt) || Date.now(),
+    printedAt: Number(order.printedAt) || null,
     amount: Number(order.total || order.amount || order.grandTotal) || orderItems.reduce(function(sum, item) { return sum + item.total; }, 0),
     items: orderItems,
     time: order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
@@ -2937,7 +2948,7 @@ function setQrOrderStatus(serverId, status) {
     .catch(function(error) { console.error('Could not update QR order status:', error); });
 }
 
-function addToQueue(billNo, customer, amount, items) {
+function addToQueue(billNo, customer, amount, items, printedAt) {
   var now = new Date();
   orderQueue.push({
     id: Date.now(),
@@ -2945,10 +2956,21 @@ function addToQueue(billNo, customer, amount, items) {
     customer: customer || '',
     amount: amount,
     items: items || [],
+    placedAt: now.getTime(),
+    printedAt: Number(printedAt) || null,
     time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
     payMethod: null
   });
   renderQueue();
+}
+
+function formatQueueTimestamp(timestamp) {
+  var date = new Date(Number(timestamp));
+  if (!Number.isFinite(date.getTime())) return 'Time unavailable';
+  return date.toLocaleString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
 }
 
 function renderQueue() {
@@ -2978,7 +3000,7 @@ function renderQueue() {
     var qrTable = o.source === 'qr'
       ? '<span class="oq-row-bill">Table ' + escapeQueueText(o.table) + '</span>'
       : '<span class="oq-row-bill">Bill #' + escapeQueueText(o.billNo) + '</span>';
-    var qrNeedsPrint = o.source === 'qr' && o.status !== 'preparing' && o.status !== 'printed';
+    var qrNeedsPrint = o.source === 'qr' && !o.billNo && o.status !== 'preparing' && o.status !== 'printed';
     var qrAction = qrNeedsPrint
       ? '<button class="oq-row-pay-btn" onclick="loadQrOrder(\'' + escapeQueueText(o.serverId) + '\')">Load &amp; Print</button>'
       : '';
@@ -2991,7 +3013,10 @@ function renderQueue() {
         '<div class="oq-row-main">' +
           qrTable +
           (o.source === 'qr' ? '<span class="oq-row-time">QR order' + (o.orderNo ? ' · ' + escapeQueueText(o.orderNo) : '') + '</span>' : '') +
-          '<span class="oq-row-time">' + o.time + '</span>' +
+        '</div>' +
+        '<div class="oq-row-timestamps">' +
+          '<span class="oq-row-time">Placed: ' + escapeQueueText(formatQueueTimestamp(o.placedAt || Date.now())) + '</span>' +
+          (o.printedAt ? '<span class="oq-row-time">Printed: ' + escapeQueueText(formatQueueTimestamp(o.printedAt)) + '</span>' : '') +
         '</div>' +
         '<span class="oq-row-items">' + itemsSummary + '</span>' +
       '</div>' +
