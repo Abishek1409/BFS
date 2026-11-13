@@ -98,11 +98,18 @@
    * @param {number} amount  - Finite numeric total in INR.
    * @param {Array}  items   - Optional array of item snapshots.
    * @param {string} printMethod - Optional print method ('browser' or 'thermal'), defaults to 'browser'.
+<<<<<<< HEAD
    * @param {string} formatType - Optional format type ('customer', 'kitchen', 'both', 'none'), defaults to 'both'.
    * @param {string} customerName - Optional customer name to include on reprinted receipts.
    * @returns {Promise<void>}
    */
   function saveBillRecord(billNo, amount, items, printMethod, formatType, customerName) {
+=======
+   * @param {string} formatType - Optional format type ('customer', 'kitchen', 'both'), defaults to 'both'.
+   * @returns {Promise<void>}
+   */
+  function saveBillRecord(billNo, amount, items, printMethod, formatType) {
+>>>>>>> b48df7aceee0fbc479863f6df195622d6bc50bf2
     if (typeof billNo !== 'string' || billNo.trim() === '') {
       return Promise.reject(new Error('billNo must be a non-empty string'));
     }
@@ -119,7 +126,10 @@
       date: date,
       time: _formatTime(now),
       items: Array.isArray(items) ? items : [],
+<<<<<<< HEAD
       customerName: typeof customerName === 'string' ? customerName : '',
+=======
+>>>>>>> b48df7aceee0fbc479863f6df195622d6bc50bf2
       // 'manual' = entered by hand without printing; 'wifi-thermal' is the thermal print path
       printMethod: printMethod === 'manual' ? 'manual'
         : (printMethod === 'thermal' || printMethod === 'wifi-thermal') ? 'thermal'
