@@ -732,7 +732,6 @@
     .hist-table tr:hover td { background: rgba(255, 176, 0, 0.08); }
     .hist-amount { color: var(--accent); font-weight: 700; }
     .hist-empty { text-align: center; color: var(--muted); padding: 40px; }
-<<<<<<< HEAD
     .hist-actions { display: flex; gap: 6px; }
     .hist-print-btn {
       border: 1px solid var(--accent); border-radius: 7px; padding: 5px 10px;
@@ -743,8 +742,6 @@
     .hist-print-kitchen-btn { border-color: var(--control); color: var(--text); }
     .hist-print-kitchen-btn:hover:not(:disabled) { background: var(--raised); color: var(--ink); }
     .hist-print-btn:disabled { opacity: .6; cursor: wait; }
-=======
->>>>>>> b48df7aceee0fbc479863f6df195622d6bc50bf2
 
     /* === Admin_Panel drawer === */
     .hist-drawer.admin-drawer { width: 820px; right: -860px; }

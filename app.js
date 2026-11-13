@@ -1855,11 +1855,7 @@ function loadHistory() {
 
   promise.then(renderHistoryTable).catch(function(e) {
     document.getElementById('histTableBody').innerHTML =
-<<<<<<< HEAD
       '<tr><td colspan="9" class="hist-empty">Error: ' + e.message + '</td></tr>';
-=======
-      '<tr><td colspan="8" class="hist-empty">Error: ' + e.message + '</td></tr>';
->>>>>>> b48df7aceee0fbc479863f6df195622d6bc50bf2
   });
 }
 
@@ -1868,11 +1864,7 @@ function renderHistoryTable(records) {
   const summary = document.getElementById('histSummary');
 
   if (!records || records.length === 0) {
-<<<<<<< HEAD
     tbody.innerHTML = '<tr><td colspan="9" class="hist-empty">No records found.</td></tr>';
-=======
-    tbody.innerHTML = '<tr><td colspan="8" class="hist-empty">No records found.</td></tr>';
->>>>>>> b48df7aceee0fbc479863f6df195622d6bc50bf2
     summary.textContent = '';
     return;
   }
@@ -1947,7 +1939,6 @@ function renderHistoryTable(records) {
       '<td>' + formatCell + '</td>' +
       '<td style="font-size:.78rem;line-height:1.6">' + itemList + '</td>' +
       '<td class="hist-amount">₹' + Number(r.amount).toFixed(2) + '</td>' +
-<<<<<<< HEAD
       '<td><div class="hist-actions">' +
       '<button type="button" class="hist-print-btn" data-history-index="' + i + '" data-printer-id="printer1">Bill · P1</button>' +
       '<button type="button" class="hist-print-btn hist-print-kitchen-btn" data-history-index="' + i + '" data-printer-id="printer2">Kitchen · P2</button>' +
@@ -2016,10 +2007,6 @@ async function printHistoryBill(record, button, printerId) {
     button.disabled = false;
     button.textContent = originalLabel;
   }
-=======
-      '</tr>';
-  }).join('');
->>>>>>> b48df7aceee0fbc479863f6df195622d6bc50bf2
 }
 
 function downloadHistory() {
@@ -2341,11 +2328,7 @@ function saveBillWithoutPrint() {
   if (!confirm(`Save Bill #${billData.billNo} (₹${billData.grandTotal.toFixed(2)}) to history without printing?`)) return;
   if (!window.BillHistory) { showErrorToast('History unavailable', 'billHistory.js not loaded'); return; }
   // Save first so the history entry exists before the bill is cleared
-<<<<<<< HEAD
   window.BillHistory.saveBillRecord(billData.billNo, billData.grandTotal, billData.items, 'manual', 'none', billData.customerName)
-=======
-  window.BillHistory.saveBillRecord(billData.billNo, billData.grandTotal, billData.items, 'manual', 'none')
->>>>>>> b48df7aceee0fbc479863f6df195622d6bc50bf2
     .then(function() {
       showSuccessToast('Saved to history', `Bill #${billData.billNo} recorded without printing`);
       finishBill(billData);
@@ -2389,11 +2372,7 @@ function saveBillToHistory(billNo, amount, items, customer, formatType) {
   // Save the bill record (Req 5.5). Stock is a manual In/Out toggle, so nothing is deducted.
   function saveRecordAndDeduct() {
     if (!window.BillHistory) return;
-<<<<<<< HEAD
     window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both', customer)
-=======
-    window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both')
->>>>>>> b48df7aceee0fbc479863f6df195622d6bc50bf2
       .catch(function(err) { console.error('Bill save failed:', err); });
   }
 
