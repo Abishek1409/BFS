@@ -1,0 +1,210 @@
+/* Your Cafe POS: Gold & Black theme (from the Miro board "Cafe Billing Website: UI Design").
+   Shared by billing, live-map, history, reports and inventory pages.
+   Loaded after app.css (component styles) and before fonts.css, so the Lumiare + Eternalo fonts apply.
+   No background animation. Kept: gold text shine, button light sweep, card hover lift. */
+
+:root {
+  --black:#0a0a0b; --surface:#121214; --sidebar:#080809; --panel-bg:#0c0c0d;
+  --gold:#d4af37; --gold-light:#f5d77a; --gold-pale:#fff1b8; --gold-deep:#a07c1e; --gold-dark:#7a5c10;
+  --text:#f3ead3; --soft:#bfb49a; --muted:#9a8f78; --dim:#7d745f;
+  --line:rgba(212,175,55,.18); --line-strong:rgba(212,175,55,.35);
+  --green:#2dc75c; --green-text:#7ee8a4; --red:#ff6464; --red-text:#ff9a9a; --yellow:#ffdc4a;
+
+  /* Map the old app.css variables onto the gold palette */
+  --bg:var(--black); --ground:var(--black); --raised:#18181b; --control:rgba(212,175,55,.3);
+  --ink:var(--text); --ink-2:var(--soft); --amber:var(--gold); --amber-ink:var(--black); --amber-light:var(--gold-light);
+  --accent:var(--gold); --accent-light:var(--gold-light); --accent-text:var(--black); --accent-cta:var(--gold);
+  --border:var(--line); --border-subtle:rgba(212,175,55,.08);
+  --card:var(--surface); --card2:#18181b; --input-bg:var(--surface);
+  --champagne:var(--text); --champagne-2:var(--gold-light); --sand:var(--gold-light);
+  --mocha:var(--gold-deep); --mocha-dark:#1a1608; --mocha-deep:var(--black);
+  --gradient:var(--surface); --shadow:none;
+}
+html, body { background:var(--black); color:var(--text); }
+body { height:100vh; overflow:hidden; }
+a { color:inherit; text-decoration:none; }
+
+/* ---------- Layout ---------- */
+.app { display:grid; grid-template-columns:210px minmax(0,1fr) 340px; height:100vh; }
+.app.no-panel { grid-template-columns:210px minmax(0,1fr); }
+.main { padding:22px 26px; display:flex; flex-direction:column; gap:14px; min-height:0; overflow:auto; }
+.side-panel { background:var(--panel-bg); border-left:1px solid var(--line); padding:22px; display:flex; flex-direction:column; gap:12px; min-height:0; overflow:auto; }
+.grow { flex:1; }
+.top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.row-gap { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.page-title { font-size:28px; font-weight:700; }
+.side-panel h2 { font-size:24px; font-weight:700; }
+.sub { font-size:13px; color:var(--muted); display:flex; align-items:center; }
+.label { font-size:11px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
+
+/* ---------- Sidebar ---------- */
+.side { background:var(--sidebar); border-right:1px solid var(--line); padding:24px 14px; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+.brand { font-size:22px; font-weight:700; padding:0 10px 20px; display:flex; gap:10px; align-items:center; }
+.brand img { width:40px; height:40px; border-radius:10px; object-fit:cover; flex-shrink:0; }
+.brand small { display:block; font-weight:400; font-size:11px; color:var(--muted); letter-spacing:.08em; margin-top:2px; }
+.nv { padding:11px 12px; border-radius:10px; font-size:14px; color:var(--soft); display:flex; justify-content:space-between; align-items:center;
+  transition:background .2s,color .2s; background:none; border:0; cursor:pointer; text-align:left; width:100%; }
+.nv:hover { background:rgba(212,175,55,.08); color:var(--gold-light); }
+.nv.on { background:linear-gradient(135deg,var(--gold-light),var(--gold) 55%,var(--gold-deep)); color:var(--black); font-weight:600; box-shadow:0 6px 24px rgba(212,175,55,.35); }
+.nv[hidden] { display:none; }
+.nv.logout { color:#ff8a8a; }
+.nv:focus-visible { outline:2px solid var(--gold-light); outline-offset:2px; }
+
+/* ---------- Gold shine text ---------- */
+.gold { background:linear-gradient(90deg,var(--gold-deep),var(--gold-light),var(--gold),var(--gold-pale),var(--gold-deep));
+  background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
+  animation:shine 6s linear infinite; }
+@keyframes shine { to { background-position:200% center; } }
+
+/* ---------- Shared surfaces ---------- */
+.card { background:var(--surface); border:1px solid var(--line); border-radius:16px; }
+.tag { font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--gold); color:var(--gold-light); background:rgba(212,175,55,.12); }
+.locked { padding:28px; text-align:center; display:flex; flex-direction:column; gap:12px; align-items:center; }
+.locked[hidden], [data-admin-only][hidden] { display:none !important; }
+
+/* Gold button with the light sweep */
+.btn-gold, .btn-print, .btn-primary, .hist-dl-btn {
+  border:0; border-radius:12px; font-weight:700; color:var(--black); cursor:pointer;
+  background:linear-gradient(110deg,var(--gold-deep) 0%,var(--gold) 35%,var(--gold-pale) 50%,var(--gold) 65%,var(--gold-deep) 100%);
+  background-size:250% 100%; animation:sweep 3.5s linear infinite; box-shadow:0 8px 28px rgba(212,175,55,.3);
+}
+.btn-gold { display:inline-block; padding:12px 18px; text-align:center; font-size:15px; }
+.btn-print { padding:14px 18px; font-size:15px; }
+.btn-gold:hover, .btn-print:hover, .btn-primary:hover, .hist-dl-btn:hover {
+  background:linear-gradient(110deg,var(--gold-deep) 0%,var(--gold) 35%,var(--gold-pale) 50%,var(--gold) 65%,var(--gold-deep) 100%);
+  background-size:250% 100%; color:var(--black); box-shadow:0 10px 36px rgba(212,175,55,.5); transform:none;
+}
+.hist-dl-btn { border-radius:10px; box-shadow:0 4px 16px rgba(212,175,55,.25); }
+@keyframes sweep { 0% { background-position:100% 0; } 100% { background-position:-150% 0; } }
+
+/* Outlined secondaries */
+.btn-secondary, .btn-print-alt, .btn-configure-printers, .btn-connect-printer, .oq-connect-btn, .ap-small-btn, .oq-row-pay-btn {
+  background:transparent; color:var(--text); border:1px solid var(--line-strong); border-radius:10px;
+}
+.btn-secondary:hover, .btn-print-alt:hover, .btn-configure-printers:hover, .btn-connect-printer:hover,
+.oq-connect-btn:hover, .ap-small-btn:hover, .oq-row-pay-btn:hover {
+  background:transparent; border-color:var(--gold); color:var(--gold-light);
+}
+.btn-clear { background:transparent; color:var(--red-text); border:1px solid rgba(255,100,100,.4); border-radius:12px; padding:12px; }
+.btn-clear:hover { background:rgba(255,100,100,.08); }
+
+/* Inputs */
+.menu-search input, .bill-no-input, .customer-row input, .hist-filters select, .hist-filters input,
+.rpt-date-input, .form-row input, .form-row select, .form-row textarea,
+.ap-body input[type="text"], .ap-body input[type="number"], .ap-cat-select {
+  background:var(--surface) !important; border:1px solid rgba(212,175,55,.25) !important; border-radius:12px; color:var(--text);
+  box-shadow:none; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+}
+.menu-search input { padding:11px 16px; }
+.menu-search input:focus, .bill-no-input:focus, .customer-row input:focus, .hist-filters select:focus,
+.hist-filters input:focus, .rpt-date-input:focus, .form-row input:focus, .form-row textarea:focus, .ap-body input:focus {
+  border-color:var(--gold) !important; background:var(--surface) !important;
+}
+.menu-search input::placeholder, .customer-row input::placeholder { color:var(--dim); }
+
+/* ---------- Existing components restyled to match the designs ---------- */
+/* Panels: flat gold-lined cards, no glass/blur */
+.panel, .oq-list {
+  background:var(--surface) !important; border:1px solid var(--line) !important; border-radius:16px;
+  box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+}
+.panel::before, .oq-list::before { display:none; }
+.panel-head { background:transparent !important; color:var(--gold-light); border-bottom:1px solid var(--line); }
+.panel-head, .cat-tabs, .bill-number-row, .customer-row, .bill-items-list, .bill-totals { border-color:var(--line) !important; }
+
+/* Category chips */
+.cat-tabs { gap:8px; }
+.cat-tab { padding:8px 16px; border-radius:999px; border:1px solid rgba(212,175,55,.25) !important; color:#d8ccaf !important;
+  background:var(--surface) !important; box-shadow:none !important; transform:none !important; }
+.cat-tab:hover { border-color:var(--gold) !important; color:var(--gold-light) !important; }
+.cat-tab.active { background:rgba(212,175,55,.16) !important; border-color:var(--gold) !important; color:var(--gold-light) !important; font-weight:600; }
+
+/* Menu cards */
+.menu-grid { max-height:none; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); }
+.menu-card { background:var(--surface) !important; border:1px solid var(--line) !important; border-radius:16px; box-shadow:none !important; }
+.menu-card:hover { border-color:var(--gold) !important; }
+.menu-card::after { box-shadow:0 0 0 1px var(--gold-light),0 0 32px rgba(212,175,55,.35); }
+.menu-card .item-name { color:var(--text); text-shadow:none; }
+.menu-card .item-price { color:var(--gold-light); text-shadow:none; font-size:20px; }
+.menu-card .item-cat-badge, .menu-card[data-cat] .item-cat-badge { background:rgba(10,10,11,.85); color:var(--gold-light); border:1px solid rgba(212,175,55,.4); }
+.menu-card.just-added { border-color:var(--gold) !important; }
+.added-badge { background:var(--gold); color:var(--black); }
+
+/* Bill panel inside the right-hand side panel */
+.side-panel .panel { flex:1; display:flex; flex-direction:column; min-height:0; }
+.bill-items-list { max-height:none; flex:1; background:transparent !important; }
+.bill-item-total, .oq-row-amount, .hist-amount { color:var(--gold-light) !important; }
+.total-row.grand { border-top:1px dashed var(--line-strong) !important; font-size:26px; }
+.total-row.grand span:last-child { color:var(--gold-light); }
+.qty-stepper button { border-color:rgba(212,175,55,.25); color:var(--gold); }
+.qty-stepper button:hover:not(:disabled) { border-color:var(--gold); color:var(--gold-light); }
+.wifi-printer-status { background:var(--black) !important; border:1px solid var(--line) !important; }
+
+/* Toggles in the item popup */
+.toggle-btn { background:var(--surface) !important; border:1px solid rgba(212,175,55,.2) !important; color:var(--soft); }
+.toggle-btn.selected { border-color:var(--gold) !important; color:var(--gold-light) !important; background:rgba(212,175,55,.12) !important; }
+
+/* Orders queue */
+.oq-section { padding:0 !important; }
+.oq-title { color:var(--text); }
+.oq-badge { background:rgba(212,175,55,.15); color:var(--gold-light); border:1px solid rgba(212,175,55,.5); }
+.oq-row { border-bottom:1px solid var(--border-subtle); }
+.oq-row:hover { background:rgba(212,175,55,.05) !important; }
+.oq-row-bill { color:var(--gold-light); }
+.oq-row-pay-btn.selected-cash, .oq-row-pay-btn.selected-gpay { background:rgba(212,175,55,.16); color:var(--gold-light); border-color:var(--gold); }
+.oq-row-done.ready { background:var(--gold); color:var(--black); }
+.oq-connection.connected { color:var(--green-text); }
+
+/* Modals and toasts */
+.overlay { background:rgba(0,0,0,.72); }
+.modal { background:var(--panel-bg) !important; border:1px solid var(--line-strong) !important; border-radius:16px;
+  box-shadow:0 20px 50px rgba(0,0,0,.6) !important; backdrop-filter:none !important; }
+.modal h3 { color:var(--text); }
+.modal .modal-price { color:var(--gold-light); }
+.toast { background:var(--panel-bg) !important; border:1px solid var(--line-strong); backdrop-filter:none !important; }
+
+/* Tables (history, inventory) */
+.hist-table th { background:var(--surface) !important; color:var(--muted); font-size:11px; letter-spacing:.1em; text-transform:uppercase; border-bottom:1px solid rgba(212,175,55,.2); }
+.hist-table td { border-bottom:1px solid var(--border-subtle) !important; }
+.hist-table tr:hover td { background:rgba(212,175,55,.05) !important; }
+.hist-summary { color:var(--muted); border-color:var(--line); }
+
+/* Reports */
+.rpt-card, .rpt-stat { background:var(--surface) !important; border:1px solid var(--line) !important; border-radius:16px; }
+.rpt-stat { text-align:left; padding:16px 18px; }
+.rpt-stat-val { color:var(--gold-light); font-size:26px; }
+.rpt-mode-btn { border-radius:999px; border:1px solid rgba(212,175,55,.25) !important; background:var(--surface) !important; color:#d8ccaf !important; }
+.rpt-mode-btn.active { background:rgba(212,175,55,.16) !important; border-color:var(--gold) !important; color:var(--gold-light) !important; }
+
+/* Inventory */
+.ap-section { border-color:var(--line); }
+.ap-section h4 { color:var(--gold-light); }
+.ap-cat-chip { background:rgba(212,175,55,.08); border-color:rgba(212,175,55,.3); color:var(--text); }
+
+/* ---------- Page bodies (the old drawers rendered inline) ---------- */
+.page-body { display:flex; flex-direction:column; gap:14px; min-height:0; }
+.page-body .hist-filters { padding:0; border:0; }
+.page-body .hist-table-wrap { overflow:auto; }
+.page-body .ap-body { overflow:visible; }
+
+/* Live map page: the 3D map fills the area right of the sidebar */
+.page-live-map .lm-root { left:210px; }
+
+/* Smaller screens: sidebar becomes a top bar, side panel stacks */
+@media (max-width: 1100px) {
+  body { overflow:auto; height:auto; }
+  .app, .app.no-panel { grid-template-columns:1fr; height:auto; min-height:100vh; }
+  .side { flex-direction:row; flex-wrap:wrap; padding:12px; border-right:0; border-bottom:1px solid var(--line); }
+  .side .brand { padding:0 10px 0 0; width:100%; }
+  .side .nv { width:auto; }
+  .side .grow { display:none; }
+  .side-panel { border-left:0; border-top:1px solid var(--line); }
+  .page-live-map .lm-root { left:0; top:auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gold, .btn-gold, .btn-print, .btn-primary, .hist-dl-btn { animation:none !important; }
+}
+
+/* Table headers on History / Inventory scroll away with the page instead of sticking over the rows */
+.page-body .hist-table th { position: static; }
