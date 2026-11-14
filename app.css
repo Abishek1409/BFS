@@ -1202,7 +1202,7 @@
     body[data-page="billing"] .app-header { flex-shrink: 0; }
     body[data-page="billing"] .workspace {
       flex: 1; min-height: 0; max-width: none; width: 100%;
-      grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px 20px;
+      grid-template-columns: minmax(0, 1fr) minmax(400px, 460px); gap: 16px; padding: 16px 20px;
     }
     /* Menu panel: header, search and tabs stay put, cards fill the rest */
     body[data-page="billing"] .workspace > .panel { display: flex; flex-direction: column; min-height: 0; }
@@ -1217,9 +1217,40 @@
     body[data-page="billing"] .oq-list { max-height: 160px; }
     body[data-page="billing"] .oq-empty { padding: 12px 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
     body[data-page="billing"] .oq-empty .icon { font-size: 1.1rem; display: inline; margin: 0; }
-    /* Tighter bill: smaller rows so the print buttons stay on screen */
+    /* Give each order enough room to read its timestamp, items, amount, and actions. */
+    body[data-page="billing"] .oq-list { max-height: min(34vh, 320px); }
+    body[data-page="billing"] .oq-row {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start;
+      gap: 8px 12px; padding: 12px;
+    }
+    body[data-page="billing"] .oq-row-info { grid-column: 1; min-width: 0; gap: 5px; }
+    body[data-page="billing"] .oq-row-main { gap: 6px; }
+    body[data-page="billing"] .oq-row-timestamps { gap: 3px; }
+    body[data-page="billing"] .oq-row-items {
+      white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    body[data-page="billing"] .oq-row-amount { grid-column: 2; grid-row: 1; margin: 0; }
+    body[data-page="billing"] .oq-row-pay {
+      grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px; margin: 0;
+    }
+    body[data-page="billing"] .oq-row-pay > :only-child { grid-column: 1 / -1; }
+    body[data-page="billing"] .oq-row-pay-btn { min-width: 0; padding: 8px 6px; }
+    body[data-page="billing"] .oq-row-done { width: 100%; height: 34px; border-radius: 8px; }
+    body[data-page="billing"] .oq-row-gpay { grid-column: 1 / -1; margin: 0; white-space: normal; line-height: 1.5; }
+    /* Keep item details and prices in separate, readable columns. */
+    body[data-page="billing"] .bill-item {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto 24px;
+      align-items: center; gap: 8px; padding: 12px 8px;
+    }
+    body[data-page="billing"] .bill-item-info { min-width: 0; }
+    body[data-page="billing"] .bill-item-name { line-height: 1.35; overflow-wrap: anywhere; }
+    body[data-page="billing"] .bill-item-spec { line-height: 1.4; overflow-wrap: anywhere; }
+    body[data-page="billing"] .bill-item-qty-price { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
+    /* Bill controls stay visible while the item list gets more breathing room. */
     body[data-page="billing"] .bill-number-row, body[data-page="billing"] .customer-row { padding: 6px 14px; }
-    body[data-page="billing"] .bill-items-list { max-height: 30vh; padding: 8px 10px; }
+    body[data-page="billing"] .bill-items-list { max-height: 34vh; padding: 8px 10px; }
     body[data-page="billing"] .bill-actions { padding: 8px 12px; gap: 6px; }
     body[data-page="billing"] .wifi-printer-status { padding: 6px; gap: 4px; }
     body[data-page="billing"] .printer-status-item { padding: 3px 6px; }
@@ -1239,6 +1270,7 @@
       body[data-page="billing"] .workspace { grid-template-columns: 1fr; }
       body[data-page="billing"] .menu-grid { max-height: 60vh; }
       body[data-page="billing"] .right-col { overflow: visible; }
+      body[data-page="billing"] .oq-list { max-height: 40vh; }
     }
 
     /* Printer status: one line with a settings gear */

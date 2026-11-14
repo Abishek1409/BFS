@@ -1020,6 +1020,7 @@ function init() {
 
   initMenuFromInventory();
   initAdminAuthUI();
+  restorePendingManualOrders();
   renderQueue();
   if (window.ShopAuth && window.firebaseConfig) {
     setQrConnection('Shop sign-in needed', false);
@@ -2654,6 +2655,41 @@ var orderQueue = [];
 var ordersRef = window.firebaseConfig ? firebase.database().ref('orders') : null;
 var firebaseConnectionRef = window.firebaseConfig ? firebase.database().ref('.info/connected') : null;
 
+function restorePendingManualOrders() {
+  var stored = safeGetStorage('bfsPendingManualOrders');
+  if (!stored) {
+    orderQueue = [];
+    return;
+  }
+
+  try {
+    var orders = JSON.parse(stored);
+    if (!Array.isArray(orders)) throw new Error('Pending orders must be an array');
+    orderQueue = orders.filter(function(order) {
+      return order && order.source !== 'qr' && order.billNo != null &&
+        Array.isArray(order.items) && Number.isFinite(Number(order.amount));
+    }).map(function(order) {
+      return Object.assign({}, order, {
+        source: 'manual',
+        amount: Number(order.amount),
+        placedAt: Number(order.placedAt) || Date.now(),
+        printedAt: Number(order.printedAt) || null,
+        payMethod: order.payMethod === 'cash' || order.payMethod === 'gpay' ? order.payMethod : null
+      });
+    });
+  } catch (error) {
+    console.warn('Could not restore pending manual orders:', error);
+    orderQueue = [];
+  }
+}
+
+function persistPendingManualOrders(orders) {
+  var pending = (orders || orderQueue).filter(function(order) {
+    return order && order.source !== 'qr';
+  });
+  safeSetStorage('bfsPendingManualOrders', JSON.stringify(pending));
+}
+
 function escapeQueueText(value) {
   var div = document.createElement('div');
   div.textContent = value == null ? '' : String(value);
@@ -2952,6 +2988,7 @@ function addToQueue(billNo, customer, amount, items, printedAt) {
   var now = new Date();
   orderQueue.push({
     id: Date.now(),
+    source: 'manual',
     billNo: billNo,
     customer: customer || '',
     amount: amount,
@@ -2961,6 +2998,7 @@ function addToQueue(billNo, customer, amount, items, printedAt) {
     time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
     payMethod: null
   });
+  persistPendingManualOrders();
   renderQueue();
 }
 
@@ -3034,6 +3072,7 @@ function setPayMethod(id, method) {
   var order = orderQueue.find(function(o) { return o.id === id; });
   if (!order) return;
   order.payMethod = order.payMethod === method ? null : method;
+  persistPendingManualOrders();
   renderQueue();
 }
 
@@ -3041,10 +3080,12 @@ function completeOrder(id) {
   var row = document.getElementById('oqcard-' + id);
   if (row) {
     row.classList.add('removing');
+    persistPendingManualOrders(orderQueue.filter(function(o) { return o.id !== id; }));
     setTimeout(function() {
       var completed = orderQueue.find(function(o) { return o.id === id; });
       orderQueue = orderQueue.filter(function(o) { return o.id !== id; });
       if (completed && completed.serverId) setQrOrderStatus(completed.serverId, 'served');
+      persistPendingManualOrders();
       renderQueue();
     }, 300);
   }
