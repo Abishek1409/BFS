@@ -94,6 +94,11 @@ window.firebaseConfig = {
 };
 ```
 
+### QR Order Amendments
+To let customers add items to the same QR order, deploy the updated QR ordering site and billing app, then publish `migrations/database.rules.secure.json` to the Firebase Realtime Database Rules. Amendments are written to the owner-scoped `orderAmendments` path; do not enable broad customer writes to existing orders.
+
+Printed-bill amendments update the bill history stored in IndexedDB on the billing device and reprint the revised receipt. Keep the billing app available on the device that originally recorded the bill. Bills created before this update do not store the order owner's UID and cannot be amended securely from the QR site.
+
 ### Printer Configuration
 The system supports multiple printer types:
 

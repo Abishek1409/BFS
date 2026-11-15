@@ -2193,7 +2193,8 @@ async function printBill(mode) {
         size: it.size,
         note: it.note,
         orderType: it.orderType || 'Dine In',
-        spec: parts.join(', ') || 'Standard' 
+        spec: parts.join(', ') || 'Standard',
+        ...(it.amendmentId ? { amendmentId: it.amendmentId } : {})
       };
     });
 
@@ -2302,7 +2303,8 @@ function collectBillData() {
       qty: it.qty, price: it.price, total: it.total,
       ice: it.ice, sugar: it.sugar, size: it.size, note: it.note,
       orderType: it.orderType || 'Dine In',
-      spec: parts.join(', ') || 'Standard'
+      spec: parts.join(', ') || 'Standard',
+      ...(it.amendmentId ? { amendmentId: it.amendmentId } : {})
     };
   });
   return { billNo, customerName: customer, items, subtotal: grandTotal, grandTotal, date: new Date() };
@@ -2364,16 +2366,42 @@ function saveBillWithoutPrint() {
 }
 
 /** QR order bookkeeping after a bill is recorded (shared with saveBillToHistory). */
-function finishBill(billData, wasPrinted) {
-  if (activeQrOrderId) {
-    var qrId = activeQrOrderId;
+function finishBill(billData, wasPrinted, orderIdOverride) {
+  var qrId = typeof orderIdOverride === 'undefined' ? activeQrOrderId : orderIdOverride;
+  if (qrId) {
     var qrOrder = orderQueue.find(function(o) { return o.serverId === qrId; });
     var printedAt = wasPrinted ? Date.now() : null;
     if (window.firebaseConfig && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-      var orderStatus = { billNo: billData.billNo, status: 'billed' };
+      var orderStatus = {
+        billNo: billData.billNo,
+        billDate: window.BillHistory._formatDate(new Date()),
+        status: 'billed',
+        includedAmendments: []
+      };
+      (billData.items || []).forEach(function(item) {
+        if (item.amendmentId && orderStatus.includedAmendments.indexOf(item.amendmentId) === -1) {
+          orderStatus.includedAmendments.push(item.amendmentId);
+        }
+      });
+      if (qrOrder && qrOrder.uid) orderStatus.uid = qrOrder.uid;
       if (printedAt) orderStatus.printedAt = printedAt;
       firebase.database().ref('orderStatus/' + qrId).set(orderStatus)
-        .then(function() { return firebase.database().ref('orders/' + qrId).remove(); })
+        .then(function() {
+          return firebase.database().ref('orderAmendments/' + qrId).once('value').then(function(snapshot) {
+            var amendments = snapshot.val() || {};
+            var updates = Object.keys(amendments).map(function(amendmentId) {
+              var amendmentRef = firebase.database().ref('orderAmendments/' + qrId + '/' + amendmentId);
+              if (orderStatus.includedAmendments.indexOf(amendmentId) !== -1) {
+                return amendmentRef.update({ status: 'printed' });
+              }
+              if (amendments[amendmentId].status === 'printed') return Promise.resolve();
+              return applyBilledOrderAmendment(qrId, amendmentId, amendments[amendmentId], orderStatus, billData.billNo);
+            });
+            return Promise.all(updates);
+          }).then(function() {
+            return firebase.database().ref('orders/' + qrId).remove();
+          });
+        })
         .catch(function(error) { console.error('Could not save or remove QR order in Firebase:', error); });
     }
     if (qrOrder) {
@@ -2381,7 +2409,7 @@ function finishBill(billData, wasPrinted) {
       qrOrder.billNo = billData.billNo;
       if (printedAt) qrOrder.printedAt = printedAt;
     }
-    activeQrOrderId = null;
+    if (activeQrOrderId === qrId) activeQrOrderId = null;
     renderQueue();
   } else {
     addToQueue(billData.billNo, billData.customerName, billData.grandTotal, billData.items,
@@ -2400,17 +2428,23 @@ function finishBill(billData, wasPrinted) {
  * @param {string} formatType - Format type ('customer', 'kitchen', 'both')
  */
 function saveBillToHistory(billNo, amount, items, customer, formatType, wasPrinted) {
-  // Save the bill record (Req 5.5). Stock is a manual In/Out toggle, so nothing is deducted.
-  function saveRecordAndDeduct() {
-    if (!window.BillHistory) return;
-    window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both', customer)
-      .catch(function(err) { console.error('Bill save failed:', err); });
+  var qrOrderId = activeQrOrderId;
+  var billData = { billNo: billNo, customerName: customer, grandTotal: amount, items: items };
+  if (!window.BillHistory) {
+    showErrorToast('History unavailable', 'Could not save this bill to history.');
+    finishBill(billData, wasPrinted !== false, qrOrderId);
+    return;
   }
 
-  saveRecordAndDeduct();
-  // Marks a loaded QR order as billed, or adds manual bills to the local orders queue.
-  finishBill({ billNo: billNo, customerName: customer, grandTotal: amount, items: items },
-    wasPrinted !== false);
+  window.BillHistory.saveBillRecord(billNo, amount, items, 'wifi-thermal', formatType || 'both', customer)
+    .then(function() {
+      finishBill(billData, wasPrinted !== false, qrOrderId);
+    })
+    .catch(function(error) {
+      console.error('Bill save failed:', error);
+      showErrorToast('Bill history save failed', error.message || 'Could not save this bill to history.');
+      finishBill(billData, wasPrinted !== false, qrOrderId);
+    });
 }
 
 /**
@@ -2675,7 +2709,10 @@ function clearCurrentBill() {
 /* ===== ORDERS QUEUE ===== */
 var orderQueue = [];
 var ordersRef = window.firebaseConfig ? firebase.database().ref('orders') : null;
+var orderAmendmentsRef = window.firebaseConfig ? firebase.database().ref('orderAmendments') : null;
 var firebaseConnectionRef = window.firebaseConfig ? firebase.database().ref('.info/connected') : null;
+var orderAmendmentRefs = {};
+var processingOrderAmendments = {};
 
 function restorePendingManualOrders() {
   var stored = safeGetStorage('bfsPendingManualOrders');
@@ -2743,6 +2780,13 @@ function connectOrderServer() {
   }
   setQrConnection('Connecting…', false);
   ordersRef.off();
+  if (orderAmendmentsRef) {
+    orderAmendmentsRef.off();
+    Object.keys(orderAmendmentRefs).forEach(function(orderId) {
+      orderAmendmentRefs[orderId].off();
+    });
+    orderAmendmentRefs = {};
+  }
   firebaseConnectionRef.off();
   firebaseConnectionRef.on('value', function(snapshot) {
     setQrConnection(snapshot.val() === true ? 'QR live' : 'QR offline', snapshot.val() === true);
@@ -2760,6 +2804,16 @@ function connectOrderServer() {
   ordersRef.on('child_changed', function(snapshot) {
     updateQrOrder(snapshot.key, snapshot.val());
   }, handleOrderSyncError);
+  if (orderAmendmentsRef) {
+    orderAmendmentsRef.on('child_added', function(snapshot) {
+      var orderId = snapshot.key;
+      if (orderAmendmentRefs[orderId]) return;
+      orderAmendmentRefs[orderId] = snapshot.ref;
+      snapshot.ref.on('child_added', function(amendmentSnapshot) {
+        handleOrderAmendment(orderId, amendmentSnapshot.key, amendmentSnapshot.val());
+      }, handleOrderSyncError);
+    }, handleOrderSyncError);
+  }
 }
 
 /* ===== NEW QR ORDER ALERT (toast + soft chime + system notification) ===== */
@@ -2936,6 +2990,7 @@ function addQrOrder(order, orderId) {
   orderQueue.push({
     id: Date.now() + Math.random(),
     serverId: orderId,
+    uid: order.uid || '',
     orderNo: order.orderNo || '',
     source: 'qr',
     table: order.table,
@@ -2962,6 +3017,171 @@ function updateQrOrder(orderId, order) {
     row.status = order.status || row.status;
   }
   renderQueue();
+}
+
+function getAmendmentItems(items, amendmentId) {
+  if (!Array.isArray(items)) return [];
+  return items.filter(function(item) {
+    return item && typeof item.name === 'string' && Number.isFinite(Number(item.price)) && Number(item.price) >= 0;
+  }).map(function(item) {
+    var normalized = normalizeQrItemPreferences(item);
+    var qty = Math.max(1, Number(item.qty) || 1);
+    var price = Number(item.price);
+    var parts = [];
+    if (normalized.ice) parts.push(normalized.ice);
+    if (normalized.sugar && normalized.sugar !== 'Normal Sugar') parts.push(normalized.sugar);
+    if (normalized.size && normalized.size !== 'Regular') parts.push(normalized.size);
+    if (normalized.note) parts.push(normalized.note);
+    return Object.assign({}, normalized, {
+      qty: qty,
+      price: price,
+      total: price * qty,
+      emoji: normalized.emoji || '🍹',
+      uid: Date.now() + Math.random(),
+      amendmentId: amendmentId,
+      orderType: normalized.orderType || 'Dine In',
+      spec: parts.join(', ') || 'Standard'
+    });
+  });
+}
+
+function handleOrderAmendment(orderId, amendmentId, amendment) {
+  if (!amendment || amendment.status === 'printed') return;
+
+  var statusRef = firebase.database().ref('orderStatus/' + orderId);
+  statusRef.once('value').then(function(statusSnapshot) {
+    var orderStatus = statusSnapshot.val() || {};
+    if (Array.isArray(orderStatus.includedAmendments) && orderStatus.includedAmendments.indexOf(amendmentId) !== -1) {
+      return firebase.database().ref('orderAmendments/' + orderId + '/' + amendmentId)
+        .update({ status: 'printed' });
+    }
+    var billNo = orderStatus.billNo || amendment.billNo;
+    if (billNo) {
+      return applyBilledOrderAmendment(orderId, amendmentId, amendment, orderStatus, billNo);
+    }
+
+    return ordersRef.child(orderId).once('value').then(function(orderSnapshot) {
+      var order = orderSnapshot.val();
+      if (!order) throw new Error('The original QR order is no longer available.');
+      applyPreBillAmendment(orderId, amendmentId, amendment, order);
+    });
+  }).catch(function(error) {
+    console.error('Could not apply QR order amendment:', orderId, amendmentId, error);
+    showErrorToast('Order update failed', error.message || 'Could not update the existing bill.');
+  });
+}
+
+function applyPreBillAmendment(orderId, amendmentId, amendment, order) {
+  var row = orderQueue.find(function(item) { return item.serverId === orderId; });
+  if (!row) {
+    addQrOrder(order, orderId);
+    row = orderQueue.find(function(item) { return item.serverId === orderId; });
+  }
+  if (!row) throw new Error('Could not find the original order in the billing queue.');
+
+  row.appliedAmendments = Array.isArray(row.appliedAmendments) ? row.appliedAmendments : [];
+  if (row.appliedAmendments.indexOf(amendmentId) !== -1) return;
+
+  var additions = getAmendmentItems(amendment.items, amendmentId);
+  if (!additions.length) throw new Error('The order update contains no valid items.');
+  row.items = row.items.concat(additions);
+  row.amount += additions.reduce(function(sum, item) { return sum + item.total; }, 0);
+  row.appliedAmendments.push(amendmentId);
+
+  if (activeQrOrderId === orderId) {
+    billItems = billItems.concat(additions);
+    renderBill();
+  }
+
+  firebase.database().ref('orderAmendments/' + orderId + '/' + amendmentId)
+    .update({ status: 'queued' })
+    .catch(function(error) { console.error('Could not acknowledge QR order amendment:', error); });
+  renderQueue();
+  showSuccessToast('Order updated', 'Additional items were added to the existing order.');
+}
+
+async function applyBilledOrderAmendment(orderId, amendmentId, amendment, orderStatus, billNo) {
+  var key = orderId + '/' + amendmentId;
+  if (processingOrderAmendments[key]) return processingOrderAmendments[key];
+  var operation = applyBilledOrderAmendmentOnce(orderId, amendmentId, amendment, orderStatus, billNo);
+  processingOrderAmendments[key] = operation.finally(function() {
+    delete processingOrderAmendments[key];
+  });
+  return processingOrderAmendments[key];
+}
+
+async function applyBilledOrderAmendmentOnce(orderId, amendmentId, amendment, orderStatus, billNo) {
+  if (!window.BillHistory || !window.BillHistory.appendBillItems) {
+    throw new Error('Bill history is unavailable on this device.');
+  }
+
+  var additions = getAmendmentItems(amendment.items, amendmentId);
+  if (!additions.length) throw new Error('The order update contains no valid items.');
+
+  var billDate = orderStatus.billDate || amendment.billDate ||
+    window.BillHistory._formatDate(new Date(Number(amendment.createdAt) || Date.now()));
+  var recordId = billDate + '_' + String(billNo);
+  var record = await window.BillHistory.appendBillItems(recordId, amendmentId, additions);
+  var amendmentRef = firebase.database().ref('orderAmendments/' + orderId + '/' + amendmentId);
+  await amendmentRef.update({ status: 'updated', updatedAt: Date.now() });
+
+  try {
+    var amendmentSnapshot = await amendmentRef.once('value');
+    var amendmentState = amendmentSnapshot.val() || amendment;
+    var billData = {
+      billNo: record.billNo,
+      customerName: record.customerName || '',
+      items: record.items,
+      subtotal: record.amount,
+      grandTotal: record.amount,
+      date: new Date()
+    };
+    var printerStatus = getPrintersStatus();
+    var shouldPrintCustomer = record.formatType === 'customer' || record.formatType === 'both' || record.formatType === 'none';
+    var shouldPrintKitchen = record.formatType === 'kitchen' || record.formatType === 'both';
+    if (shouldPrintCustomer &&
+        printerStatus.printer1.configured && !amendmentState.customerPrintedAt) {
+      await printToUnifiedPrinter('printer1', generateCustomerReceipt(billData));
+      await amendmentRef.update({ customerPrintedAt: Date.now() });
+    }
+    if (shouldPrintKitchen &&
+        printerStatus.printer2.configured && !amendmentState.kitchenPrintedAt) {
+      await printToUnifiedPrinter('printer2', generateKitchenTicket(Object.assign({}, billData, {
+        items: additions,
+        subtotal: additions.reduce(function(sum, item) { return sum + item.total; }, 0),
+        grandTotal: additions.reduce(function(sum, item) { return sum + item.total; }, 0)
+      })));
+      await amendmentRef.update({ kitchenPrintedAt: Date.now() });
+    }
+    if (shouldPrintCustomer &&
+        !printerStatus.printer1.configured && !amendmentState.customerPrintedAt) {
+      throw new Error('Customer receipt printer is not configured.');
+    }
+    if (shouldPrintKitchen &&
+        !printerStatus.printer2.configured && !amendmentState.kitchenPrintedAt) {
+      throw new Error('Kitchen printer is not configured.');
+    }
+    if (!shouldPrintCustomer && !shouldPrintKitchen) {
+      throw new Error('The saved bill has no printable format.');
+    }
+    await amendmentRef.update({ status: 'printed', printedAt: Date.now() });
+    showSuccessToast('Bill updated', 'Bill #' + billNo + ' was updated and reprinted.');
+  } catch (error) {
+    console.error('Bill amendment reprint failed:', error);
+    showErrorToast('Bill updated; reprint failed', error.message || 'Use Bill History to retry printing.', [
+      {
+        label: 'Retry Reprint',
+        onClick: function() {
+          applyBilledOrderAmendment(orderId, amendmentId, amendment, orderStatus, billNo)
+            .catch(function(retryError) {
+              console.error('Bill amendment reprint retry failed:', retryError);
+              showErrorToast('Reprint failed', retryError.message || 'Use Bill History to retry printing.');
+            });
+        },
+        primary: true
+      }
+    ]);
+  }
 }
 
 function normalizeQrItemPreferences(item) {

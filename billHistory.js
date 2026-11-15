@@ -162,6 +162,65 @@
     });
   }
 
+  function appendBillItems(recordId, amendmentId, items) {
+    if (typeof recordId !== 'string' || recordId === '') {
+      return Promise.reject(new Error('recordId must be a non-empty string'));
+    }
+    if (typeof amendmentId !== 'string' || amendmentId === '') {
+      return Promise.reject(new Error('amendmentId must be a non-empty string'));
+    }
+    if (!Array.isArray(items) || items.length === 0 || items.some(function(item) {
+      return !item || !Number.isFinite(Number(item.total)) || Number(item.total) < 0;
+    })) {
+      return Promise.reject(new Error('items must contain valid bill items'));
+    }
+
+    return _getDB().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var tx = db.transaction(STORE_NAME, 'readwrite');
+        var store = tx.objectStore(STORE_NAME);
+        var req = store.get(recordId);
+        var updatedRecord = null;
+        var failure = null;
+
+        req.onsuccess = function() {
+          var record = req.result;
+          if (!record) {
+            failure = new Error('Bill record not found: ' + recordId);
+            tx.abort();
+            return;
+          }
+
+          record.appliedAmendments = Array.isArray(record.appliedAmendments) ? record.appliedAmendments : [];
+          if (record.appliedAmendments.indexOf(amendmentId) !== -1) {
+            updatedRecord = record;
+            return;
+          }
+
+          record.items = (Array.isArray(record.items) ? record.items : []).concat(items);
+          record.amount += items.reduce(function(sum, item) { return sum + Number(item.total); }, 0);
+          record.appliedAmendments.push(amendmentId);
+          updatedRecord = record;
+          store.put(record);
+        };
+
+        req.onerror = function(event) {
+          failure = new Error('Failed to retrieve bill record: ' + event.target.error);
+        };
+        tx.oncomplete = function() {
+          if (failure) reject(failure);
+          else resolve(updatedRecord);
+        };
+        tx.onabort = function(event) {
+          reject(failure || new Error('Failed to amend bill record: ' + (event.target.error || 'transaction aborted')));
+        };
+        tx.onerror = function(event) {
+          failure = failure || new Error('Failed to amend bill record: ' + event.target.error);
+        };
+      });
+    });
+  }
+
   /**
    * Returns all bill records sorted newest-first (by date then time, descending).
    * @returns {Promise<BillRecord[]>}
@@ -284,6 +343,7 @@
   // --- Public API ---
   window.BillHistory = {
     saveBillRecord: saveBillRecord,
+    appendBillItems: appendBillItems,
     getAllBillRecords: getAllBillRecords,
     getBillRecordsByDateRange: getBillRecordsByDateRange,
     downloadBillHistory: downloadBillHistory,
