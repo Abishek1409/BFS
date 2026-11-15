@@ -603,12 +603,16 @@ function generateCustomerReceipt(billData) {
  * @returns {string} Formatted date string (DD-MMM-YYYY)
  */
 function formatDate(date) {
-  const day = date.getDate().toString().padStart(2, '0');
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).formatToParts(date).reduce((result, part) => {
+    if (part.type !== 'literal') result[part.type] = part.value;
+    return result;
+  }, {});
+  return `${parts.day}-${parts.month}-${parts.year}`;
 }
 
 /**
@@ -617,9 +621,12 @@ function formatDate(date) {
  * @returns {string} Formatted time string (HH:MM)
  */
 function formatTime(date) {
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  return `${hours}:${minutes}`;
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).format(date);
 }
 
 // Export functions for use in other modules

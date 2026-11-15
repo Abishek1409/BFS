@@ -36,13 +36,22 @@ function safeSetStorage(key, val) {
   }
 }
 
-/* ===== LOCAL DATE HELPER ===== */
-function getLocalTodayDate() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+/* ===== INDIA DATE HELPER ===== */
+function getIndiaDateParts(date) {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date).reduce(function(parts, part) {
+    if (part.type !== 'literal') parts[part.type] = part.value;
+    return parts;
+  }, {});
+}
+
+function getIndiaTodayDate() {
+  const parts = getIndiaDateParts(new Date());
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 /* ===== UNIFIED PRINTER MANAGEMENT (USB + WiFi) ===== */
@@ -966,7 +975,7 @@ async function handleDisconnectPrinter() {
 }
 
 function checkAndResetDailyCounter() {
-  const today = getLocalTodayDate();
+  const today = getIndiaTodayDate();
   const storedData = safeGetStorage('bfsBillData');
   if (storedData) {
     try {
@@ -987,7 +996,7 @@ function checkAndResetDailyCounter() {
 function ensureTodayBillCounter() {
   let savedDate = '';
   try { savedDate = JSON.parse(safeGetStorage('bfsBillData') || '{}').date; } catch (e) {}
-  if (savedDate === getLocalTodayDate()) return;
+  if (savedDate === getIndiaTodayDate()) return;
   billCounter = checkAndResetDailyCounter();
   const pad = String(billCounter);
   const billNoEl = document.getElementById('billNoInput');
@@ -1362,7 +1371,7 @@ function stepModalQty(delta) {
 }
 
 function advanceBillCounter() {
-  const today = getLocalTodayDate();
+  const today = getIndiaTodayDate();
   const storedData = safeGetStorage('bfsBillData');
   let currentSavedDate = '';
   if (storedData) {
@@ -1766,7 +1775,7 @@ function apExport() {
   apGuard(() => {
     const blob = new Blob([Inventory.exportJson()], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = apEl('a', { href: url, download: `inventory-${new Date().toISOString().slice(0, 10)}.json` });
+    const a = apEl('a', { href: url, download: `inventory-${getIndiaTodayDate()}.json` });
     document.body.append(a);
     a.click();
     a.remove();
@@ -1971,13 +1980,26 @@ async function printHistoryBill(record, button, printerId) {
 
   const dateParts = String(record.date || '').split('-').map(Number);
   const timeParts = String(record.time || '').split(':').map(Number);
-  const billDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]);
+  const hasNumericParts = dateParts.length === 3 && timeParts.length === 2 &&
+    dateParts.every(Number.isInteger) && timeParts.every(Number.isInteger);
+  const billDate = hasNumericParts
+    ? new Date(Date.UTC(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]) - 330 * 60 * 1000)
+    : new Date(NaN);
+  const indiaDate = Number.isNaN(billDate.getTime()) ? null : getIndiaDateParts(billDate);
+  const indiaTime = indiaDate && new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).formatToParts(billDate).reduce(function(parts, part) {
+    if (part.type !== 'literal') parts[part.type] = part.value;
+    return parts;
+  }, {});
   const validDate = dateParts.length === 3 && timeParts.length === 2 &&
-    dateParts.every(Number.isInteger) && timeParts.every(Number.isInteger) &&
-    !Number.isNaN(billDate.getTime()) &&
-    billDate.getDate() === dateParts[0] && billDate.getMonth() === dateParts[1] - 1 &&
-    billDate.getFullYear() === dateParts[2] &&
-    billDate.getHours() === timeParts[0] && billDate.getMinutes() === timeParts[1];
+    hasNumericParts && indiaDate && indiaTime &&
+    Number(indiaDate.day) === dateParts[0] && Number(indiaDate.month) === dateParts[1] &&
+    Number(indiaDate.year) === dateParts[2] &&
+    Number(indiaTime.hour) === timeParts[0] && Number(indiaTime.minute) === timeParts[1];
   if (!validDate) {
     showErrorToast('Cannot print bill', 'The saved bill date or time is invalid.');
     return;
@@ -2090,7 +2112,7 @@ function downloadHistory() {
         '.summary strong{color:#f5f5f5}' +
       '</style></head><body>' +
       '<h2>&#x1F4DC; Bill History — Best Fruits Stall</h2>' +
-      '<div class="meta">' + label + ' &nbsp;|&nbsp; Generated: ' + new Date().toLocaleString('en-IN') + '</div>' +
+      '<div class="meta">' + label + ' &nbsp;|&nbsp; Generated: ' + new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + '</div>' +
       '<table><thead><tr><th>#</th><th>Bill No.</th><th>Date</th><th>Time</th><th>Method</th><th>Format</th><th>Items</th><th>Amount</th></tr></thead>' +
       '<tbody>' + (rows || '<tr><td colspan="8" style="text-align:center;color:#a3a3a3;padding:32px">No records found.</td></tr>') + '</tbody></table>' +
       '<div class="summary">' + records.length + ' bill' + (records.length !== 1 ? 's' : '') +
@@ -2922,7 +2944,7 @@ function addQrOrder(order, orderId) {
     printedAt: Number(order.printedAt) || null,
     amount: Number(order.total || order.amount || order.grandTotal) || orderItems.reduce(function(sum, item) { return sum + item.total; }, 0),
     items: orderItems,
-    time: order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
+    time: order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '',
     payMethod: null
   });
 }
@@ -2995,7 +3017,7 @@ function addToQueue(billNo, customer, amount, items, printedAt) {
     items: items || [],
     placedAt: now.getTime(),
     printedAt: Number(printedAt) || null,
-    time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+    time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }),
     payMethod: null
   });
   persistPendingManualOrders();
@@ -3007,7 +3029,7 @@ function formatQueueTimestamp(timestamp) {
   if (!Number.isFinite(date.getTime())) return 'Time unavailable';
   return date.toLocaleString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+    hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata'
   });
 }
 
@@ -3384,10 +3406,10 @@ function closeRptDrawer() {
 
 // Init reports default dates
 (function initReports() {
-  var today = new Date();
-  var yy = today.getFullYear();
-  var mm = String(today.getMonth() + 1).padStart(2, '0');
-  var dd = String(today.getDate()).padStart(2, '0');
+  var today = getIndiaDateParts(new Date());
+  var yy = today.year;
+  var mm = today.month;
+  var dd = today.day;
   if (!document.getElementById('rptDatePicker')) return; // not on the reports page
   document.getElementById('rptDatePicker').value  = yy + '-' + mm + '-' + dd;
   document.getElementById('rptMonthPicker').value = yy + '-' + mm;

@@ -2,29 +2,43 @@
 import { isClosable } from './progress.ts';
 import type { BillRecord, ProgressRecord } from './types.ts';
 
+const indiaDateParts = (timestamp: number): { year: number; month: number; day: number } => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(timestamp);
+  return {
+    year: Number(parts.find(p => p.type === 'year')?.value),
+    month: Number(parts.find(p => p.type === 'month')?.value),
+    day: Number(parts.find(p => p.type === 'day')?.value),
+  };
+};
+
 /** Active orders = open Progress_Records (served + paid ones are about to close). */
 export function openCount(orders: ProgressRecord[]): number {
   return orders.reduce((n, p) => (isClosable(p) ? n : n + 1), 0);
 }
 
-/** Local-midnight bounds of the day containing `now`. */
+/** India-midnight bounds of the day containing `now`. */
 export function dayRange(now: number): { start: number; end: number } {
-  const d = new Date(now);
-  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+  const { year, month, day } = indiaDateParts(now);
+  const start = Date.UTC(year, month - 1, day) - 330 * 60 * 1000;
+  const end = start + 24 * 60 * 60 * 1000;
   return { start, end };
 }
 
 /** "DD-MM-YYYY", the date format used by billHistory.js. */
 export function billDate(now: number): string {
-  const d = new Date(now);
-  return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+  const { year, month, day } = indiaDateParts(now);
+  return `${String(day).padStart(2, '0')}-${String(month).padStart(2, '0')}-${year}`;
 }
 
 /** "YYYY-MM-DD", the key used by liveMap/history. */
 export function historyDate(now: number): string {
-  const d = new Date(now);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const { year, month, day } = indiaDateParts(now);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 /**

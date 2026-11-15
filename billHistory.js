@@ -59,14 +59,26 @@
 
   /** Returns "DD-MM-YYYY" from a Date object. */
   function _formatDate(d) {
-    var dd = String(d.getDate()).padStart(2, '0');
-    var mm = String(d.getMonth() + 1).padStart(2, '0');
-    return dd + '-' + mm + '-' + d.getFullYear();
+    var parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).formatToParts(d).reduce(function(result, part) {
+      if (part.type !== 'literal') result[part.type] = part.value;
+      return result;
+    }, {});
+    return parts.day + '-' + parts.month + '-' + parts.year;
   }
 
   /** Returns "HH:MM" (24-hour) from a Date object. */
   function _formatTime(d) {
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).format(d);
   }
 
   /**
