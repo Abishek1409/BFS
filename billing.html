@@ -158,6 +158,7 @@
         <div class="oq-head-actions">
           <span class="oq-connection" id="oqConnection">QR offline</span>
           <button class="oq-connect-btn" onclick="reconnectQr()">Reconnect QR</button>
+          <button type="button" class="oq-clear-btn" id="clearQueueBtn" data-admin-only hidden onclick="withAdmin(clearOrderQueue)">Clear Queue &amp; QR Orders</button>
         </div>
       </div>
       <div class="oq-list" id="oqList">

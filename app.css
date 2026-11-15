@@ -505,7 +505,7 @@
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
     }
-    .oq-head-actions { display: flex; align-items: center; gap: 8px; }
+    .oq-head-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
     .oq-connection { color: var(--muted); font-size: .72rem; }
     .oq-connection.connected { color: var(--accent-light); }
     .oq-connect-btn {
@@ -513,6 +513,12 @@
       border-radius: 8px; padding: 6px 10px; font: 700 .72rem inherit; cursor: pointer;
     }
     .oq-connect-btn:hover { background: var(--card2); border-color: var(--accent); }
+    .oq-clear-btn {
+      background: transparent; color: var(--danger); border: 1px solid var(--danger);
+      border-radius: 8px; padding: 6px 10px; font: 700 .72rem inherit; cursor: pointer;
+    }
+    .oq-clear-btn:hover:not(:disabled) { background: var(--danger); color: var(--card); }
+    .oq-clear-btn:disabled { cursor: wait; opacity: .6; }
     .oq-title {
       font-size: 1.15rem; font-weight: 800; color: var(--gold);
       display: flex; align-items: center; gap: 8px;

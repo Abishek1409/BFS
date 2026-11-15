@@ -2749,6 +2749,86 @@ function persistPendingManualOrders(orders) {
   safeSetStorage('bfsPendingManualOrders', JSON.stringify(pending));
 }
 
+async function clearOrderQueue() {
+  if (!ordersRef) {
+    showErrorToast('QR orders unavailable', 'Firebase is not configured on this page.');
+    return;
+  }
+
+  var user = window.firebase && window.firebase.auth && firebase.apps.length
+    ? firebase.auth().currentUser
+    : null;
+  if (!user || user.isAnonymous) {
+    showErrorToast('Firebase sign-in required', 'Sign in with the authorized billing Firebase account to delete QR orders.');
+    if (window.ShopAuth) window.ShopAuth.showLogin();
+    return;
+  }
+
+  if (!window.confirm('Clear all orders currently in this billing queue and delete the QR orders currently stored in Firebase? This cannot be undone. Bill history, orderStatus, and orderAmendments will be kept.')) return;
+
+  var button = document.getElementById('clearQueueBtn');
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Clearing…';
+  }
+
+  var queueIdsAtStart = new Set(orderQueue.map(function(order) { return String(order.id); }));
+  var manualCount = orderQueue.filter(function(order) { return order.source !== 'qr'; }).length;
+
+  try {
+    var snapshot = await ordersRef.once('value');
+    var records = snapshot.val() || {};
+    var remoteIds = Object.keys(records);
+    var remoteIdSet = new Set(remoteIds);
+    var outcomes = await Promise.all(remoteIds.map(function(orderId) {
+      return ordersRef.child(orderId).remove()
+        .then(function() { return { id: orderId }; })
+        .catch(function(error) {
+          console.error('Could not delete QR order:', orderId, error);
+          return { id: orderId, error: error };
+        });
+    }));
+    var failedIds = new Set(outcomes.filter(function(result) { return result.error; }).map(function(result) { return result.id; }));
+    var failedCount = failedIds.size;
+    var deletedCount = outcomes.length - failedCount;
+
+    orderQueue = orderQueue.filter(function(order) {
+      var wasQueued = queueIdsAtStart.has(String(order.id)) ||
+        (order.source === 'qr' && remoteIdSet.has(order.serverId));
+      if (!wasQueued) return true;
+      if (failedCount && order.source !== 'qr') return true;
+      return order.source === 'qr' && failedIds.has(order.serverId);
+    });
+    persistPendingManualOrders();
+    renderQueue();
+
+    if (failedCount) {
+      var firstError = outcomes.find(function(result) { return result.error; }).error;
+      var detail = firstError && (firstError.code || firstError.message);
+      showErrorToast(
+        'Queue partially cleared',
+        'Deleted ' + deletedCount + ' QR order(s), but ' + failedCount +
+          ' could not be deleted. Manual queue items were kept. ' +
+          (detail ? 'Firebase error: ' + detail : 'Check the Firebase account and try again.')
+      );
+    } else {
+      showSuccessToast(
+        'Queue cleared',
+        'Cleared ' + manualCount + ' local queue order(s) and deleted ' + deletedCount +
+          ' QR order(s). Bill history and amendment/status records were kept.'
+      );
+    }
+  } catch (error) {
+    console.error('Could not clear the order queue:', error);
+    showErrorToast('Could not clear orders', error.message || 'Firebase did not allow the operation. Check the billing Firebase account and reconnect.');
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Clear Queue & QR Orders';
+    }
+  }
+}
+
 function escapeQueueText(value) {
   var div = document.createElement('div');
   div.textContent = value == null ? '' : String(value);
