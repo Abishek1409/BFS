@@ -29,6 +29,35 @@
       }
     },
 
+    "orderAmendments": {
+      ".read": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",
+      "$orderId": {
+        "$amendmentId": {
+          ".write": "auth != null && (auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2' || (!data.exists() && newData.child('uid').val() === auth.uid && (root.child('orders').child($orderId).child('uid').val() === auth.uid || root.child('orderStatus').child($orderId).child('uid').val() === auth.uid)))",
+          ".validate": "newData.hasChildren(['uid', 'items', 'createdAt']) && newData.child('uid').isString() && newData.child('items').hasChildren() && newData.child('createdAt').isNumber() && (!newData.hasChild('billNo') || newData.child('billNo').isString() || newData.child('billNo').isNumber()) && (!newData.hasChild('billDate') || newData.child('billDate').isString()) && (!newData.hasChild('status') || newData.child('status').val().matches(/^(queued|updated|printed)$/)) && (!newData.hasChild('updatedAt') || newData.child('updatedAt').isNumber()) && (!newData.hasChild('printedAt') || newData.child('printedAt').isNumber()) && (!newData.hasChild('customerPrintedAt') || newData.child('customerPrintedAt').isNumber()) && (!newData.hasChild('kitchenPrintedAt') || newData.child('kitchenPrintedAt').isNumber())",
+          "items": {
+            "$i": {
+              ".validate": "newData.hasChildren(['name', 'price', 'qty'])",
+              "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120" },
+              "price": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000" },
+              "qty": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99" },
+              "$other": { ".validate": false }
+            }
+          },
+          "uid": { ".validate": "newData.isString()" },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "billNo": { ".validate": "newData.isString() || newData.isNumber()" },
+          "billDate": { ".validate": "newData.isString()" },
+          "status": { ".validate": "newData.val().matches(/^(queued|updated|printed)$/)" },
+          "updatedAt": { ".validate": "newData.isNumber()" },
+          "printedAt": { ".validate": "newData.isNumber()" },
+          "customerPrintedAt": { ".validate": "newData.isNumber()" },
+          "kitchenPrintedAt": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+
     "menu": {
       ".read": "auth != null",
       ".write": "auth != null && auth.uid === 'sUN0LfqxRZYyqHBZanmFx88fiDP2'",

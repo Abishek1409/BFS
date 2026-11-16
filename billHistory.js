@@ -59,14 +59,26 @@
 
   /** Returns "DD-MM-YYYY" from a Date object. */
   function _formatDate(d) {
-    var dd = String(d.getDate()).padStart(2, '0');
-    var mm = String(d.getMonth() + 1).padStart(2, '0');
-    return dd + '-' + mm + '-' + d.getFullYear();
+    var parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).formatToParts(d).reduce(function(result, part) {
+      if (part.type !== 'literal') result[part.type] = part.value;
+      return result;
+    }, {});
+    return parts.day + '-' + parts.month + '-' + parts.year;
   }
 
   /** Returns "HH:MM" (24-hour) from a Date object. */
   function _formatTime(d) {
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).format(d);
   }
 
   /**
@@ -98,10 +110,11 @@
    * @param {number} amount  - Finite numeric total in INR.
    * @param {Array}  items   - Optional array of item snapshots.
    * @param {string} printMethod - Optional print method ('browser' or 'thermal'), defaults to 'browser'.
-   * @param {string} formatType - Optional format type ('customer', 'kitchen', 'both'), defaults to 'both'.
+   * @param {string} formatType - Optional format type ('customer', 'kitchen', 'both', 'none'), defaults to 'both'.
+   * @param {string} customerName - Optional customer name to include on reprinted receipts.
    * @returns {Promise<void>}
    */
-  function saveBillRecord(billNo, amount, items, printMethod, formatType) {
+  function saveBillRecord(billNo, amount, items, printMethod, formatType, customerName) {
     if (typeof billNo !== 'string' || billNo.trim() === '') {
       return Promise.reject(new Error('billNo must be a non-empty string'));
     }
@@ -118,6 +131,7 @@
       date: date,
       time: _formatTime(now),
       items: Array.isArray(items) ? items : [],
+      customerName: typeof customerName === 'string' ? customerName : '',
       // 'manual' = entered by hand without printing; 'wifi-thermal' is the thermal print path
       printMethod: printMethod === 'manual' ? 'manual'
         : (printMethod === 'thermal' || printMethod === 'wifi-thermal') ? 'thermal'
@@ -143,6 +157,65 @@
         };
         req.onerror = function (event) {
           reject(new Error('Failed to save bill record: ' + event.target.error));
+        };
+      });
+    });
+  }
+
+  function appendBillItems(recordId, amendmentId, items) {
+    if (typeof recordId !== 'string' || recordId === '') {
+      return Promise.reject(new Error('recordId must be a non-empty string'));
+    }
+    if (typeof amendmentId !== 'string' || amendmentId === '') {
+      return Promise.reject(new Error('amendmentId must be a non-empty string'));
+    }
+    if (!Array.isArray(items) || items.length === 0 || items.some(function(item) {
+      return !item || !Number.isFinite(Number(item.total)) || Number(item.total) < 0;
+    })) {
+      return Promise.reject(new Error('items must contain valid bill items'));
+    }
+
+    return _getDB().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var tx = db.transaction(STORE_NAME, 'readwrite');
+        var store = tx.objectStore(STORE_NAME);
+        var req = store.get(recordId);
+        var updatedRecord = null;
+        var failure = null;
+
+        req.onsuccess = function() {
+          var record = req.result;
+          if (!record) {
+            failure = new Error('Bill record not found: ' + recordId);
+            tx.abort();
+            return;
+          }
+
+          record.appliedAmendments = Array.isArray(record.appliedAmendments) ? record.appliedAmendments : [];
+          if (record.appliedAmendments.indexOf(amendmentId) !== -1) {
+            updatedRecord = record;
+            return;
+          }
+
+          record.items = (Array.isArray(record.items) ? record.items : []).concat(items);
+          record.amount += items.reduce(function(sum, item) { return sum + Number(item.total); }, 0);
+          record.appliedAmendments.push(amendmentId);
+          updatedRecord = record;
+          store.put(record);
+        };
+
+        req.onerror = function(event) {
+          failure = new Error('Failed to retrieve bill record: ' + event.target.error);
+        };
+        tx.oncomplete = function() {
+          if (failure) reject(failure);
+          else resolve(updatedRecord);
+        };
+        tx.onabort = function(event) {
+          reject(failure || new Error('Failed to amend bill record: ' + (event.target.error || 'transaction aborted')));
+        };
+        tx.onerror = function(event) {
+          failure = failure || new Error('Failed to amend bill record: ' + event.target.error);
         };
       });
     });
@@ -270,6 +343,7 @@
   // --- Public API ---
   window.BillHistory = {
     saveBillRecord: saveBillRecord,
+    appendBillItems: appendBillItems,
     getAllBillRecords: getAllBillRecords,
     getBillRecordsByDateRange: getBillRecordsByDateRange,
     downloadBillHistory: downloadBillHistory,

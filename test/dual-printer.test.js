@@ -34,7 +34,7 @@ function startTestServer(options = {}) {
 const completeBill = {
   billNo: 'B-1042',
   customerName: 'Asha Customer',
-  date: new Date(2026, 9, 2, 14, 35),
+  date: new Date('2026-10-02T09:05:00.000Z'),
   items: [{
     name: 'Mango Shake',
     qty: 2,

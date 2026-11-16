@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { avgPrepMinutes, billDate, openCount, todaySales } from '../../map3d/lib/counters.ts';
+import { avgPrepMinutes, billDate, dayRange, openCount, todaySales } from '../../map3d/lib/counters.ts';
 import type { ProgressRecord, Stage } from '../../map3d/lib/types.ts';
 
-const NOW = new Date(2026, 9, 11, 15, 0).getTime();
+const NOW = Date.UTC(2026, 9, 11, 9, 30);
 const MIN = 60000;
 
 const order = (id: string, stage: Stage, extra: Partial<ProgressRecord> = {}): ProgressRecord => ({
@@ -37,4 +37,13 @@ test('todaySales sums only today and is null when the store is unavailable', () 
     { billNo: '3', amount: 500, date: '10-10-2026' },
   ], NOW), 200);
   assert.equal(todaySales(null, NOW), null);
+});
+
+test('India day boundaries and bill date do not depend on the host timezone', () => {
+  const justAfterIndiaMidnight = Date.UTC(2026, 9, 10, 18, 31);
+  assert.equal(billDate(justAfterIndiaMidnight), '11-10-2026');
+  assert.deepEqual(dayRange(justAfterIndiaMidnight), {
+    start: Date.UTC(2026, 9, 10, 18, 30),
+    end: Date.UTC(2026, 9, 11, 18, 30),
+  });
 });

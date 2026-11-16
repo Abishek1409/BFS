@@ -2,7 +2,11 @@
 import { useLiveStore } from '../hooks/useLiveStore.ts';
 import { sel, useLiveMap } from './LiveMapContext.tsx';
 
-const time = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit' });
+const time = new Intl.DateTimeFormat('en-IN', {
+  timeZone: 'Asia/Kolkata',
+  hour: '2-digit',
+  minute: '2-digit',
+});
 
 export function EventsFeed() {
   const { store } = useLiveMap();
