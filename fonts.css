@@ -55,7 +55,7 @@ input, textarea, select {
 html { font-size: 20px; }
 
 :root {
-  --fs-xs: 16px; --fs-sm: 18px; --fs-body: 20px; --fs-md: 23px; --fs-lg: 28px; --fs-xl: 34px;
+  --fs-xs: 18px; --fs-sm: 21px; --fs-body: 23px; --fs-md: 26px; --fs-lg: 31px; --fs-xl: 38px;
 }
 body { font-size: var(--fs-body); }
 
@@ -66,11 +66,11 @@ body { font-size: var(--fs-body); }
 .brand small { font-size: 15px; }
 .nv { font-size: 19px; }
 .sub { font-size: 18px; }
-.label, .hist-table th { font-size: 15px; }
-.hist-table td, .hist-summary { font-size: 18px; }
+.label, .hist-table th { font-size: 20px; }
+.hist-table td, .hist-summary { font-size: 21px; }
 .tag, .printer-chip { font-size: 17px; }
 .btn-gold { font-size: 20px; }
-.rpt-stat-val { font-size: 36px; }
+.rpt-stat-val { font-size: 42px; }
 .menu-card .item-name { font-size: 20px; }
 .menu-card .item-price { font-size: 25px; }
 .menu-card .item-cat-badge, .out-of-stock-label, .added-badge { font-size: 15px; }

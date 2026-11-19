@@ -172,6 +172,8 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
       Current Bill
     </div>
+    <!-- Shown while adding more items to a bill that is already in the Orders Queue -->
+    <div class="addon-banner" id="addOnBanner" hidden></div>
     <div class="bill-number-row">
       <label for="billNoInput">Bill No.</label>
       <input type="text" id="billNoInput" class="bill-no-input" value="100" oninput="updateHeaderBill(this.value)" />

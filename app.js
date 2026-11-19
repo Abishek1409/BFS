@@ -1306,12 +1306,13 @@ function renderBill() {
   const totalsEl = document.getElementById('billTotals');
   if (!list) return; // not on the billing page
   // Keep the open bill when the cashier switches to another page and back
-  safeSetStorage('bfsDraftBill', JSON.stringify(billItems));
+  safeSetStorage('bfsDraftBill', JSON.stringify(addOnOrderId ? [] : billItems));
+  updateAddOnBanner();
 
   if (billItems.length === 0) {
     list.innerHTML = `<div class="empty-bill"><span class="icon">&#x1F6D2;</span>No items yet. Tap any menu item to add.</div>`;
     totalsEl.style.display = 'none';
-    var pLabel = document.getElementById('printBtnLabel'); if (pLabel) pLabel.textContent = 'Print Bill';
+    var pLabel = document.getElementById('printBtnLabel'); if (pLabel) pLabel.textContent = addOnOrderId ? 'Tap menu items to add' : 'Print Bill';
     return;
   }
 
@@ -1347,7 +1348,9 @@ function renderBill() {
   document.getElementById('grandTotal').innerHTML  = '&#x20B9;' + subtotal.toFixed(2);
   totalsEl.style.display = 'block';
   var totalItems = billItems.reduce(function(s,i){ return s + (i.qty||0); }, 0);
-  var pLabel = document.getElementById('printBtnLabel'); if (pLabel) pLabel.textContent = 'Print Bill (' + totalItems + ' items)';
+  var pLabel = document.getElementById('printBtnLabel'); if (pLabel) pLabel.textContent = addOnOrderId
+    ? 'Add ' + totalItems + ' item' + (totalItems === 1 ? '' : 's') + ' & Send to Kitchen'
+    : 'Print Bill (' + totalItems + ' items)';
 }
 
 function removeItem(idx) {
@@ -1391,6 +1394,7 @@ function advanceBillCounter() {
 }
 
 function clearBill() {
+  if (addOnOrderId) { cancelAddToOrder(); return; }
   if (billItems.length > 0 && !confirm('Clear all items and start a new bill?')) return;
   billItems = [];
   const custEl = document.getElementById('customerName');
@@ -2138,6 +2142,9 @@ async function printBill(mode) {
     return; 
   }
 
+  // Adding to a bill already in the queue: kitchen ticket for the new items only
+  if (addOnOrderId) return sendAddOnToKitchen();
+
   const status = getPrintersStatus();
 
   // Single-copy print: customer bill only (Printer 1) or kitchen ticket only (Printer 2)
@@ -2407,6 +2414,7 @@ function finishBill(billData, wasPrinted, orderIdOverride) {
     if (qrOrder) {
       qrOrder.status = wasPrinted ? 'printed' : 'billed';
       qrOrder.billNo = billData.billNo;
+      if (window.BillHistory) qrOrder.billDate = window.BillHistory._formatDate(new Date());
       if (printedAt) qrOrder.printedAt = printedAt;
     }
     if (activeQrOrderId === qrId) activeQrOrderId = null;
@@ -3147,7 +3155,10 @@ function handleOrderAmendment(orderId, amendmentId, amendment) {
     });
   }).catch(function(error) {
     console.error('Could not apply QR order amendment:', orderId, amendmentId, error);
-    showErrorToast('Order update failed', error.message || 'Could not update the existing bill.');
+    // Stale amendments (order already gone/billed) are not actionable by the cashier � log only.
+    if (!error.message || error.message.indexOf('no longer available') === -1) {
+      showErrorToast('Order update failed', error.message || 'Could not update the existing bill.');
+    }
   });
 }
 
@@ -3317,6 +3328,7 @@ function addToQueue(billNo, customer, amount, items, printedAt) {
     items: items || [],
     placedAt: now.getTime(),
     printedAt: Number(printedAt) || null,
+    billDate: typeof window !== 'undefined' && window.BillHistory ? window.BillHistory._formatDate(now) : null,
     time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }),
     payMethod: null
   });
@@ -3333,6 +3345,16 @@ function formatQueueTimestamp(timestamp) {
   });
 }
 
+function formatQueueTime(timestamp) {
+  var date = new Date(Number(timestamp));
+  if (!Number.isFinite(date.getTime())) return '';
+  var opts = { timeZone: 'Asia/Kolkata' };
+  var dayKey = function(dt) { return dt.toLocaleDateString('en-IN', opts); };
+  var time = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+  if (dayKey(date) === dayKey(new Date())) return time;
+  return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' }) + ', ' + time;
+}
+
 function renderQueue() {
   var list = document.getElementById('oqList');
   var badge = document.getElementById('oqCount');
@@ -3340,52 +3362,48 @@ function renderQueue() {
   badge.textContent = orderQueue.length;
 
   if (orderQueue.length === 0) {
-    list.innerHTML = '<div class="oq-empty"><span class="icon">✅</span>No pending orders.</div>';
+    list.innerHTML = '<div class="oq-empty"><span class="icon">\u2705</span>No pending orders.</div>';
     return;
   }
 
   list.innerHTML = orderQueue.map(function(o) {
-    // Build compact items summary: "🥭 Mango Juice x2, 🍉 Watermelon Juice x1"
-    var itemsSummary = o.items.map(function(it) {
-      return it.emoji + ' ' + it.name + ' x' + it.qty;
-    }).join(', ');
+    var itemsSummary = (o.items || []).map(function(it) {
+      return escapeQueueText((it.emoji ? it.emoji + ' ' : '') + it.name) + ' <b>\u00D7' + escapeQueueText(it.qty) + '</b>';
+    }).join('<span class="oq-sep">\u00B7</span>');
 
-    var cashSel = o.payMethod === 'cash' ? ' selected-cash' : '';
-    var gpaySel = o.payMethod === 'gpay' ? ' selected-gpay' : '';
-    var doneReady = o.payMethod ? ' ready' : '';
-    var gpayVerify = o.payMethod === 'gpay'
-      ? '<div class="oq-row-gpay show">GPay: Ask customer to send <strong>₹' + Number(o.amount).toFixed(2) + '</strong> · ' + (o.source === 'qr' ? 'Table <strong>' + escapeQueueText(o.table) + '</strong>' : 'Bill <strong>#' + escapeQueueText(o.billNo) + '</strong>') + '</div>'
-      : '<div class="oq-row-gpay"></div>';
+    var isQr = o.source === 'qr';
+    var title = isQr
+      ? 'Table ' + escapeQueueText(o.table) + (o.billNo ? ' <span class="oq-row-sub">#' + escapeQueueText(o.billNo) + '</span>' : '')
+      : '#' + escapeQueueText(o.billNo);
 
-    var qrTable = o.source === 'qr'
-      ? '<span class="oq-row-bill">Table ' + escapeQueueText(o.table) + '</span>'
-      : '<span class="oq-row-bill">Bill #' + escapeQueueText(o.billNo) + '</span>';
-    var qrNeedsPrint = o.source === 'qr' && !o.billNo && o.status !== 'preparing' && o.status !== 'printed';
-    var qrAction = qrNeedsPrint
-      ? '<button class="oq-row-pay-btn" onclick="loadQrOrder(\'' + escapeQueueText(o.serverId) + '\')">Load &amp; Print</button>'
-      : '';
-    var paymentActions = '<button class="oq-row-pay-btn' + cashSel + '" onclick="setPayMethod(' + o.id + ',\'cash\')">💵 Cash</button>' +
-      '<button class="oq-row-pay-btn' + gpaySel + '" onclick="setPayMethod(' + o.id + ',\'gpay\')">📱 GPay</button>' +
-      '<button class="oq-row-done' + doneReady + '" onclick="completeOrder(' + o.id + ')" title="Mark as done">✓</button>';
+    var meta = [];
+    if (o.customer && !isQr) meta.push(escapeQueueText(o.customer));
+    if (isQr) meta.push('QR' + (o.orderNo ? ' ' + escapeQueueText(o.orderNo) : ''));
+    meta.push(escapeQueueText(formatQueueTime(o.placedAt || Date.now())));
+    if (o.printedAt) meta.push('Printed ' + escapeQueueText(formatQueueTime(o.printedAt)));
+    var fullTimes = 'Placed: ' + formatQueueTimestamp(o.placedAt || Date.now()) +
+      (o.printedAt ? ' | Printed: ' + formatQueueTimestamp(o.printedAt) : '');
 
-    return '<div class="oq-row" id="oqcard-' + o.id + '">' +
-      '<div class="oq-row-info">' +
-        '<div class="oq-row-main">' +
-          qrTable +
-          (o.source === 'qr' ? '<span class="oq-row-time">QR order' + (o.orderNo ? ' · ' + escapeQueueText(o.orderNo) : '') + '</span>' : '') +
-        '</div>' +
-        '<div class="oq-row-timestamps">' +
-          '<span class="oq-row-time">Placed: ' + escapeQueueText(formatQueueTimestamp(o.placedAt || Date.now())) + '</span>' +
-          (o.printedAt ? '<span class="oq-row-time">Printed: ' + escapeQueueText(formatQueueTimestamp(o.printedAt)) + '</span>' : '') +
-        '</div>' +
-        '<span class="oq-row-items">' + itemsSummary + '</span>' +
+    var qrNeedsPrint = isQr && !o.billNo && o.status !== 'preparing' && o.status !== 'printed';
+    var adding = addOnOrderId === o.id;
+    var actions = qrNeedsPrint
+      ? '<button class="oq-btn oq-btn-wide" onclick="loadQrOrder(\'' + escapeQueueText(o.serverId) + '\')">Load &amp; Print</button>'
+      : (o.billNo
+          ? '<button class="oq-btn oq-btn-add' + (adding ? ' active' : '') + '" onclick="startAddToOrder(' + o.id + ')" title="Add more items to this bill">' + (adding ? 'Adding\u2026' : '+ Add') + '</button>'
+          : '') +
+        '<button class="oq-btn oq-btn-pay" onclick="payOrder(' + o.id + ',\'cash\')" title="Paid in cash \u2014 close this order">\uD83D\uDCB5 Cash</button>' +
+        '<button class="oq-btn oq-btn-pay" onclick="payOrder(' + o.id + ',\'gpay\')" title="Paid by GPay \u2014 close this order">\uD83D\uDCF1 GPay</button>';
+
+    return '<div class="oq-row' + (adding ? ' is-adding' : '') + '" id="oqcard-' + o.id + '">' +
+      '<div class="oq-row-head">' +
+        '<span class="oq-row-bill">' + title + '</span>' +
+        '<span class="oq-row-meta" title="' + escapeQueueText(fullTimes) + '">' + meta.join(' \u00B7 ') + '</span>' +
+        '<span class="oq-row-amount">\u20B9' + Number(o.amount).toFixed(2) + '</span>' +
       '</div>' +
-      '<span class="oq-row-amount">₹' + Number(o.amount).toFixed(2) + '</span>' +
-      '<div class="oq-row-pay">' +
-        qrAction +
-        (o.source !== 'qr' || !qrNeedsPrint ? paymentActions : '') +
+      '<div class="oq-row-body">' +
+        '<div class="oq-row-items">' + itemsSummary + '</div>' +
+        '<div class="oq-row-pay">' + actions + '</div>' +
       '</div>' +
-      gpayVerify +
     '</div>';
   }).join('');
 }
@@ -3411,6 +3429,135 @@ function completeOrder(id) {
       renderQueue();
     }, 300);
   }
+}
+
+/* ===== ADD MORE ITEMS TO A BILL IN THE QUEUE ===== */
+var addOnOrderId = null;
+
+function getAddOnOrder() {
+  return addOnOrderId ? orderQueue.find(function(o) { return o.id === addOnOrderId; }) : null;
+}
+
+// One tap: record the payment and close the order
+function payOrder(id, method) {
+  var order = orderQueue.find(function(o) { return o.id === id; });
+  if (!order) return;
+  if (addOnOrderId === id) {
+    if (billItems.length) {
+      showWarningToast('Items not sent yet', 'Send the added items to the kitchen or cancel them first.');
+      return;
+    }
+    cancelAddToOrder();
+  }
+  order.payMethod = method;
+  persistPendingManualOrders();
+  completeOrder(id);
+  showSuccessToast('Paid by ' + (method === 'gpay' ? 'GPay' : 'Cash'),
+    (order.billNo ? 'Bill #' + order.billNo : 'Table ' + order.table) + ' · ₹' + Number(order.amount).toFixed(2));
+}
+
+function startAddToOrder(id) {
+  var order = orderQueue.find(function(o) { return o.id === id; });
+  if (!order || !order.billNo) return;
+  if (addOnOrderId === id) { cancelAddToOrder(); return; }
+  if (billItems.length && !addOnOrderId) {
+    showWarningToast('Current bill not empty', 'Print or clear the current bill before adding to Bill #' + order.billNo + '.');
+    return;
+  }
+  if (billItems.length && addOnOrderId && !confirm('Discard the items being added and switch to Bill #' + order.billNo + '?')) return;
+  billItems = [];
+  addOnOrderId = id;
+  renderBill();
+  renderQueue();
+}
+
+function cancelAddToOrder() {
+  if (billItems.length && !confirm('Discard the items you were adding?')) return;
+  addOnOrderId = null;
+  billItems = [];
+  renderBill();
+  renderQueue();
+}
+
+function updateAddOnBanner() {
+  var banner = document.getElementById('addOnBanner');
+  var panel = document.querySelector('.bill-panel');
+  var order = getAddOnOrder();
+  if (addOnOrderId && !order) addOnOrderId = null; // order was closed meanwhile
+  if (panel) panel.classList.toggle('is-addon', !!order);
+  if (!banner) return;
+  if (!order) { banner.hidden = true; banner.innerHTML = ''; return; }
+  var adding = billItems.reduce(function(s, i) { return s + i.total; }, 0);
+  banner.hidden = false;
+  banner.innerHTML =
+    '<div class="addon-text">' +
+      '<span class="addon-label">Adding to</span>' +
+      '<strong>Bill #' + escapeQueueText(order.billNo) + '</strong>' +
+      '<span class="addon-sub">Current ₹' + Number(order.amount).toFixed(2) +
+        (adding ? ' → New ₹' + (Number(order.amount) + adding).toFixed(2) : '') + '</span>' +
+    '</div>' +
+    '<button type="button" class="addon-cancel" onclick="cancelAddToOrder()">Cancel</button>';
+}
+
+async function sendAddOnToKitchen(skipPrint) {
+  var order = getAddOnOrder();
+  if (!order) { addOnOrderId = null; renderBill(); return; }
+  if (!billItems.length) { showWarningToast('Nothing to add', 'Tap menu items to add them to Bill #' + order.billNo); return; }
+
+  var amendmentId = 'counter-' + Date.now();
+  var additions = collectBillData().items.map(function(it) {
+    return Object.assign({}, it, { amendmentId: amendmentId });
+  });
+  var addTotal = additions.reduce(function(s, i) { return s + i.total; }, 0);
+
+  if (!skipPrint) {
+    var status = getPrintersStatus();
+    var retryActions = [
+      { label: 'Retry', onClick: function() { sendAddOnToKitchen(); }, primary: true },
+      { label: 'Add without printing', onClick: function() { sendAddOnToKitchen(true); }, primary: false }
+    ];
+    if (!status.printer2.configured) {
+      showErrorToast('Kitchen printer not configured', 'Configure Printer 2 to send the added items to the kitchen.', retryActions);
+      return;
+    }
+    try {
+      setPrintLoading(true, 'Sending added items to kitchen...');
+      await printToUnifiedPrinter('printer2', generateKitchenTicket({
+        billNo: order.billNo + ' ADD-ON',
+        customerName: order.source === 'qr' ? 'Table ' + order.table : (order.customer || ''),
+        items: additions,
+        subtotal: addTotal,
+        grandTotal: addTotal,
+        date: new Date()
+      }));
+      setPrintLoading(false);
+    } catch (error) {
+      setPrintLoading(false);
+      console.error('Add-on kitchen print failed:', error);
+      showErrorToast('Kitchen print failed', error.message || 'Could not print the added items.', retryActions);
+      return;
+    }
+  }
+
+  order.items = (order.items || []).concat(additions);
+  order.amount = Number(order.amount) + addTotal;
+  persistPendingManualOrders();
+
+  if (window.BillHistory && window.BillHistory.appendBillItems) {
+    var billDate = order.billDate || window.BillHistory._formatDate(new Date(Number(order.printedAt || order.placedAt) || Date.now()));
+    window.BillHistory.appendBillItems(billDate + '_' + order.billNo, amendmentId, additions)
+      .catch(function(error) {
+        console.error('Could not update bill history:', error);
+        showWarningToast('History not updated', 'Bill #' + order.billNo + ' was updated in the queue but not in Bill History.');
+      });
+  }
+
+  addOnOrderId = null;
+  billItems = [];
+  renderBill();
+  renderQueue();
+  showSuccessToast(skipPrint ? 'Items added' : 'Sent to kitchen',
+    'Bill #' + order.billNo + ' is now ₹' + order.amount.toFixed(2));
 }
 
 /* ===== REPORTS ===== */
