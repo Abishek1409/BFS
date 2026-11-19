@@ -1,0 +1,468 @@
+/* =========================================================================
+   LUXE: the single design layer for every page (billing, QR order, history,
+   reports, inventory, live map). Loaded LAST so it wins over app.css,
+   theme.css and the inline styles in order.html.
+   Rules: black + gold only. One surface scale, one line scale, one gold.
+   Fonts come from fonts.css (Lumiare + Eternalo) and are not changed here.
+   ========================================================================= */
+
+:root {
+  /* Ground and surfaces: warm blacks, each step a little lighter */
+  --lx-bg:        #070605;
+  --lx-s1:        #0f0c0a;   /* panels, sidebar */
+  --lx-s2:        #16120e;   /* inputs, rows, chips */
+  --lx-s3:        #1e1913;   /* hover */
+  /* Gold */
+  --lx-gold:      #d4af37;
+  --lx-gold-hi:   #f3d98b;
+  --lx-gold-lo:   #a8832c;
+  --lx-gold-grad: linear-gradient(180deg, #f6df97 0%, #d9b24a 52%, #b88a2c 100%);
+  --lx-gold-tint: rgba(212, 175, 55, .12);
+  --lx-gold-tint-2: rgba(212, 175, 55, .2);
+  /* Lines */
+  --lx-line:      rgba(212, 175, 55, .13);
+  --lx-line-2:    rgba(212, 175, 55, .28);
+  --lx-line-3:    rgba(212, 175, 55, .55);
+  /* Text */
+  --lx-text:      #f4ead5;
+  --lx-text-2:    #c7b791;
+  --lx-text-3:    #8d8067;
+  --lx-on-gold:   #120d06;
+  /* Shape */
+  --lx-r:         14px;
+  --lx-r-sm:      10px;
+  --lx-r-pill:    999px;
+  --lx-shadow:    0 14px 36px rgba(0, 0, 0, .5);
+  --lx-inner:     inset 0 1px 0 rgba(243, 217, 139, .06);
+  --lx-ring:      0 0 0 3px rgba(212, 175, 55, .22);
+  --lx-num:       'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  /* Point the older variables at the same palette so leftovers match */
+  --gold: var(--lx-gold-hi); --gold-light: var(--lx-gold-hi); --accent: var(--lx-gold); --accent-cta: var(--lx-gold);
+  --text: var(--lx-text); --ink: var(--lx-text); --ink-2: var(--lx-text-2); --muted: var(--lx-text-2);
+  --line: var(--lx-line); --border: var(--lx-line); --border-subtle: rgba(212, 175, 55, .07);
+  --surface: var(--lx-s1); --raised: var(--lx-s2); --card: var(--lx-s1); --card2: var(--lx-s2);
+}
+
+html { background: var(--lx-bg); }
+body { color: var(--lx-text); }
+::selection { background: rgba(212, 175, 55, .35); color: #fff; }
+
+/* Thin gold scrollbars everywhere */
+* { scrollbar-width: thin; scrollbar-color: rgba(212, 175, 55, .3) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, .25); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, .45); background-clip: padding-box; }
+
+:focus-visible { outline: 2px solid var(--lx-gold-hi) !important; outline-offset: 2px; }
+
+/* Gold text: a still, polished gradient (no endless shine) */
+.gold {
+  background: linear-gradient(180deg, #f8e4a4 0%, #d9b24a 60%, #b88a2c 100%) !important;
+  -webkit-background-clip: text !important; background-clip: text !important;
+  color: transparent !important; -webkit-text-fill-color: transparent !important;
+  animation: none !important;
+}
+
+/* =========================================================================
+   SURFACES
+   ========================================================================= */
+.panel, .oq-list, .card, .rpt-card, .rpt-stat, .modal, .ap-body, .hist-table-wrap {
+  background: linear-gradient(180deg, rgba(22, 18, 14, .94), rgba(13, 10, 8, .94)) !important;
+  border: 1px solid var(--lx-line) !important;
+  border-radius: var(--lx-r) !important;
+  box-shadow: var(--lx-inner), 0 10px 30px rgba(0, 0, 0, .35) !important;
+  backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important;
+}
+.panel::before, .oq-list::before { display: none !important; }
+.panel-head {
+  background: transparent !important; color: var(--lx-gold-hi) !important;
+  border-bottom: 1px solid var(--lx-line) !important; letter-spacing: .01em;
+}
+.panel-head svg { color: var(--lx-gold); opacity: .9; }
+.cat-tabs, .bill-number-row, .customer-row, .bill-items-list, .bill-totals { border-color: var(--lx-line) !important; background: transparent !important; }
+
+/* =========================================================================
+   BUTTONS: one primary (gold), one secondary (outlined), one quiet
+   ========================================================================= */
+.btn-print, .btn-primary, .btn-gold, .hist-dl-btn, .btn-confirm, .cart-bar-btn {
+  background: var(--lx-gold-grad) !important; background-size: auto !important;
+  color: var(--lx-on-gold) !important; border: 1px solid rgba(255, 232, 160, .35) !important;
+  border-radius: var(--lx-r-sm) !important; font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 18px rgba(212, 175, 55, .18) !important;
+  animation: none !important; cursor: pointer;
+  transition: filter .15s, box-shadow .2s, transform .1s !important;
+}
+.btn-print:hover, .btn-primary:hover, .btn-gold:hover, .hist-dl-btn:hover, .btn-confirm:hover, .cart-bar-btn:hover {
+  filter: brightness(1.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 8px 26px rgba(212, 175, 55, .3) !important;
+}
+.btn-print:active, .btn-primary:active, .btn-gold:active, .hist-dl-btn:active, .btn-confirm:active, .cart-bar-btn:active { transform: translateY(1px); }
+.btn-print:disabled, .btn-primary:disabled, .btn-confirm:disabled, .cart-bar-btn:disabled { filter: grayscale(.4) brightness(.7); }
+
+.btn-secondary, .btn-print-alt, .btn-configure-printers, .btn-connect-printer, .oq-connect-btn,
+.ap-small-btn, .oq-row-pay-btn, .rpt-mode-btn, .addon-cancel, .hist-close {
+  background: var(--lx-s2) !important; color: var(--lx-text-2) !important;
+  border: 1px solid var(--lx-line-2) !important; border-radius: var(--lx-r-sm) !important;
+  box-shadow: none !important; transition: border-color .15s, color .15s, background .15s;
+}
+.btn-secondary:hover, .btn-print-alt:hover, .btn-configure-printers:hover, .btn-connect-printer:hover,
+.oq-connect-btn:hover, .ap-small-btn:hover, .oq-row-pay-btn:hover, .rpt-mode-btn:hover, .addon-cancel:hover, .hist-close:hover {
+  background: var(--lx-s3) !important; color: var(--lx-gold-hi) !important; border-color: var(--lx-line-3) !important;
+}
+.rpt-mode-btn.active {
+  background: var(--lx-gold-tint-2) !important; color: var(--lx-gold-hi) !important; border-color: var(--lx-gold) !important;
+}
+
+/* Clear / logout: quiet, reads as "secondary, careful" without a new colour */
+.btn-clear, .oq-clear-btn {
+  background: transparent !important; color: var(--lx-text-3) !important;
+  border: 1px dashed var(--lx-line-2) !important; border-radius: var(--lx-r-sm) !important; box-shadow: none !important;
+}
+.btn-clear:hover, .oq-clear-btn:hover { color: var(--lx-text) !important; border-color: var(--lx-line-3) !important; background: var(--lx-s2) !important; }
+
+/* =========================================================================
+   INPUTS
+   ========================================================================= */
+input[type="text"], input[type="search"], input[type="email"], input[type="password"], input[type="number"],
+input[type="date"], input[type="month"], select, textarea,
+.menu-search input, .bill-no-input, .customer-row input, .note-input, .rpt-date-input {
+  background: var(--lx-s2) !important; color: var(--lx-text) !important;
+  border: 1px solid var(--lx-line-2) !important; border-radius: var(--lx-r-sm) !important;
+  box-shadow: none !important; outline: none;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  transition: border-color .15s, box-shadow .15s;
+  color-scheme: dark;
+}
+input:focus, select:focus, textarea:focus,
+.menu-search input:focus, .bill-no-input:focus, .customer-row input:focus, .note-input:focus {
+  border-color: var(--lx-gold) !important; box-shadow: var(--lx-ring) !important; outline: none !important;
+}
+input::placeholder, textarea::placeholder { color: var(--lx-text-3) !important; opacity: 1; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--lx-gold); }
+label { color: var(--lx-text-2); }
+
+/* =========================================================================
+   CHIPS: category tabs, toggles
+   ========================================================================= */
+.cat-tab {
+  background: var(--lx-s2) !important; color: var(--lx-text-2) !important;
+  border: 1px solid var(--lx-line) !important; border-radius: var(--lx-r-pill) !important;
+  box-shadow: none !important; transform: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.cat-tab:hover { color: var(--lx-gold-hi) !important; border-color: var(--lx-line-3) !important; background: var(--lx-s3) !important; }
+.cat-tab.active {
+  background: var(--lx-gold-grad) !important; color: var(--lx-on-gold) !important;
+  border-color: transparent !important; box-shadow: 0 4px 14px rgba(212, 175, 55, .22) !important;
+}
+
+.toggle-btn {
+  background: var(--lx-s2) !important; color: var(--lx-text-2) !important;
+  border: 1px solid var(--lx-line-2) !important; border-radius: var(--lx-r-sm) !important; box-shadow: none !important;
+}
+.toggle-btn:hover { border-color: var(--lx-line-3) !important; color: var(--lx-text) !important; }
+.toggle-btn.selected {
+  background: var(--lx-gold-tint-2) !important; color: var(--lx-gold-hi) !important;
+  border-color: var(--lx-gold) !important; box-shadow: inset 0 0 0 1px rgba(212, 175, 55, .35) !important;
+}
+
+/* Quantity steppers */
+.qty-stepper button, .qty-btn, .cart-qty button {
+  background: var(--lx-s2) !important; color: var(--lx-gold-hi) !important;
+  border: 1px solid var(--lx-line-2) !important; border-radius: 9px !important;
+}
+.qty-stepper button:hover:not(:disabled), .qty-btn:hover, .cart-qty button:hover:not(:disabled) {
+  border-color: var(--lx-gold) !important; background: var(--lx-s3) !important;
+}
+.qty-stepper .qty-val, .qty-num, .cart-qty-num { color: var(--lx-text); }
+
+/* =========================================================================
+   MODALS, TOASTS
+   ========================================================================= */
+.overlay, .sheet-overlay { background: rgba(4, 3, 2, .72) !important; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.modal {
+  border-color: var(--lx-line-2) !important; border-radius: 18px !important;
+  box-shadow: var(--lx-inner), 0 30px 80px rgba(0, 0, 0, .7) !important;
+  background: linear-gradient(180deg, #17130f, #0d0a08) !important;
+}
+.modal h3 { color: var(--lx-gold-hi) !important; }
+.modal .modal-price, .sheet-price { color: var(--lx-gold-hi) !important; }
+.modal-actions { gap: 10px; }
+
+.toast {
+  background: linear-gradient(180deg, #17130f, #0e0b09) !important; color: var(--lx-text) !important;
+  border: 1px solid var(--lx-line-2) !important; border-left: 3px solid var(--lx-gold) !important;
+  border-radius: 12px !important; box-shadow: 0 18px 40px rgba(0, 0, 0, .55) !important;
+  backdrop-filter: none !important;
+}
+.toast-title { color: var(--lx-gold-hi) !important; }
+.toast-message { color: var(--lx-text-2) !important; }
+
+/* =========================================================================
+   BILLING PAGE
+   ========================================================================= */
+body[data-page="billing"] .gradient-waves-bg { opacity: .55; }
+
+/* Header: black glass bar with a gold hairline */
+body[data-page="billing"] .app-header, body[data-page="order"] .app-header {
+  background: linear-gradient(180deg, rgba(14, 11, 8, .92), rgba(9, 7, 5, .88)) !important;
+  color: var(--lx-text) !important; box-shadow: 0 8px 28px rgba(0, 0, 0, .45) !important;
+  border-bottom: 0 !important; position: relative;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+body[data-page="billing"] .app-header::after, body[data-page="order"] .app-header::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, .7) 20%, rgba(243, 217, 139, .9) 50%, rgba(212, 175, 55, .7) 80%, transparent);
+}
+body[data-page="billing"] .app-header { padding: 10px 22px !important; }
+.app-header .site-logo {
+  border-radius: 12px !important; background: #0b0906 !important;
+  box-shadow: 0 0 0 1px var(--lx-line-2), 0 6px 16px rgba(0, 0, 0, .5) !important;
+}
+body[data-page="billing"] .site-logo { width: 46px !important; height: 46px !important; }
+.app-header h1 {
+  background: linear-gradient(180deg, #f8e4a4 0%, #d9b24a 62%, #b88a2c 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent;
+  letter-spacing: .01em !important;
+}
+body[data-page="billing"] .app-header h1 { font-size: 1.45rem !important; line-height: 1.1 !important; }
+body[data-page="billing"] .app-header small { color: var(--lx-text-3) !important; font-size: .62rem !important; letter-spacing: .06em !important; }
+.bill-badge {
+  background: var(--lx-gold-tint) !important; color: var(--lx-gold-hi) !important;
+  border: 1px solid var(--lx-line-3) !important; border-radius: var(--lx-r-pill) !important;
+  padding: 7px 16px !important; box-shadow: none !important;
+}
+.hamburger-btn {
+  width: 44px; height: 44px; border-radius: 12px !important;
+  background: var(--lx-s2) !important; border: 1px solid var(--lx-line-2) !important;
+}
+.hamburger-btn:hover { border-color: var(--lx-gold) !important; background: var(--lx-s3) !important; }
+.hamburger-btn span { background: var(--lx-gold-hi) !important; width: 20px !important; height: 2px !important; }
+
+/* Slide-in menu */
+.nav-backdrop { background: rgba(4, 3, 2, .6) !important; }
+.nav-panel {
+  background: linear-gradient(180deg, #120f0b, #0a0806) !important;
+  border-left: 1px solid var(--lx-line-2) !important; box-shadow: -20px 0 60px rgba(0, 0, 0, .6) !important;
+}
+.nav-panel .hist-head { color: var(--lx-gold-hi) !important; border-bottom: 1px solid var(--lx-line) !important; background: transparent !important; }
+.nav-item {
+  background: transparent !important; color: var(--lx-text-2) !important;
+  border: 1px solid transparent !important; border-radius: var(--lx-r-sm) !important;
+}
+.nav-item:hover, .nav-item:focus-visible { background: var(--lx-s2) !important; color: var(--lx-gold-hi) !important; border-color: var(--lx-line) !important; }
+
+/* Workspace */
+body[data-page="billing"] .workspace { gap: 14px !important; padding: 14px 18px !important; }
+body[data-page="billing"] .panel-head { padding-top: 14px; padding-bottom: 12px; }
+
+/* Menu cards */
+body[data-page="billing"] .menu-card {
+  background: linear-gradient(180deg, #17130f, #100d0a) !important;
+  border: 1px solid var(--lx-line) !important; border-radius: var(--lx-r) !important;
+  box-shadow: var(--lx-inner) !important; padding: 8px !important;
+}
+body[data-page="billing"] .menu-card::before { display: none !important; }
+body[data-page="billing"] .menu-card::after { box-shadow: 0 0 0 1px rgba(243, 217, 139, .6), 0 14px 30px rgba(212, 175, 55, .16) !important; }
+body[data-page="billing"] .menu-card:hover { border-color: var(--lx-line-3) !important; transform: translateY(-3px) !important; }
+body[data-page="billing"] .menu-card .item-photo { border-radius: 10px !important; background: #0b0907 !important; }
+body[data-page="billing"] .menu-card .item-name { color: var(--lx-text) !important; text-shadow: none !important; padding: 0 4px; }
+body[data-page="billing"] .menu-card .item-price { color: var(--lx-gold-hi) !important; text-shadow: none !important; padding: 0 4px; }
+.menu-card .item-cat-badge {
+  background: rgba(8, 6, 4, .78) !important; color: var(--lx-gold-hi) !important;
+  border: 1px solid var(--lx-line-2) !important; border-radius: var(--lx-r-pill) !important;
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.added-badge { background: var(--lx-gold-grad) !important; color: var(--lx-on-gold) !important; border-radius: var(--lx-r-pill) !important; }
+.out-of-stock-label { background: rgba(8, 6, 4, .85) !important; color: var(--lx-text-2) !important; border: 1px solid var(--lx-line-2) !important; }
+.menu-card.out-of-stock { filter: grayscale(.85) brightness(.7); }
+
+/* Bill */
+.bill-item { border-bottom: 1px solid var(--lx-line) !important; }
+.bill-item:hover { background: rgba(212, 175, 55, .04) !important; }
+.bill-item-name { color: var(--lx-text) !important; }
+.bill-item-spec, .bill-item-unit { color: var(--lx-text-3) !important; }
+.bill-item-total { color: var(--lx-gold-hi) !important; }
+.bill-item-del { color: var(--lx-text-3) !important; background: transparent !important; border-radius: 8px; }
+.bill-item-del:hover { color: var(--lx-gold-hi) !important; background: var(--lx-s2) !important; }
+.empty-bill { color: var(--lx-text-3) !important; }
+.total-row { color: var(--lx-text-2) !important; }
+.total-row.grand { border-top: 1px dashed var(--lx-line-2) !important; color: var(--lx-text) !important; }
+.total-row.grand span:last-child { color: var(--lx-gold-hi) !important; }
+.bill-number-row label, .customer-row label { color: var(--lx-text-2) !important; }
+.printer-chip { background: var(--lx-s2) !important; border: 1px solid var(--lx-line) !important; color: var(--lx-text-2) !important; }
+.printer-gear { background: var(--lx-s2) !important; border: 1px solid var(--lx-line-2) !important; color: var(--lx-gold-hi) !important; }
+.printer-gear:hover { border-color: var(--lx-gold) !important; }
+.print-loading { color: var(--lx-text-2); }
+.btn-print { min-height: 48px; letter-spacing: .02em; }
+.btn-print-alt { min-height: 40px; }
+
+/* Orders queue heading */
+.oq-title { color: var(--lx-gold-hi) !important; }
+.oq-badge {
+  background: var(--lx-gold-tint) !important; color: var(--lx-gold-hi) !important;
+  border: 1px solid var(--lx-line-3) !important; border-radius: var(--lx-r-pill) !important;
+}
+.oq-connection { color: var(--lx-text-3) !important; }
+.oq-connection.connected { color: var(--lx-gold-hi) !important; }
+.oq-connection.connected::before { content: "\25CF  "; color: var(--lx-gold); }
+.oq-empty { color: var(--lx-text-3) !important; }
+
+/* =========================================================================
+   ADMIN PAGES (side menu): history, reports, inventory, live map
+   ========================================================================= */
+.side {
+  background: linear-gradient(180deg, #0f0c09 0%, #080605 100%) !important;
+  border-right: 1px solid var(--lx-line) !important; gap: 4px !important;
+}
+.side .brand { padding-bottom: 22px !important; margin-bottom: 8px; border-bottom: 1px solid var(--lx-line); line-height: 1.1; }
+.side .brand img { border-radius: 12px !important; box-shadow: 0 0 0 1px var(--lx-line-2), 0 6px 16px rgba(0, 0, 0, .5); }
+.side .brand small { color: var(--lx-text-3) !important; letter-spacing: .14em !important; }
+.nv {
+  position: relative; color: var(--lx-text-2) !important; background: transparent !important;
+  border: 1px solid transparent !important; box-shadow: none !important;
+}
+.nv:hover { background: var(--lx-s2) !important; color: var(--lx-gold-hi) !important; }
+.nv.on {
+  background: linear-gradient(90deg, rgba(212, 175, 55, .2), rgba(212, 175, 55, .05)) !important;
+  color: var(--lx-gold-hi) !important; border-color: var(--lx-line-2) !important; box-shadow: none !important;
+}
+.nv.on::before {
+  content: ""; position: absolute; left: -1px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0;
+  background: var(--lx-gold-grad);
+}
+.nv.logout { color: var(--lx-text-3) !important; }
+.nv.logout:hover { color: var(--lx-text) !important; }
+
+.main .top { padding-bottom: 14px; border-bottom: 1px solid var(--lx-line); }
+.page-title { letter-spacing: .01em; }
+.sub { color: var(--lx-text-3) !important; }
+.locked { padding: 40px 28px !important; }
+.locked p { color: var(--lx-text-2); }
+
+/* Tables */
+.hist-table { border-collapse: separate; border-spacing: 0; }
+.hist-table th {
+  background: rgba(212, 175, 55, .06) !important; color: var(--lx-gold-hi) !important;
+  text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--lx-line-2) !important;
+}
+.hist-table td { color: var(--lx-text) !important; border-bottom: 1px solid var(--lx-line) !important; }
+.hist-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, .012); }
+.hist-table tbody tr:hover td { background: rgba(212, 175, 55, .06) !important; }
+.hist-amount { color: var(--lx-gold-hi) !important; }
+.hist-empty { color: var(--lx-text-3) !important; }
+.hist-summary { color: var(--lx-text-2) !important; }
+.hist-table-wrap { padding: 4px; }
+
+/* Reports */
+.rpt-controls { border-color: var(--lx-line) !important; }
+.rpt-stat { position: relative; overflow: hidden; }
+.rpt-stat::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lx-gold), transparent); opacity: .7;
+}
+.rpt-stat-val { color: var(--lx-gold-hi) !important; }
+.rpt-stat-lbl { color: var(--lx-text-3) !important; text-transform: uppercase; letter-spacing: .08em; }
+.rpt-card-title { color: var(--lx-gold-hi) !important; }
+
+/* Inventory */
+.ap-section { border-color: var(--lx-line) !important; }
+.ap-section h4 { color: var(--lx-gold-hi) !important; }
+.ap-cat-chip {
+  background: var(--lx-s2) !important; border: 1px solid var(--lx-line-2) !important;
+  color: var(--lx-text) !important; border-radius: var(--lx-r-pill) !important;
+}
+.ap-err { color: var(--lx-gold-hi); }
+
+/* =========================================================================
+   QR ORDER PAGE (customers, phone first)
+   ========================================================================= */
+body[data-page="order"] .app-header { padding: 12px 16px !important; }
+body[data-page="order"] .site-logo { width: 44px !important; height: 44px !important; }
+body[data-page="order"] .table-badge {
+  background: var(--lx-gold-tint) !important; color: var(--lx-gold-hi) !important;
+  border: 1px solid var(--lx-line-3) !important; font-family: var(--lx-num);
+}
+body[data-page="order"] .cat-scroll {
+  position: sticky; top: 68px; z-index: 40;
+  background: rgba(8, 6, 5, .9) !important; border-bottom: 1px solid var(--lx-line) !important;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+body[data-page="order"] .category-header { color: var(--lx-gold-hi) !important; letter-spacing: .14em; opacity: .85; }
+body[data-page="order"] .menu-card {
+  background: linear-gradient(180deg, rgba(24, 19, 15, .92), rgba(14, 11, 9, .92)) !important;
+  border: 1px solid var(--lx-line) !important; box-shadow: var(--lx-inner) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 10px !important;
+}
+body[data-page="order"] .menu-card.visible:hover { border-color: var(--lx-line-3) !important; }
+body[data-page="order"] .menu-card .item-photo { border-radius: 10px; background: #0b0907; }
+body[data-page="order"] .menu-card .item-price { color: var(--lx-gold-hi) !important; font-family: var(--lx-num); }
+body[data-page="order"] .cart-bar {
+  background: rgba(10, 8, 6, .94) !important; border-top: 1px solid var(--lx-line-2) !important;
+}
+body[data-page="order"] .cart-total { color: var(--lx-gold-hi) !important; }
+body[data-page="order"] .cart-count { color: var(--lx-text-3) !important; }
+body[data-page="order"] .sheet {
+  background: linear-gradient(180deg, #17130f, #0d0a08) !important;
+  border-top: 1px solid var(--lx-line-2) !important;
+}
+body[data-page="order"] .sheet-close { color: var(--lx-text-3) !important; }
+body[data-page="order"] .cart-line { border-bottom-color: var(--lx-line) !important; }
+body[data-page="order"] .cart-line-total { color: var(--lx-gold-hi); }
+body[data-page="order"] .cart-totals { border-top-color: var(--lx-line-2) !important; }
+body[data-page="order"] .cart-total-row.grand span:last-child { color: var(--lx-gold-hi); }
+body[data-page="order"] .spinner { border-color: var(--lx-line-2) !important; border-top-color: var(--lx-gold) !important; }
+body[data-page="order"] .confirm-title { color: var(--lx-gold-hi); }
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-card, .btn-print, .btn-primary, .cat-tab { transition: none !important; }
+}
+
+/* =========================================================================
+   REFINEMENTS
+   ========================================================================= */
+/* Billing: categories on one swipeable row instead of three wrapped rows */
+body[data-page="billing"] .cat-tabs {
+  flex-wrap: nowrap !important; overflow-x: auto; overflow-y: hidden;
+  padding-bottom: 10px !important; scroll-snap-type: x proximity;
+  -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent); mask-image: linear-gradient(90deg, #000 92%, transparent);
+}
+body[data-page="billing"] .cat-tab { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
+
+/* Queue buttons sit on true black, not a gold tint */
+.oq-btn { background: var(--lx-s2) !important; border-color: var(--lx-line-2) !important; color: var(--lx-gold-hi) !important; }
+.oq-btn:hover, .oq-btn-add.active { background: var(--lx-gold-grad) !important; color: var(--lx-on-gold) !important; border-color: transparent !important; }
+.oq-btn-add { background: transparent !important; border-style: dashed !important; }
+
+/* Side menu brand fits on two lines */
+.side .brand { font-size: 21px !important; gap: 12px !important; }
+.side .brand img { width: 44px !important; height: 44px !important; }
+
+/* Reports: stat tiles share the full row */
+.rpt-summary-grid { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; gap: 12px !important; }
+
+/* Inventory: tool buttons are secondary, only "Add" actions are gold */
+.ap-cell .hist-dl-btn {
+  background: var(--lx-s2) !important; color: var(--lx-text-2) !important;
+  border: 1px solid var(--lx-line-2) !important; box-shadow: none !important;
+}
+.ap-cell .hist-dl-btn:hover { background: var(--lx-s3) !important; color: var(--lx-gold-hi) !important; border-color: var(--lx-line-3) !important; filter: none; }
+.ap-body { padding: 0 !important; overflow: hidden; }
+.ap-section { padding: 16px 18px !important; }
+
+/* Native file picker button */
+input[type="file"] { color: var(--lx-text-3); font-size: .8rem; }
+input[type="file"]::file-selector-button {
+  margin-right: 10px; padding: 7px 12px; cursor: pointer; font: inherit;
+  background: var(--lx-s2); color: var(--lx-gold-hi);
+  border: 1px solid var(--lx-line-2); border-radius: 8px;
+}
+input[type="file"]::file-selector-button:hover { border-color: var(--lx-gold); }
+
+/* Shop sign-in box (built by shopAuth.js): proper field and button sizes */
+#shopLoginOverlay .modal { width: 400px; max-width: calc(100vw - 32px); padding: 28px !important; }
+#shopLoginOverlay input { padding: 11px 14px !important; font-size: 1rem; margin-top: 6px !important; }
+#shopLoginOverlay .btn-primary { padding: 12px 16px !important; font-size: 1rem; margin-top: 10px !important; }
