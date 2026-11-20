@@ -100,7 +100,30 @@ test('completing a manual order removes it from persistent pending orders', () =
   assert.deepEqual(JSON.parse(storage.get('bfsPendingManualOrders')), []);
 });
 
-test('QR orders are not copied into local manual-order storage', () => {
+test('a printed QR order waiting for payment survives leaving and reopening the Billing page', () => {
+  const storage = new Map();
+  const firstPage = createQueueContext(storage);
+  // Printed QR orders are removed from Firebase, so the device must keep them
+  firstPage.orderQueue.push({
+    id: 7, source: 'qr', serverId: 'remote-7', table: '5', orderNo: 'QR-7', billNo: '104',
+    status: 'printed', amount: 90, items: [{ name: 'Mango Juice', qty: 1, total: 90 }], placedAt: 1731580000000
+  });
+  firstPage.persistPendingManualOrders();
+
+  const nextPage = createQueueContext(storage);
+  nextPage.restorePendingManualOrders();
+  assert.equal(nextPage.orderQueue.length, 1);
+  const restored = nextPage.orderQueue[0];
+  assert.equal(restored.source, 'qr');
+  assert.equal(restored.serverId, 'remote-7');
+  assert.equal(restored.table, '5');
+  assert.equal(restored.billNo, '104');
+
+  nextPage.completeOrder(restored.id);
+  assert.deepEqual(JSON.parse(storage.get('bfsPendingManualOrders')), []);
+});
+
+test('QR orders not billed yet are not copied into local storage (Firebase keeps them)', () => {
   const storage = new Map();
   const page = createQueueContext(storage);
   page.orderQueue.push({ id: 1, source: 'qr', serverId: 'remote-1' });

@@ -514,8 +514,9 @@ body[data-page="order"] .table-badge { padding: 6px 12px !important; font-size: 
 
 body[data-page="billing"] .oq-section { position: relative; z-index: 20; }
 body[data-page="billing"] .oq-section.oq-expanded .oq-list {
-  position: absolute; left: 0; right: 0;
-  max-height: calc(100vh - 190px) !important; height: auto !important;
+  /* Position, width and max height are set from the header by setQueueExpanded() */
+  position: fixed; z-index: 60;
+  height: auto !important; min-height: min(460px, calc(100vh - 200px)) !important;
   background: linear-gradient(180deg, rgba(22, 18, 14, .97), rgba(11, 9, 7, .98)) !important;
   border-color: var(--lx-line-3) !important;
   box-shadow: 0 0 0 1px rgba(212, 175, 55, .15), 0 26px 60px rgba(0, 0, 0, .7) !important;
@@ -528,4 +529,8 @@ body[data-page="billing"] .oq-section.oq-expanded .oq-row-bill,
 body[data-page="billing"] .oq-section.oq-expanded .oq-row-amount { font-size: 1.15rem; }
 body[data-page="billing"] .oq-section.oq-expanded .oq-row-items { font-size: .85rem; }
 body[data-page="billing"] .oq-section.oq-expanded .oq-btn { height: 38px; font-size: .82rem; }
+/* Wide panel: actions sit beside the items so more orders fit on screen */
+body[data-page="billing"] .oq-section.oq-expanded .oq-row-body { flex-direction: row; align-items: center; gap: 14px; }
+body[data-page="billing"] .oq-section.oq-expanded .oq-row-items { flex: 1; }
+body[data-page="billing"] .oq-section.oq-expanded .oq-row-pay { flex: 0 0 300px; }
 @media (prefers-reduced-motion: reduce) { body[data-page="billing"] .oq-section.oq-expanded .oq-list { animation: none; } }

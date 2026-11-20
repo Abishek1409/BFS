@@ -2418,6 +2418,8 @@ function finishBill(billData, wasPrinted, orderIdOverride) {
       if (printedAt) qrOrder.printedAt = printedAt;
     }
     if (activeQrOrderId === qrId) activeQrOrderId = null;
+    // Keep the billed QR order across page changes until Cash / GPay is chosen
+    persistPendingManualOrders();
     renderQueue();
   } else {
     addToQueue(billData.billNo, billData.customerName, billData.grandTotal, billData.items,
@@ -2733,11 +2735,12 @@ function restorePendingManualOrders() {
     var orders = JSON.parse(stored);
     if (!Array.isArray(orders)) throw new Error('Pending orders must be an array');
     orderQueue = orders.filter(function(order) {
-      return order && order.source !== 'qr' && order.billNo != null &&
+      return order && order.billNo != null && (order.source !== 'qr' || order.serverId) &&
         Array.isArray(order.items) && Number.isFinite(Number(order.amount));
     }).map(function(order) {
       return Object.assign({}, order, {
-        source: 'manual',
+        // Billed QR orders keep their QR details (table, order number, server id)
+        source: order.source === 'qr' ? 'qr' : 'manual',
         amount: Number(order.amount),
         placedAt: Number(order.placedAt) || Date.now(),
         printedAt: Number(order.printedAt) || null,
@@ -2751,8 +2754,11 @@ function restorePendingManualOrders() {
 }
 
 function persistPendingManualOrders(orders) {
+  // Manual bills, plus QR orders that are already billed: those are removed from Firebase
+  // once printed, so this device is the only place they wait for Cash / GPay.
+  // QR orders not billed yet stay in Firebase and are loaded from there.
   var pending = (orders || orderQueue).filter(function(order) {
-    return order && order.source !== 'qr';
+    return order && (order.source !== 'qr' || (order.billNo != null && order.serverId));
   });
   safeSetStorage('bfsPendingManualOrders', JSON.stringify(pending));
 }
@@ -3943,16 +3949,32 @@ function setQueueExpanded(open) {
   if (open) {
     // Hold the queue's normal height so the bill below does not jump up
     section.style.height = section.offsetHeight + 'px';
-    list.style.top = (head.offsetHeight + 8) + 'px';
+    placeQueuePanel();
   } else {
     section.style.height = '';
-    list.style.top = '';
+    list.style.top = list.style.left = list.style.width = list.style.maxHeight = '';
   }
   section.classList.toggle('oq-expanded', open);
   if (toggle) {
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     toggle.title = open ? 'Close the orders queue' : 'Open the orders queue';
   }
+}
+
+function placeQueuePanel() {
+  var head = document.getElementById('oqHead');
+  var list = document.getElementById('oqList');
+  if (!head || !list) return;
+  // A larger panel pinned under the header: wider than the column (it grows to the
+  // left over the menu) and tall enough to read, even with only a few orders
+  var headRect = head.getBoundingClientRect();
+  var rightEdge = headRect.right;
+  var width = Math.min(Math.max(headRect.width, 620), rightEdge - 16);
+  var top = headRect.bottom + 8;
+  list.style.top = top + 'px';
+  list.style.left = (rightEdge - width) + 'px';
+  list.style.width = width + 'px';
+  list.style.maxHeight = (window.innerHeight - top - 16) + 'px';
 }
 
 function onQueueHeadClick(event) {
@@ -3974,4 +3996,9 @@ document.addEventListener('click', function(event) {
 
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Escape') setQueueExpanded(false);
+});
+
+// Keep the open panel lined up with the header when the window size changes
+window.addEventListener('resize', function() {
+  if (document.querySelector('.oq-section.oq-expanded')) placeQueuePanel();
 });
