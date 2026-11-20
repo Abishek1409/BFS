@@ -532,7 +532,7 @@
       });
       let html = '';
       Object.keys(grouped).forEach(catName => {
-        html += `<div class="category-header">${catName}</div>`;
+        html += `<div class="category-header">${escapeHtml(catName)}</div>`;
         html += `<div class="menu-grid">`;
         grouped[catName].forEach(item => {
           const out = isOut(item);

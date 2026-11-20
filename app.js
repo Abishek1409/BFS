@@ -420,7 +420,7 @@ function showToast(options) {
     actionsHTML = '<div class="toast-actions">';
     actions.forEach((action, index) => {
       const btnClass = action.primary ? 'toast-btn-primary' : 'toast-btn-secondary';
-      actionsHTML += `<button class="toast-btn ${btnClass}" data-action="${index}">${action.label}</button>`;
+      actionsHTML += `<button class="toast-btn ${btnClass}" data-action="${index}">${escMenu(action.label)}</button>`;
     });
     actionsHTML += '</div>';
   }
@@ -428,8 +428,8 @@ function showToast(options) {
   toast.innerHTML = `
     <div class="toast-icon">${icons[type]}</div>
     <div class="toast-content">
-      <div class="toast-title">${title}</div>
-      ${message ? `<div class="toast-message">${message}</div>` : ''}
+      <div class="toast-title">${escMenu(title)}</div>
+      ${message ? `<div class="toast-message">${escMenu(message)}</div>` : ''}
       ${actionsHTML}
     </div>
     <button class="toast-close" aria-label="Close">×</button>
@@ -1323,11 +1323,11 @@ function renderBill() {
     if (item.size  && item.size  !== 'Regular')      parts.push(item.size);
     if (item.note) parts.push(item.note);
     if (item.orderType === 'Take Away') parts.push('Take Away');
-    const spec = parts.length ? parts.join(' &middot; ') : 'Standard';
+    const spec = parts.length ? parts.map(escMenu).join(' &middot; ') : 'Standard';
     return `
       <div class="bill-item">
         <div class="bill-item-info">
-          <div class="bill-item-name">${item.emoji} ${item.name}</div>
+          <div class="bill-item-name">${escMenu(item.emoji)} ${escMenu(item.name)}</div>
           <div class="bill-item-spec">${spec}</div>
         </div>
         <div class="bill-item-qty-price">
@@ -1336,7 +1336,7 @@ function renderBill() {
             <span class="qty-val">${item.qty}</span>
             <button type="button" onclick="changeBillQty(${idx}, 1)" aria-label="Increase ${escMenu(item.name)}">+</button>
           </div>
-          <div class="bill-item-unit">&#x20B9;${item.price} each</div>
+          <div class="bill-item-unit">&#x20B9;${escMenu(item.price)} each</div>
           <div class="bill-item-total">&#x20B9;${item.total.toFixed(2)}</div>
         </div>
         <button class="bill-item-del" onclick="removeItem(${idx})" title="Remove item">&#x2715;</button>
@@ -1890,7 +1890,7 @@ function renderHistoryTable(records) {
   tbody.innerHTML = records.map(function(r, i) {
     const itemList = (r.items && r.items.length)
       ? r.items.map(function(it) {
-          return it.emoji + ' ' + it.name + ' x' + it.qty + (it.spec && it.spec !== 'Standard' ? ' (' + it.spec + ')' : '');
+          return escMenu(it.emoji) + ' ' + escMenu(it.name) + ' x' + escMenu(it.qty) + (it.spec && it.spec !== 'Standard' ? ' (' + escMenu(it.spec) + ')' : '');
         }).join('<br>')
       : '<span style="color:#737373">—</span>';
     
@@ -1946,9 +1946,9 @@ function renderHistoryTable(records) {
     
     return '<tr>' +
       '<td>' + (i + 1) + '</td>' +
-      '<td><strong>#' + r.billNo + '</strong></td>' +
-      '<td>' + r.date + '</td>' +
-      '<td>' + r.time + '</td>' +
+      '<td><strong>#' + escMenu(r.billNo) + '</strong></td>' +
+      '<td>' + escMenu(r.date) + '</td>' +
+      '<td>' + escMenu(r.time) + '</td>' +
       '<td>' + methodCell + '</td>' +
       '<td>' + formatCell + '</td>' +
       '<td style="font-size:.78rem;line-height:1.6">' + itemList + '</td>' +
@@ -3055,18 +3055,41 @@ function handleOrderSyncError(error) {
   setQrConnection('QR connection failed', false);
 }
 
+/**
+ * Customers build QR orders on their own phones, so the price and total they send
+ * cannot be trusted. Look the item up in this device's menu and use the shop's price
+ * (+10 for Large, same as the billing popup). Items not on the menu keep the sent
+ * price but are marked so the cashier checks them.
+ */
+function verifyQrItemPrice(item) {
+  var baseName = String(item.baseName || item.name || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+  var menuItem = (typeof menuItems !== 'undefined' ? menuItems : []).find(function(m) {
+    return m && String(m.name).trim().toLowerCase() === baseName.toLowerCase();
+  });
+  var quantity = Math.min(99, Math.max(1, Math.floor(Number(item.qty)) || 1));
+  if (!menuItem || !Number.isFinite(Number(menuItem.price))) {
+    var sent = Math.max(0, Number(item.price) || 0);
+    return { price: sent, qty: quantity, total: sent * quantity, priceUnverified: true };
+  }
+  var large = item.size === 'Large' || /\blarge\b/i.test(String(item.spec || '') + ' ' + String(item.name || ''));
+  var price = Number(menuItem.price) + (large ? 10 : 0);
+  return { price: price, qty: quantity, total: price * quantity, priceUnverified: false, emoji: menuItem.emoji };
+}
+
 function addQrOrder(order, orderId) {
   if (!order || !orderId || orderQueue.some(function(item) { return item.serverId === orderId; })) return;
   var orderItems = (order.items || []).map(function(item) {
-    var quantity = Number(item.qty) || 1;
-    var price = Number(item.price) || 0;
+    var checked = verifyQrItemPrice(item);
+    var quantity = checked.qty;
+    var price = checked.price;
     return {
       name: item.name,
       baseName: item.baseName,
-      emoji: item.emoji || '🍹',
+      emoji: checked.emoji || item.emoji || '🍹',
       qty: quantity,
       price: price,
-      total: Number(item.total) || price * quantity,
+      total: checked.total,
+      priceUnverified: checked.priceUnverified,
       ice: item.ice,
       sugar: item.sugar,
       size: item.size,
@@ -3085,7 +3108,8 @@ function addQrOrder(order, orderId) {
     status: order.status || 'pending',
     placedAt: Number(order.createdAt) || Date.now(),
     printedAt: Number(order.printedAt) || null,
-    amount: Number(order.total || order.amount || order.grandTotal) || orderItems.reduce(function(sum, item) { return sum + item.total; }, 0),
+    // Always the sum of verified line totals, never the total the customer sent
+    amount: orderItems.reduce(function(sum, item) { return sum + item.total; }, 0),
     items: orderItems,
     time: order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '',
     payMethod: null
@@ -3113,8 +3137,9 @@ function getAmendmentItems(items, amendmentId) {
     return item && typeof item.name === 'string' && Number.isFinite(Number(item.price)) && Number(item.price) >= 0;
   }).map(function(item) {
     var normalized = normalizeQrItemPreferences(item);
-    var qty = Math.max(1, Number(item.qty) || 1);
-    var price = Number(item.price);
+    var checked = verifyQrItemPrice(item);
+    var qty = checked.qty;
+    var price = checked.price;
     var parts = [];
     if (normalized.ice) parts.push(normalized.ice);
     if (normalized.sugar && normalized.sugar !== 'Normal Sugar') parts.push(normalized.sugar);
@@ -3368,7 +3393,8 @@ function renderQueue() {
 
   list.innerHTML = orderQueue.map(function(o) {
     var itemsSummary = (o.items || []).map(function(it) {
-      return escapeQueueText((it.emoji ? it.emoji + ' ' : '') + it.name) + ' <b>\u00D7' + escapeQueueText(it.qty) + '</b>';
+      return escapeQueueText((it.emoji ? it.emoji + ' ' : '') + it.name) + ' <b>\u00D7' + escapeQueueText(it.qty) + '</b>' +
+        (it.priceUnverified ? ' <span class="oq-warn" title="Not on the menu: check this price">\u26A0 check price</span>' : '');
     }).join('<span class="oq-sep">\u00B7</span>');
 
     var isQr = o.source === 'qr';
@@ -3744,7 +3770,7 @@ function drawPie(items, totalQty) {
   legendEl.innerHTML = items.map(function(item, i) {
     return '<div class="rpt-legend-item">' +
       '<div class="rpt-legend-dot" style="background:' + RPT_COLORS[i % RPT_COLORS.length] + '"></div>' +
-      item.emoji + ' ' + item.name + ' (' + item.qty + ')' +
+      escMenu(item.emoji) + ' ' + escMenu(item.name) + ' (' + escMenu(item.qty) + ')' +
       '</div>';
   }).join('');
 }

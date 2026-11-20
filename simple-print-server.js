@@ -12,6 +12,15 @@
 const PRINTER_IP = '192.168.1.19';    // ← CHANGE THIS to your Possiflow IP
 const PRINTER_PORT = 9100;
 const SERVER_PORT = 3000;
+// Listen on this computer only (set HOST=0.0.0.0 to share it on the network on purpose)
+const HOST = process.env.HOST || '127.0.0.1';
+// Only the billing website may use this server from a browser; other sites are refused.
+// Add more with ALLOWED_ORIGINS="https://a.example,https://b.example".
+const ALLOWED_ORIGINS = ['https://bfs-one.vercel.app'].concat(
+  String(process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
+);
+// Raw printing ports only (JetDirect 9100-9102)
+const PRINTER_PORTS = new Set([9100, 9101, 9102]);
 // ===================================
 
 const http = require('http');
@@ -24,14 +33,28 @@ function isPrivateIPv4(ip) {
   return a === 10 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31);
 }
 
+function originAllowed(origin) {
+  if (!origin) return true;            // not a browser page (curl, local tools)
+  if (origin === 'null') return true;  // billing page opened from a local file
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || ALLOWED_ORIGINS.includes(origin);
+}
+
 function sendJson(res, status, payload) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(payload));
 }
 
 const server = http.createServer((req, res) => {
-  // Enable CORS for all requests
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Refuse browser requests from any site except the billing website
+  const origin = req.headers.origin;
+  if (!originAllowed(origin)) {
+    sendJson(res, 403, { success: false, error: 'Origin not allowed' });
+    return;
+  }
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   // Chrome asks HTTPS sites for permission before calling localhost
@@ -85,7 +108,7 @@ const server = http.createServer((req, res) => {
     const ip = url.searchParams.get('ip') || '';
     const port = Number(url.searchParams.get('port') || 9100);
     // Only local network printers, so this cannot be used to reach the internet
-    if (!isPrivateIPv4(ip) || !Number.isInteger(port) || port < 1 || port > 65535) {
+    if (!isPrivateIPv4(ip) || !PRINTER_PORTS.has(port)) {
       sendJson(res, 400, { success: false, error: 'Invalid printer address' });
       return;
     }
@@ -165,7 +188,7 @@ const server = http.createServer((req, res) => {
   res.end('Not found');
 });
 
-server.listen(SERVER_PORT, () => {
+server.listen(SERVER_PORT, HOST, () => {
   console.log(`
 ╔═══════════════════════════════════════╗
 ║   POSSIFLOW PRINT SERVER              ║

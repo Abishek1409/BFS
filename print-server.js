@@ -14,6 +14,29 @@ const cors = require('cors');
 const net = require('net');
 
 const PORT = Number(process.env.PORT || 3000);
+// Listen on this computer only, so other devices on the shop Wi-Fi cannot send print jobs.
+// Set HOST=0.0.0.0 to share the print server on the network on purpose.
+const HOST = process.env.HOST || '127.0.0.1';
+
+// Only the billing website may use this server from a browser. Any other site the shop
+// computer visits is refused, so it cannot print or reach devices on the shop network.
+// Add more with ALLOWED_ORIGINS="https://a.example,https://b.example".
+const DEFAULT_ALLOWED_ORIGINS = ['https://bfs-one.vercel.app'];
+const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+// Raw printing ports (JetDirect 9100-9102). Anything else on the LAN is off limits.
+const PRINTER_PORTS = new Set([9100, 9101, 9102]);
+
+function originAllowed(origin, allowed) {
+  if (!origin) return true;            // not a browser page (tests, curl, local tools)
+  if (origin === 'null') return true;  // billing page opened from a local file
+  return LOCAL_ORIGIN.test(origin) || allowed.includes(origin);
+}
+
+function allowedOriginsFromEnv() {
+  return DEFAULT_ALLOWED_ORIGINS.concat(
+    String(process.env.ALLOWED_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean)
+  );
+}
 
 // Your thermal printers configuration
 const PRINTERS = {
@@ -29,14 +52,19 @@ const PRINTERS = {
   }
 };
 
-function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrinter } = {}) {
+function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrinter, allowedOrigins = allowedOriginsFromEnv() } = {}) {
   const app = express();
-  // Chrome asks HTTPS sites for permission before calling localhost
+  // Refuse browser requests from any site except the billing website
   app.use((req, res, next) => {
+    if (!originAllowed(req.headers.origin, allowedOrigins)) {
+      res.status(403).json({ success: false, error: 'Origin not allowed' });
+      return;
+    }
+    // Chrome asks HTTPS sites for permission before calling localhost
     res.setHeader('Access-Control-Allow-Private-Network', 'true');
     next();
   });
-  app.use(cors());
+  app.use(cors({ origin: (origin, cb) => cb(null, originAllowed(origin, allowedOrigins)) }));
   app.use(express.raw({ type: 'application/octet-stream', limit: '10mb' }));
 
   // Relay raw ESC/POS bytes to a printer IP chosen in the website settings.
@@ -44,7 +72,7 @@ function createApp({ printers = PRINTERS, send = sendToPrinter, test = testPrint
   const printTo = async (req, res) => {
     const ip = String(req.query.ip || '');
     const port = Number(req.query.port || 9100);
-    if (!isPrivateIPv4(ip) || !Number.isInteger(port) || port < 1 || port > 65535) {
+    if (!isPrivateIPv4(ip) || !PRINTER_PORTS.has(port)) {
       res.status(400).json({ success: false, error: 'Invalid printer address' });
       return;
     }
@@ -209,7 +237,7 @@ if (require.main === module) {
   {
   // Printer IPs come from the website settings via /print-to; env vars are optional
   const app = createApp();
-  app.listen(PORT, () => {
+  app.listen(PORT, HOST, () => {
   console.log(`
 ╔════════════════════════════════════════════╗
 ║   Multi-Printer Server Running!            ║
