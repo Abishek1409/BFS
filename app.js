@@ -3904,3 +3904,48 @@ function openLiveMapPage() {
     if (++tries < 100) setTimeout(wait, 50);
   })();
 }
+
+
+/* ===== ORDERS QUEUE: click the header to open it big, like a drop-down ===== */
+function setQueueExpanded(open) {
+  var section = document.querySelector('.oq-section');
+  var head = document.getElementById('oqHead');
+  var list = document.getElementById('oqList');
+  var toggle = document.getElementById('oqToggle');
+  if (!section || !head || !list) return;
+  if (open === section.classList.contains('oq-expanded')) return;
+  if (open) {
+    // Hold the queue's normal height so the bill below does not jump up
+    section.style.height = section.offsetHeight + 'px';
+    list.style.top = (head.offsetHeight + 8) + 'px';
+  } else {
+    section.style.height = '';
+    list.style.top = '';
+  }
+  section.classList.toggle('oq-expanded', open);
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.title = open ? 'Close the orders queue' : 'Open the orders queue';
+  }
+}
+
+function onQueueHeadClick(event) {
+  // The Reconnect / Clear buttons keep their own job
+  if (event.target.closest('button') && !event.target.closest('#oqToggle')) return;
+  var section = document.querySelector('.oq-section');
+  setQueueExpanded(!(section && section.classList.contains('oq-expanded')));
+}
+
+document.addEventListener('click', function(event) {
+  var section = document.querySelector('.oq-section.oq-expanded');
+  if (!section) return;
+  // Close when clicking outside, or after choosing "+ Add" so the bill is in view
+  if (event.target.closest('.oq-btn-add')) { setQueueExpanded(false); return; }
+  // A queue button may re-render the list, detaching the clicked element: that still counts as inside
+  if (!document.contains(event.target)) return;
+  if (!section.contains(event.target)) setQueueExpanded(false);
+});
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') setQueueExpanded(false);
+});

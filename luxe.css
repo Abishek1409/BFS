@@ -494,3 +494,38 @@ html body, html body :is(#_, *):not(.printer-ip) {
 .bill-badge, .table-badge, .oq-badge, .cat-tab, .nv { white-space: nowrap; }
 body[data-page="order"] .app-header h1 { font-size: 1.05rem !important; white-space: nowrap; }
 body[data-page="order"] .table-badge { padding: 6px 12px !important; font-size: .75rem !important; }
+
+/* =========================================================================
+   ORDERS QUEUE: click the header to drop it open over the bill
+   ========================================================================= */
+.oq-head { cursor: pointer; user-select: none; border-radius: var(--lx-r-sm); transition: background .15s; padding: 4px 6px; }
+.oq-head:hover { background: rgba(212, 175, 55, .06); }
+.oq-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: none !important; border: 0 !important; padding: 4px 0; margin: 0;
+  color: var(--lx-gold-hi) !important; cursor: pointer; text-align: left;
+}
+.oq-chevron {
+  width: 9px; height: 9px; margin-left: 2px; flex-shrink: 0;
+  border-right: 2px solid var(--lx-gold); border-bottom: 2px solid var(--lx-gold);
+  transform: translateY(-2px) rotate(45deg); transition: transform .2s ease;
+}
+.oq-expanded .oq-chevron { transform: translateY(2px) rotate(-135deg); }
+
+body[data-page="billing"] .oq-section { position: relative; z-index: 20; }
+body[data-page="billing"] .oq-section.oq-expanded .oq-list {
+  position: absolute; left: 0; right: 0;
+  max-height: calc(100vh - 190px) !important; height: auto !important;
+  background: linear-gradient(180deg, rgba(22, 18, 14, .97), rgba(11, 9, 7, .98)) !important;
+  border-color: var(--lx-line-3) !important;
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, .15), 0 26px 60px rgba(0, 0, 0, .7) !important;
+  animation: oqDrop .16s ease-out;
+}
+@keyframes oqDrop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+/* Bigger, roomier cards while open */
+body[data-page="billing"] .oq-section.oq-expanded .oq-row { padding: 14px 16px 14px 18px; gap: 9px; }
+body[data-page="billing"] .oq-section.oq-expanded .oq-row-bill,
+body[data-page="billing"] .oq-section.oq-expanded .oq-row-amount { font-size: 1.15rem; }
+body[data-page="billing"] .oq-section.oq-expanded .oq-row-items { font-size: .85rem; }
+body[data-page="billing"] .oq-section.oq-expanded .oq-btn { height: 38px; font-size: .82rem; }
+@media (prefers-reduced-motion: reduce) { body[data-page="billing"] .oq-section.oq-expanded .oq-list { animation: none; } }

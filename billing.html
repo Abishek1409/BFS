@@ -152,11 +152,13 @@
 
     <!-- ORDERS QUEUE (moved above bill) -->
     <div class="oq-section" style="padding: 0; max-width: none; margin: 0;">
-      <div class="oq-head">
-        <div class="oq-title">
+      <!-- Click the queue header to open the queue big; click again, click outside or press Esc to close -->
+      <div class="oq-head" id="oqHead" onclick="onQueueHeadClick(event)">
+        <button type="button" class="oq-title oq-toggle" id="oqToggle" aria-expanded="false" aria-controls="oqList" title="Open the orders queue">
           🍱 Orders Queue
           <span class="oq-badge" id="oqCount">0</span>
-        </div>
+          <span class="oq-chevron" aria-hidden="true"></span>
+        </button>
         <div class="oq-head-actions">
           <span class="oq-connection" id="oqConnection">QR offline</span>
           <button class="oq-connect-btn" onclick="reconnectQr()">Reconnect QR</button>
